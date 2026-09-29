@@ -190,16 +190,82 @@ const projects = {
   },
   "project-2": {
     type: "Team Project",
-    title: "프로젝트 이름 02",
-    period: "2026.00 - 2026.00 / 3인 팀",
-    feature: "로그인, 플레이 데이터 저장, 랭킹과 클라이언트 연동처럼 서버 중심 기능을 간단히 소개합니다.",
-    challenge: "요청 순서와 예외 상황에 따라 데이터가 다르게 저장되는 정합성 문제가 발생했습니다. 재현이 어렵다는 점도 함께 해결해야 했습니다.",
-    solution: "요청 단위를 명확히 정의하고 검증 계층과 로그를 추가했습니다. 실패 지점을 추적할 수 있게 만들고 저장 규칙을 한곳에서 관리했습니다.",
-    tags: ["Node.js", "REST API", "MySQL"],
+    title: "Little Survival Planet",
+    period: "2026.04.28 - 2026.06.09 / 2인 협업 프로젝트",
+    overviewTitle: "상호작용과 제작 루프를 중심으로 구성한 Unity 생존·크래프팅 시스템",
+    overview: "플레이어 행동 상태, 아이템 상호작용 판정, 제작 해금, 미션 진행, 결과 UI, 랜덤 스폰과 사운드·UI 피드백을 연결해 짧은 플레이 루프가 끝까지 진행되도록 구현한 협업 프로젝트입니다.",
+    motivationTitle: "개별 기능을 하나의 플레이 루프로 연결",
+    motivation: "협업 과정에서 담당한 상호작용·제작·플레이어 상태·미션·월드 스폰·UI 피드백을 자원 획득부터 제작·행동·미션 완료·결과 화면까지 자연스럽게 이어지는 하나의 플레이 루프로 구성하는 데 집중했습니다.",
+    info: [
+      ["개발 기간", "2026.04.28 - 2026.06.09"],
+      ["구성", "협업 프로젝트 (소프트웨어 2명)"],
+      ["담당 작업", "상호작용·제작, 플레이어 상태, 미션·결과 UI, 자원 스폰"],
+      ["엔진", "Unity 2022.3.62f3"],
+      ["클라이언트", "C#"],
+    ],
+    principles: [
+      ["상태 중심 행동 분리", "이동·낚시·벌목·섭취·요리·수리의 입력, 진행 시간, 애니메이션과 사운드 수명주기를 행동 상태별로 분리했습니다."],
+      ["아이템·대상 조합 판정", "현재 아이템의 종류와 상호작용 대상을 함께 확인해 가능한 행동을 한곳에서 일관되게 판정했습니다."],
+      ["순서 독립 제작 레시피", "재료를 선택한 순서가 달라도 같은 조합으로 인식하도록 제작 규칙을 구성했습니다."],
+      ["제작 결과와 기능 해금 연결", "제작 성공을 낚시 해금, 벌목 효율 개선, 도구 생성처럼 실제 플레이 규칙의 변화로 연결했습니다."],
+      ["미션 정의와 진행 상태 분리", "미션 정의 데이터와 플레이 중의 완료 상태를 분리해 슬롯 UI와 결과 화면에서 같은 정보를 재사용했습니다."],
+      ["검증 기반 월드 스폰", "지형 판정, 오브젝트 겹침 검사와 가중치 선택을 거쳐 자원이 플레이 가능한 공간에 생성되도록 했습니다."],
+    ],
+    coreFeatures: [
+      {
+        title: "아이템·대상 기반 상호작용 판정과 제작 흐름",
+        summary: "손에 든 아이템과 바라보는 대상의 조합을 판정해 제작과 기능 해금까지 하나의 흐름으로 연결합니다.",
+        keywords: ["Interaction Rule", "Order-independent Recipe", "Feature Unlock"],
+        why: "플레이어가 손에 든 아이템과 바라보는 대상에 따라 낚시, 요리, 불 피우기, 벌목, 로켓 수리와 제작처럼 서로 다른 행동이 실행되어야 합니다. 이 조건이 입력 처리 곳곳에 흩어지면 새로운 상호작용을 추가할 때 기존 규칙과 충돌하기 쉽습니다.",
+        how: "현재 아이템의 종류와 대상이 가진 역할을 함께 확인하는 공통 판정 흐름을 구성했습니다. 제작 재료는 선택 순서와 관계없이 같은 조합으로 비교하며, 제작이 끝나면 사용한 아이템을 정리하고 기능 해금·미션 진행·사운드·UI 피드백을 함께 갱신합니다.",
+        video: {
+          src: "assets/gep/videos/01-interaction-crafting.mp4",
+          title: "아이템·대상 기반 상호작용과 제작 흐름 결과 영상",
+        },
+      },
+      {
+        title: "상태 머신으로 나눈 플레이어 행동 처리",
+        summary: "이동·낚시·벌목·섭취·요리·수리의 입력과 시간, 애니메이션, 사운드 수명주기를 상태별로 관리합니다.",
+        keywords: ["State Machine", "Action Lifecycle", "Feedback Sync"],
+        why: "각 행동은 입력 가능 여부, 소요 시간, 이동 제한, 애니메이션과 사운드 종료 시점이 다릅니다. 이를 하나의 조건문 흐름에 모으면 행동 중 이동이 끼어들거나 종료된 행동의 사운드가 남는 등 상태 충돌이 발생하기 쉽습니다.",
+        how: "현재 행동을 진입·갱신·종료 단계가 있는 상태로 나누고, 시간이 필요한 행동에서는 이동과 입력을 조절했습니다. 행동 완료를 아이템 획득·제작·미션 진행으로 연결하고, 종료 단계에서 반복 사운드와 임시 상태를 정리해 다음 행동으로 안정적으로 전환되도록 했습니다.",
+        video: {
+          src: "assets/gep/videos/02-player-state-actions.mp4",
+          title: "플레이어 행동 상태 전환 결과 영상",
+        },
+      },
+      {
+        title: "미션 진행과 결과 화면 구성",
+        summary: "제작·낚시·벌목 결과를 미션 진행과 클리어 타임이 포함된 결과 화면으로 연결합니다.",
+        keywords: ["Mission Data", "Progress Event", "Result UI"],
+        why: "제작, 낚시와 벌목 같은 핵심 행동은 단순히 실행되는 데서 끝나지 않고 플레이 목표와 클리어 결과로 이어져야 합니다. 미션 정의와 화면 표시가 뒤섞이면 결과 UI가 각 게임 기능의 내부 상태를 직접 찾아야 합니다.",
+        how: "미션의 식별 정보·유형·설명은 정의 데이터로 관리하고, 플레이 중 완료 상태는 별도로 갱신했습니다. 각 행동이 끝나는 시점에 미션 진행을 알리며, 결과 화면은 미션 목록과 클리어 시간을 읽어 완료 여부를 한 번에 보여주도록 구성했습니다.",
+        video: {
+          src: "assets/gep/videos/03-mission-result-ui.mp4",
+          title: "미션 진행과 결과 화면 결과 영상",
+        },
+      },
+      {
+        title: "월드 자원 랜덤 스폰과 배치 안정화",
+        summary: "지형·겹침·가중치를 검증해 자원이 플레이 가능한 공간에 안정적으로 생성되게 합니다.",
+        keywords: ["Terrain Validation", "Overlap Check", "Weighted Spawn"],
+        why: "단순한 무작위 좌표에 자원을 생성하면 지형 밖이나 공중에 배치되거나 기존 오브젝트와 겹칠 수 있습니다. 생존 루프에 필요한 자원이 접근할 수 없는 곳에 생성되면 플레이 진행 자체가 막힙니다.",
+        how: "월드 범위에서 후보 위치를 만든 뒤 지형과의 실제 접점을 확인하고, 주변 오브젝트와 겹치는 위치는 제외했습니다. 자원별 등장 확률을 반영해 후보를 선택하며, 현재 생성 수에 따라 생성 간격을 조절해 플레이 가능한 공간에 자원이 지속적으로 공급되도록 했습니다.",
+        video: {
+          src: "assets/gep/videos/04-world-spawn-stability.mp4",
+          title: "월드 자원 랜덤 스폰과 배치 안정화 결과 영상",
+        },
+      },
+    ],
+    feature: "",
+    challenge: "",
+    solution: "",
+    tags: [],
+    notion: "https://app.notion.com/p/3e4e8789789b811d8a95e6cb5a666e91",
     images: [
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 2 대표 인게임 이미지 자리", label: "MAIN SCREEN" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 2 인게임 이미지 두 번째 자리", label: "GAMEPLAY 01" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 2 인게임 이미지 세 번째 자리", label: "GAMEPLAY 02" },
+      { src: "assets/gep/gep-cover.png", alt: "Little Survival Planet 타이틀 화면", label: "TITLE SCREEN", background: "#ffffff" },
+      { src: "assets/gep/gep-gameplay.png", alt: "Little Survival Planet 인게임 화면", label: "GAMEPLAY", background: "#ffffff" },
+      { src: "assets/gep/gep-tutorial.png", alt: "Little Survival Planet 튜토리얼 화면", label: "TUTORIAL", background: "#ffffff" },
     ],
   },
   "project-3": {
@@ -279,11 +345,13 @@ const modalFields = {
 
 const buildGallery = (images) => {
   modalFields.gallery.replaceChildren();
+  modalFields.gallery.dataset.imageCount = String(images.length);
   images.forEach((image) => {
     const figure = document.createElement("figure");
     const img = document.createElement("img");
     img.src = image.src;
     img.alt = image.alt;
+    if (image.background) img.style.backgroundColor = image.background;
     figure.append(img);
     modalFields.gallery.append(figure);
   });
