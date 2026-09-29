@@ -290,14 +290,13 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .project-modal { width: min(calc(100% - 2rem),1120px); max-height: calc(100svh - 2rem); margin: auto; border: 1px solid var(--line-bright); border-radius: var(--radius); padding: 0; overflow: auto; background: var(--bg-soft); color: var(--text); box-shadow: 0 28px 90px rgba(0,0,0,.75); }
 .project-modal::backdrop { background: rgba(3,6,15,.82); backdrop-filter: blur(8px); }
 .modal-shell { position: relative; padding: clamp(1.25rem,4vw,3rem); }
-.modal-close { position: sticky; top: 1rem; z-index: 2; display: grid; place-items: center; width: 2.8rem; height: 2.8rem; margin: 0 0 -2.8rem auto; border: 1px solid var(--line); border-radius: 5px; background: rgba(11,16,32,.92); color: var(--text); font-size: 1.7rem; line-height: 1; }
+.modal-toolbar { position: sticky; top: 1rem; z-index: 3; display: flex; justify-content: flex-end; gap: .5rem; width: max-content; margin: 0 0 .75rem auto; }
+.modal-close { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; border: 1px solid var(--line); border-radius: 5px; padding: 0; background: rgba(11,16,32,.94); color: var(--text); font-size: 1.7rem; line-height: 1; }
 .modal-close:hover { border-color: var(--line-bright); color: var(--peach); }
-.modal-jump-overview { position: fixed; top: 50%; right: calc((100vw - min(1120px, calc(100vw - 2rem))) / 2 + 1rem); z-index: 3; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid var(--line-bright); border-radius: 50%; padding: 0; background: rgba(11,16,32,.94); color: var(--peach); box-shadow: 0 8px 24px rgba(0,0,0,.38); transform: translateY(-50%); }
+.modal-jump-overview { min-height: 2.8rem; border: 1px solid var(--line-bright); border-radius: 5px; padding: .62rem .85rem; background: rgba(11,16,32,.94); color: var(--peach); box-shadow: 0 8px 24px rgba(0,0,0,.38); font-size: .76rem; font-weight: 850; white-space: nowrap; }
 .modal-jump-overview[hidden] { display: none; }
 .modal-jump-overview:hover { border-color: var(--orange); background: #172039; color: var(--yellow); }
-.modal-jump-overview span:first-child { font-size: 1rem; line-height: 1; }
-.modal-jump-overview span:last-child { display: none; }
-.modal-header { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 2rem; margin-bottom: 2rem; padding-right: 4rem; }
+.modal-header { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 2rem; margin-bottom: 2rem; }
 .modal-header h2, .modal-header p { margin-bottom: 0; }
 .modal-header > p { color: var(--muted); }
 .modal-gallery, .modal-overview, .modal-outline, .modal-principles, .modal-features, .modal-story { border-top: 1px solid var(--line); padding-top: 1.5rem; }
@@ -343,6 +342,11 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .principle-list p { margin: .45rem 0 0; color: var(--muted); font-size: .9rem; }
 .feature-detail-list { display: grid; gap: .8rem; }
 .feature-detail { border: 1px solid var(--line); border-radius: 5px; padding: 1.2rem; background: var(--panel); }
+.feature-detail.is-outline-highlight { animation: feature-outline-highlight 1.5s ease-out; }
+@keyframes feature-outline-highlight {
+  0%, 35% { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,218,109,.34), 0 0 24px rgba(255,183,92,.22); }
+  100% { border-color: var(--line); box-shadow: 0 0 0 0 rgba(255,218,109,0), 0 0 0 rgba(255,183,92,0); }
+}
 .feature-detail header { display: flex; align-items: baseline; gap: .75rem; }
 .feature-detail header span { color: var(--orange); font-size: .75rem; font-weight: 900; }
 .feature-detail h4 { margin: 0; color: var(--yellow); font-size: 1.05rem; }
@@ -430,7 +434,9 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 
 @media (max-width: 560px) {
   .site-header { top: .5rem; width: calc(100% - 1rem); }
-  .modal-jump-overview { right: calc((100vw - min(1120px, calc(100vw - 2rem))) / 2 + 1.35rem); width: 2.15rem; height: 2.15rem; }
+  .modal-toolbar { top: .65rem; }
+  .modal-jump-overview { min-height: 2.5rem; padding: .52rem .62rem; font-size: .68rem; }
+  .modal-close { width: 2.5rem; height: 2.5rem; }
   .main-nav a { padding: .38rem .48rem; font-size: .8rem; }
   .hero { min-height: 760px; padding-top: 15rem; }
   h1 { font-size: clamp(2.35rem,12vw,4rem); }

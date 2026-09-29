@@ -315,11 +315,7 @@ const buildProjectDetail = (project) => {
   modalFields.features.replaceChildren();
   if (!hasDetail) return;
 
-  const outlineItems = [
-    ["01", "In-game Screens", "modal-gallery-images"],
-    ["02", "Information", "modal-overview"],
-    ["04", "Design Principles", "modal-principles"],
-  ];
+  const outlineItems = [["03", "Design Principles", "modal-principles"]];
 
   outlineItems.forEach(([index, label, targetId]) => {
     const item = document.createElement("li");
@@ -331,7 +327,7 @@ const buildProjectDetail = (project) => {
 
   const featureOutline = document.createElement("li");
   const featureNumber = document.createElement("span");
-  featureNumber.textContent = "05";
+  featureNumber.textContent = "04";
   featureOutline.append(featureNumber, makeOutlineButton("Core Features", "modal-features"));
   const nestedList = document.createElement("ol");
   project.coreFeatures.forEach((feature, index) => {
@@ -459,11 +455,27 @@ document.querySelectorAll("[data-project-open]").forEach((button) => {
   button.addEventListener("click", () => openProject(button.dataset.projectOpen));
 });
 
+let featureHighlightStartTimer;
+let featureHighlightEndTimer;
+
 modalFields.outline.addEventListener("click", (event) => {
   const button = event.target.closest("[data-modal-target]");
   if (!button) return;
   const target = modal.querySelector(`#${button.dataset.modalTarget}`);
   target?.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" });
+  if (!target?.classList.contains("feature-detail")) return;
+
+  window.clearTimeout(featureHighlightStartTimer);
+  window.clearTimeout(featureHighlightEndTimer);
+  modal.querySelectorAll(".feature-detail.is-outline-highlight").forEach((item) => {
+    item.classList.remove("is-outline-highlight");
+  });
+  featureHighlightStartTimer = window.setTimeout(() => {
+    target.classList.add("is-outline-highlight");
+    featureHighlightEndTimer = window.setTimeout(() => {
+      target.classList.remove("is-outline-highlight");
+    }, 1500);
+  }, reduceMotion.matches ? 0 : 350);
 });
 
 overviewJumpButton.addEventListener("click", () => {
