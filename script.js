@@ -263,9 +263,9 @@ const projects = {
     tags: [],
     notion: "https://app.notion.com/p/3e4e8789789b811d8a95e6cb5a666e91",
     images: [
-      { src: "assets/gep/gep-cover.png", alt: "Little Survival Planet 타이틀 화면", label: "TITLE SCREEN", background: "#ffffff" },
-      { src: "assets/gep/gep-gameplay.png", alt: "Little Survival Planet 인게임 화면", label: "GAMEPLAY", background: "#ffffff" },
-      { src: "assets/gep/gep-tutorial.png", alt: "Little Survival Planet 튜토리얼 화면", label: "TUTORIAL", background: "#ffffff" },
+      { src: "assets/gep/gep-cover.png", alt: "Little Survival Planet 타이틀 화면", label: "TITLE SCREEN", background: "#000000" },
+      { src: "assets/gep/gep-gameplay.png", alt: "Little Survival Planet 인게임 화면", label: "GAMEPLAY", background: "#000000" },
+      { src: "assets/gep/gep-tutorial.png", alt: "Little Survival Planet 튜토리얼 화면", label: "TUTORIAL", background: "#000000" },
     ],
   },
   "project-3": {
