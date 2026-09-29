@@ -97,6 +97,86 @@ const projects = {
       ["데이터베이스", "MySQL / MariaDB"],
       ["통신", "TCP 커스텀 바이너리 프로토콜"],
     ],
+    principles: [
+      ["상태 중심 행동 분리", "이동·전투·피격·상호작용처럼 충돌하기 쉬운 행동을 상태 단위로 나눠 전환 규칙을 명확히 했습니다."],
+      ["정의 데이터와 진행 상태 분리", "변하지 않는 콘텐츠 정의와 수량·쿨다운·진행도 같은 런타임 상태를 분리해 저장과 확장의 경계를 세웠습니다."],
+      ["공통 계약과 다형성", "공통 실행 흐름은 하나의 계약으로 유지하고, 콘텐츠별 차이만 독립적으로 확장하도록 구성했습니다."],
+      ["이벤트 기반 결과 전달", "전투·채집·제작의 결과를 이벤트로 전달해 퀘스트와 튜토리얼이 생산 시스템의 내부 구현에 의존하지 않게 했습니다."],
+      ["네트워크와 Unity 생명주기 분리", "데이터 수신 시점과 씬·오브젝트 생성 시점을 분리하고, Unity API 작업은 메인 스레드에서 처리했습니다."],
+      ["맵 단위 월드 경계", "세션과 게임 월드를 맵 컨텍스트로 구분해 필요한 사용자에게만 상태 변화를 전달하도록 했습니다."],
+      ["재접속 가능한 영속 상태", "클라이언트 수명과 무관하게 이어져야 하는 캐릭터 상태를 관계형 데이터로 저장하고 복원했습니다."],
+    ],
+    coreFeatures: [
+      {
+        title: "데이터 중심 RPG 콘텐츠 확장",
+        summary: "정의 데이터와 실행 상태를 분리해 새로운 스킬·아이템·퀘스트를 독립적으로 추가합니다.",
+        keywords: ["Data-driven", "Polymorphism", "Runtime State"],
+        why: "온라인 RPG는 스킬·아이템·퀘스트가 계속 늘어나는 장르입니다. 유형별 조건문을 한곳에 쌓거나 변하지 않는 정의와 수량·쿨다운 같은 실행 상태를 섞으면, 콘텐츠 하나를 추가할 때 기존 로직과 저장 데이터까지 함께 수정해야 합니다.",
+        how: "콘텐츠의 이름·효과·조건처럼 변하지 않는 정의 데이터와 플레이 중 변화하는 상태를 분리했습니다. 공통 생성·실행·종료 흐름은 동일한 계약으로 처리하고, 콘텐츠별 차이는 개별 동작과 데이터로 확장했습니다. 덕분에 사용하는 쪽은 구체적인 유형을 몰라도 같은 방식으로 콘텐츠를 실행할 수 있습니다.",
+      },
+      {
+        title: "상태 머신 기반 전투 흐름",
+        summary: "이동부터 사망까지 행동을 상태로 분리해 전환 규칙과 전투 판정 시점을 명확히 관리합니다.",
+        keywords: ["State Machine", "Combat Flow", "Animation Timing"],
+        why: "이동·추적·공격·피격·사망을 하나의 갱신 흐름에서 처리하면 여러 조건이 동시에 참이 되면서 행동이 충돌할 수 있습니다. 특히 공격 가능 여부와 애니메이션 재생 시점이 섞이면 화면의 동작과 실제 판정이 어긋나고, 어떤 조건에서 잘못 전환됐는지 추적하기 어려워집니다.",
+        how: "각 행동을 진입·갱신·종료 단계가 있는 상태로 분리하고, 상태를 바꿀 수 있는 조건과 우선순위를 명시했습니다. 전투 판단은 로직에서 결정하되 실제 타격 판정은 애니메이션의 유효 프레임과 연결했습니다. 피격이나 사망처럼 현재 행동을 중단해야 하는 상황도 정해진 전환 규칙을 거치도록 구성했습니다.",
+        video: {
+          src: "assets/videos/02-combat-state-flow.mp4",
+          title: "상태 머신 기반 전투 흐름 결과 영상",
+        },
+      },
+      {
+        title: "이벤트 기반 퀘스트·튜토리얼",
+        summary: "전투·채집·제작 결과를 이벤트로 전달해 진행 시스템이 각 기능에 직접 의존하지 않게 합니다.",
+        keywords: ["Domain Event", "Loose Coupling", "Progress Tracking"],
+        why: "퀘스트와 튜토리얼이 전투·채집·제작 시스템의 내부 상태를 직접 조회하면 새로운 목표를 추가할 때 생산 시스템까지 수정해야 합니다. 같은 행동을 여러 진행 콘텐츠가 관찰할수록 의존 관계가 복잡해지고, 완료 조건을 재사용하기도 어려워집니다.",
+        how: "몬스터 처치, 아이템 획득, 제작 완료처럼 의미 있는 플레이 결과를 공통 이벤트로 발행했습니다. 퀘스트와 튜토리얼은 필요한 사건만 구독해 자신의 조건과 비교하고 진행도를 갱신합니다. 변하지 않는 목표 정의와 플레이어별 진행 상태를 분리해 동일한 조건을 재사용하고 저장·복원 흐름에도 연결했습니다.",
+        video: {
+          src: "assets/videos/03-quest-tutorial-events.mp4",
+          title: "이벤트 기반 퀘스트·튜토리얼 결과 영상",
+        },
+      },
+      {
+        title: "Unity 메인 스레드와 지연 데이터 조립",
+        summary: "네트워크 수신과 화면 반영 시점을 분리해 씬 로딩 순서와 Unity 스레드 제약을 안전하게 처리합니다.",
+        keywords: ["Main Thread", "Deferred Assembly", "Load Order"],
+        why: "네트워크 응답은 씬과 게임 오브젝트가 준비되기 전에 도착할 수 있으며, 수신 스레드에서는 Unity API를 안전하게 사용할 수 없습니다. 도착 즉시 캐릭터나 UI를 생성하면 로딩 순서에 따라 참조가 누락되거나 같은 데이터를 두 번 반영하는 문제가 생길 수 있습니다.",
+        how: "수신 단계에서는 패킷 해석과 순수 데이터 보관까지만 수행하고, 오브젝트 생성과 UI 갱신은 메인 스레드 작업 큐로 전달했습니다. 씬과 필수 객체의 준비 상태를 확인한 뒤 보관된 데이터를 정해진 순서로 조립합니다. 수신 시점과 표현 시점을 분리해 네트워크 속도와 로딩 순서가 달라도 같은 결과를 만들도록 했습니다.",
+        video: {
+          src: "assets/videos/04-login-world-assembly.mp4",
+          title: "Unity 메인 스레드와 지연 데이터 조립 결과 영상",
+        },
+      },
+      {
+        title: "맵 단위 멀티플레이 동기화",
+        summary: "사용자를 맵 컨텍스트로 구분하고 필요한 대상에게만 입장·이동·퇴장 상태를 전달합니다.",
+        keywords: ["Map Context", "Ownership", "Lifecycle"],
+        why: "서로 다른 지역의 상태까지 모든 사용자에게 전송하면 불필요한 트래픽과 객체 관리 비용이 커집니다. 또한 로컬 객체와 원격 객체의 갱신 책임이 구분되지 않으면 하나의 상태를 여러 클라이언트가 동시에 변경해 위치나 행동이 충돌할 수 있습니다.",
+        how: "접속 세션을 맵 컨텍스트에 등록하고 같은 맵에 있는 사용자에게만 상태 변화를 전달했습니다. 입장 시 현재 월드 상태를 구성하고, 이후 이동과 행동을 갱신하며, 퇴장 시 원격 객체를 정리하는 수명주기를 분리했습니다. 어떤 상태를 누가 결정하고 전달하는지도 명시해 중복 갱신을 줄였습니다.",
+        video: {
+          src: "assets/videos/05-map-multiplayer-boundary.mp4",
+          title: "맵 단위 멀티플레이 동기화 결과 영상",
+        },
+      },
+      {
+        title: "IOCP 비동기 세션과 패킷 수명주기",
+        summary: "비동기 작업의 메모리 수명과 TCP 패킷 경계를 관리해 안정적인 다중 접속 통신을 구성합니다.",
+        keywords: ["IOCP", "Object Lifetime", "Packet Framing"],
+        why: "비동기 I/O가 완료되기 전에 세션이나 버퍼가 해제되면 완료 통지에서 이미 사라진 메모리에 접근하게 됩니다. TCP는 연속된 바이트 스트림이므로 하나의 패킷이 나뉘거나 여러 패킷이 합쳐져 도착할 수 있어, 수신 횟수와 메시지 개수를 동일하게 볼 수 없습니다.",
+        how: "세션·비동기 작업·송수신 버퍼의 소유권을 구분하고 완료 통지를 처리할 때까지 필요한 객체의 수명을 유지했습니다. 수신 바이트는 누적 버퍼에 보관한 뒤 헤더와 길이를 기준으로 완전한 패킷만 분리합니다. 송신은 큐에서 순서대로 처리해 겹친 요청을 직렬화하고, 연결 종료 시 남은 작업과 자원을 정리하는 흐름도 함께 관리했습니다.",
+      },
+      {
+        title: "재접속 가능한 게임 상태 영속화",
+        summary: "캐릭터·인벤토리·퀘스트 상태를 관계형 데이터로 저장하고 다음 접속에서 일관되게 복원합니다.",
+        keywords: ["Persistence", "Relational Model", "Restore Flow"],
+        why: "온라인 RPG의 맵·위치·스탯·인벤토리·퀘스트는 클라이언트가 종료되어도 다음 접속에서 이어져야 합니다. 서로 연결된 상태를 한 번에 다루지 않으면 일부 데이터만 저장되거나 잘못된 순서로 복원되어 플레이 상태가 불일치할 수 있습니다.",
+        how: "계정, 캐릭터, 보유 아이템과 진행 정보를 관계형 구조로 나누고 연결 기준을 명확히 했습니다. 로그인 시 기본 캐릭터 정보부터 연관된 플레이 데이터까지 순서대로 읽어 런타임 상태를 구성합니다. 맵 변경과 연결 종료 시에는 현재 상태를 저장 형식으로 변환해 반영하고, 다음 접속에서 동일한 흐름으로 복원되도록 연결했습니다.",
+        video: {
+          src: "assets/videos/07-relogin-persistence.mp4",
+          title: "재접속 가능한 게임 상태 영속화 결과 영상",
+        },
+      },
+    ],
     feature: "",
     challenge: "",
     solution: "",
@@ -168,6 +248,11 @@ const projects = {
 
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
+const overviewJumpButton = modal.querySelector("#modal-jump-overview");
+const videoModal = document.querySelector("#video-modal");
+const videoModalTitle = videoModal.querySelector("#video-modal-title");
+const featureVideo = videoModal.querySelector("#feature-video");
+const videoModalClose = videoModal.querySelector(".video-modal-close");
 const modalFields = {
   type: modal.querySelector("#modal-type"),
   title: modal.querySelector("#modal-title"),
@@ -184,6 +269,10 @@ const modalFields = {
   motivationTitle: modal.querySelector("#modal-motivation-title"),
   motivationCopy: modal.querySelector("#modal-motivation-copy"),
   info: modal.querySelector("#modal-info"),
+  detail: modal.querySelector("#modal-detail"),
+  outline: modal.querySelector("#modal-outline-list"),
+  principles: modal.querySelector("#modal-principle-list"),
+  features: modal.querySelector("#modal-feature-list"),
   story: modal.querySelector(".modal-story"),
   notion: modal.querySelector("#modal-notion"),
 };
@@ -197,6 +286,119 @@ const buildGallery = (images) => {
     img.alt = image.alt;
     figure.append(img);
     modalFields.gallery.append(figure);
+  });
+};
+
+const makeOutlineButton = (label, targetId, summary = "") => {
+  const button = document.createElement("button");
+  const title = document.createElement("span");
+  button.type = "button";
+  button.dataset.modalTarget = targetId;
+  title.className = "outline-title";
+  title.textContent = label;
+  button.append(title);
+  if (summary) {
+    const description = document.createElement("span");
+    description.className = "outline-summary";
+    description.textContent = summary;
+    button.append(description);
+  }
+  return button;
+};
+
+const buildProjectDetail = (project) => {
+  const hasDetail = Boolean(project.principles?.length || project.coreFeatures?.length);
+  modalFields.detail.hidden = !hasDetail;
+  overviewJumpButton.hidden = !hasDetail;
+  modalFields.outline.replaceChildren();
+  modalFields.principles.replaceChildren();
+  modalFields.features.replaceChildren();
+  if (!hasDetail) return;
+
+  const outlineItems = [
+    ["01", "In-game Screens", "modal-gallery-images"],
+    ["02", "Information", "modal-overview"],
+    ["04", "Design Principles", "modal-principles"],
+  ];
+
+  outlineItems.forEach(([index, label, targetId]) => {
+    const item = document.createElement("li");
+    const number = document.createElement("span");
+    number.textContent = index;
+    item.append(number, makeOutlineButton(label, targetId));
+    modalFields.outline.append(item);
+  });
+
+  const featureOutline = document.createElement("li");
+  const featureNumber = document.createElement("span");
+  featureNumber.textContent = "05";
+  featureOutline.append(featureNumber, makeOutlineButton("Core Features", "modal-features"));
+  const nestedList = document.createElement("ol");
+  project.coreFeatures.forEach((feature, index) => {
+    const targetId = `modal-feature-${index + 1}`;
+    const nestedItem = document.createElement("li");
+    nestedItem.append(makeOutlineButton(`${String(index + 1).padStart(2, "0")}. ${feature.title}`, targetId, feature.summary));
+    nestedList.append(nestedItem);
+  });
+  featureOutline.append(nestedList);
+  modalFields.outline.append(featureOutline);
+
+  project.principles.forEach(([title, copy]) => {
+    const item = document.createElement("li");
+    const heading = document.createElement("strong");
+    const description = document.createElement("p");
+    heading.textContent = title;
+    description.textContent = copy;
+    item.append(heading, description);
+    modalFields.principles.append(item);
+  });
+
+  project.coreFeatures.forEach((feature, index) => {
+    const article = document.createElement("article");
+    article.className = "feature-detail";
+    article.id = `modal-feature-${index + 1}`;
+
+    const header = document.createElement("header");
+    const number = document.createElement("span");
+    const title = document.createElement("h4");
+    number.textContent = `${String(index + 1).padStart(2, "0")}.`;
+    title.textContent = feature.title;
+    header.append(number, title);
+
+    const keywords = document.createElement("ul");
+    keywords.className = "feature-keywords";
+    keywords.setAttribute("aria-label", `${feature.title} 핵심 키워드`);
+    feature.keywords.forEach((keyword) => {
+      const item = document.createElement("li");
+      item.textContent = keyword;
+      keywords.append(item);
+    });
+
+    const explanation = document.createElement("div");
+    explanation.className = "feature-explanation";
+    [["WHY", feature.why, null], ["HOW", feature.how, feature.video]].forEach(([label, copy, video]) => {
+      const block = document.createElement("section");
+      const eyebrow = document.createElement("p");
+      const text = document.createElement("p");
+      eyebrow.className = "eyebrow";
+      eyebrow.textContent = label;
+      text.textContent = copy;
+      block.append(eyebrow);
+      if (video) {
+        const videoTrigger = document.createElement("button");
+        videoTrigger.type = "button";
+        videoTrigger.className = "feature-video-trigger";
+        videoTrigger.dataset.videoSrc = video.src;
+        videoTrigger.dataset.videoTitle = video.title;
+        videoTrigger.textContent = "결과 영상 보기";
+        block.append(videoTrigger);
+      }
+      block.append(text);
+      explanation.append(block);
+    });
+
+    article.append(header, keywords, explanation);
+    modalFields.features.append(article);
   });
 };
 
@@ -245,14 +447,53 @@ const openProject = (projectId) => {
   );
   modalFields.tags.hidden = project.tags.length === 0;
   buildGallery(project.images);
+  buildProjectDetail(project);
 
   modal.showModal();
+  modal.scrollTop = 0;
   document.body.classList.add("modal-open");
   closeButton.focus();
 };
 
 document.querySelectorAll("[data-project-open]").forEach((button) => {
   button.addEventListener("click", () => openProject(button.dataset.projectOpen));
+});
+
+modalFields.outline.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-modal-target]");
+  if (!button) return;
+  const target = modal.querySelector(`#${button.dataset.modalTarget}`);
+  target?.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" });
+});
+
+overviewJumpButton.addEventListener("click", () => {
+  modalFields.detail.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+});
+
+const closeFeatureVideo = () => {
+  featureVideo.pause();
+  featureVideo.removeAttribute("src");
+  featureVideo.load();
+  videoModal.close();
+};
+
+modalFields.features.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".feature-video-trigger");
+  if (!trigger) return;
+  videoModalTitle.textContent = trigger.dataset.videoTitle || "결과 영상";
+  featureVideo.src = trigger.dataset.videoSrc;
+  videoModal.showModal();
+  featureVideo.play().catch(() => {});
+  videoModalClose.focus();
+});
+
+videoModalClose.addEventListener("click", closeFeatureVideo);
+videoModal.addEventListener("click", (event) => {
+  if (event.target === videoModal) closeFeatureVideo();
+});
+videoModal.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeFeatureVideo();
 });
 
 closeButton.addEventListener("click", () => modal.close());

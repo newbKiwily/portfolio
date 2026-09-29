@@ -267,6 +267,10 @@
     <dialog class="project-modal" id="project-modal" aria-labelledby="modal-title">
       <div class="modal-shell">
         <button class="modal-close" type="button" aria-label="프로젝트 상세 닫기">×</button>
+        <button class="modal-jump-overview" id="modal-jump-overview" type="button" aria-label="프로젝트 개요로 이동" hidden>
+          <span aria-hidden="true">☷</span>
+          <span>개요</span>
+        </button>
         <header class="modal-header">
           <div><p class="project-type" id="modal-type">Main Project</p><h2 id="modal-title">프로젝트 이름 01</h2></div>
           <p id="modal-period">2026.00 - 2026.00 / 4인 팀</p>
@@ -293,6 +297,20 @@
             <dl class="modal-info-list" id="modal-info"></dl>
           </div>
         </section>
+        <section class="modal-detail" id="modal-detail" hidden>
+          <nav class="modal-outline" aria-labelledby="modal-outline-title">
+            <div class="modal-section-title"><span>03</span><h3 id="modal-outline-title">Project Overview</h3></div>
+            <ol class="modal-outline-list" id="modal-outline-list"></ol>
+          </nav>
+          <section class="modal-principles" id="modal-principles" aria-labelledby="modal-principles-title">
+            <div class="modal-section-title"><span>04</span><h3 id="modal-principles-title">Design Principles</h3></div>
+            <ul class="principle-list" id="modal-principle-list"></ul>
+          </section>
+          <section class="modal-features" id="modal-features" aria-labelledby="modal-features-title">
+            <div class="modal-section-title"><span>05</span><h3 id="modal-features-title">Core Features</h3></div>
+            <div class="feature-detail-list" id="modal-feature-list"></div>
+          </section>
+        </section>
         <section class="modal-story" aria-label="프로젝트 핵심 내용">
           <article><span class="modal-index">02</span><h3>핵심 기능</h3><p id="modal-feature"></p></article>
           <article><span class="modal-index">03</span><h3>어려웠던 점</h3><p id="modal-challenge"></p></article>
@@ -302,6 +320,15 @@
           <ul class="tag-list" id="modal-tags" aria-label="프로젝트 사용 기술"></ul>
           <a class="button primary" id="modal-notion" href="#">Notion 상세 문서</a>
         </footer>
+      </div>
+    </dialog>
+    <dialog class="video-modal" id="video-modal" aria-labelledby="video-modal-title">
+      <div class="video-modal-shell">
+        <header class="video-modal-header">
+          <h2 id="video-modal-title">결과 영상</h2>
+          <button class="video-modal-close" type="button" aria-label="결과 영상 닫기">×</button>
+        </header>
+        <video id="feature-video" controls playsinline preload="metadata"></video>
       </div>
     </dialog>
     <script src="script.js"></script>
