@@ -110,14 +110,14 @@ const projects = {
       {
         title: "데이터 중심 RPG 콘텐츠 확장",
         summary: "정의 데이터와 실행 상태를 분리해 새로운 스킬·아이템·퀘스트를 독립적으로 추가합니다.",
-        keywords: ["Data-driven", "Polymorphism", "Runtime State"],
+        emphasis: ["정의 데이터", "실행 상태", "공통 생성·실행·종료 흐름", "콘텐츠별 차이"],
         why: "온라인 RPG는 스킬·아이템·퀘스트가 계속 늘어나는 장르입니다. 유형별 조건문을 한곳에 쌓거나 변하지 않는 정의와 수량·쿨다운 같은 실행 상태를 섞으면, 콘텐츠 하나를 추가할 때 기존 로직과 저장 데이터까지 함께 수정해야 합니다.",
         how: "콘텐츠의 이름·효과·조건처럼 변하지 않는 정의 데이터와 플레이 중 변화하는 상태를 분리했습니다. 공통 생성·실행·종료 흐름은 동일한 계약으로 처리하고, 콘텐츠별 차이는 개별 동작과 데이터로 확장했습니다. 덕분에 사용하는 쪽은 구체적인 유형을 몰라도 같은 방식으로 콘텐츠를 실행할 수 있습니다.",
       },
       {
         title: "상태 머신 기반 전투 흐름",
         summary: "이동부터 사망까지 행동을 상태로 분리해 전환 규칙과 전투 판정 시점을 명확히 관리합니다.",
-        keywords: ["State Machine", "Combat Flow", "Animation Timing"],
+        emphasis: ["상태", "전환 규칙", "애니메이션의 유효 프레임"],
         why: "이동·추적·공격·피격·사망을 하나의 갱신 흐름에서 처리하면 여러 조건이 동시에 참이 되면서 행동이 충돌할 수 있습니다. 특히 공격 가능 여부와 애니메이션 재생 시점이 섞이면 화면의 동작과 실제 판정이 어긋나고, 어떤 조건에서 잘못 전환됐는지 추적하기 어려워집니다.",
         how: "각 행동을 진입·갱신·종료 단계가 있는 상태로 분리하고, 상태를 바꿀 수 있는 조건과 우선순위를 명시했습니다. 전투 판단은 로직에서 결정하되 실제 타격 판정은 애니메이션의 유효 프레임과 연결했습니다. 피격이나 사망처럼 현재 행동을 중단해야 하는 상황도 정해진 전환 규칙을 거치도록 구성했습니다.",
         video: {
@@ -128,7 +128,7 @@ const projects = {
       {
         title: "이벤트 기반 퀘스트·튜토리얼",
         summary: "전투·채집·제작 결과를 이벤트로 전달해 진행 시스템이 각 기능에 직접 의존하지 않게 합니다.",
-        keywords: ["Domain Event", "Loose Coupling", "Progress Tracking"],
+        emphasis: ["공통 이벤트", "구독", "목표 정의", "진행 상태"],
         why: "퀘스트와 튜토리얼이 전투·채집·제작 시스템의 내부 상태를 직접 조회하면 새로운 목표를 추가할 때 생산 시스템까지 수정해야 합니다. 같은 행동을 여러 진행 콘텐츠가 관찰할수록 의존 관계가 복잡해지고, 완료 조건을 재사용하기도 어려워집니다.",
         how: "몬스터 처치, 아이템 획득, 제작 완료처럼 의미 있는 플레이 결과를 공통 이벤트로 발행했습니다. 퀘스트와 튜토리얼은 필요한 사건만 구독해 자신의 조건과 비교하고 진행도를 갱신합니다. 변하지 않는 목표 정의와 플레이어별 진행 상태를 분리해 동일한 조건을 재사용하고 저장·복원 흐름에도 연결했습니다.",
         video: {
@@ -139,7 +139,7 @@ const projects = {
       {
         title: "Unity 메인 스레드와 지연 데이터 조립",
         summary: "네트워크 수신과 화면 반영 시점을 분리해 씬 로딩 순서와 Unity 스레드 제약을 안전하게 처리합니다.",
-        keywords: ["Main Thread", "Deferred Assembly", "Load Order"],
+        emphasis: ["네트워크 응답", "메인 스레드 작업 큐", "수신 시점과 표현 시점"],
         why: "네트워크 응답은 씬과 게임 오브젝트가 준비되기 전에 도착할 수 있으며, 수신 스레드에서는 Unity API를 안전하게 사용할 수 없습니다. 도착 즉시 캐릭터나 UI를 생성하면 로딩 순서에 따라 참조가 누락되거나 같은 데이터를 두 번 반영하는 문제가 생길 수 있습니다.",
         how: "수신 단계에서는 패킷 해석과 순수 데이터 보관까지만 수행하고, 오브젝트 생성과 UI 갱신은 메인 스레드 작업 큐로 전달했습니다. 씬과 필수 객체의 준비 상태를 확인한 뒤 보관된 데이터를 정해진 순서로 조립합니다. 수신 시점과 표현 시점을 분리해 네트워크 속도와 로딩 순서가 달라도 같은 결과를 만들도록 했습니다.",
         video: {
@@ -150,7 +150,7 @@ const projects = {
       {
         title: "맵 단위 멀티플레이 동기화",
         summary: "사용자를 맵 컨텍스트로 구분하고 필요한 대상에게만 입장·이동·퇴장 상태를 전달합니다.",
-        keywords: ["Map Context", "Ownership", "Lifecycle"],
+        emphasis: ["맵 컨텍스트", "갱신 책임", "입장 시 현재 월드 상태", "수명주기"],
         why: "서로 다른 지역의 상태까지 모든 사용자에게 전송하면 불필요한 트래픽과 객체 관리 비용이 커집니다. 또한 로컬 객체와 원격 객체의 갱신 책임이 구분되지 않으면 하나의 상태를 여러 클라이언트가 동시에 변경해 위치나 행동이 충돌할 수 있습니다.",
         how: "접속 세션을 맵 컨텍스트에 등록하고 같은 맵에 있는 사용자에게만 상태 변화를 전달했습니다. 입장 시 현재 월드 상태를 구성하고, 이후 이동과 행동을 갱신하며, 퇴장 시 원격 객체를 정리하는 수명주기를 분리했습니다. 어떤 상태를 누가 결정하고 전달하는지도 명시해 중복 갱신을 줄였습니다.",
         video: {
@@ -161,14 +161,14 @@ const projects = {
       {
         title: "IOCP 비동기 세션과 패킷 수명주기",
         summary: "비동기 작업의 메모리 수명과 TCP 패킷 경계를 관리해 안정적인 다중 접속 통신을 구성합니다.",
-        keywords: ["IOCP", "Object Lifetime", "Packet Framing"],
+        emphasis: ["소유권", "누적 버퍼", "헤더와 길이", "송신은 큐"],
         why: "비동기 I/O가 완료되기 전에 세션이나 버퍼가 해제되면 완료 통지에서 이미 사라진 메모리에 접근하게 됩니다. TCP는 연속된 바이트 스트림이므로 하나의 패킷이 나뉘거나 여러 패킷이 합쳐져 도착할 수 있어, 수신 횟수와 메시지 개수를 동일하게 볼 수 없습니다.",
         how: "세션·비동기 작업·송수신 버퍼의 소유권을 구분하고 완료 통지를 처리할 때까지 필요한 객체의 수명을 유지했습니다. 수신 바이트는 누적 버퍼에 보관한 뒤 헤더와 길이를 기준으로 완전한 패킷만 분리합니다. 송신은 큐에서 순서대로 처리해 겹친 요청을 직렬화하고, 연결 종료 시 남은 작업과 자원을 정리하는 흐름도 함께 관리했습니다.",
       },
       {
         title: "재접속 가능한 게임 상태 영속화",
         summary: "캐릭터·인벤토리·퀘스트 상태를 관계형 데이터로 저장하고 다음 접속에서 일관되게 복원합니다.",
-        keywords: ["Persistence", "Relational Model", "Restore Flow"],
+        emphasis: ["관계형 구조", "연결 기준", "저장 형식", "복원"],
         why: "온라인 RPG의 맵·위치·스탯·인벤토리·퀘스트는 클라이언트가 종료되어도 다음 접속에서 이어져야 합니다. 서로 연결된 상태를 한 번에 다루지 않으면 일부 데이터만 저장되거나 잘못된 순서로 복원되어 플레이 상태가 불일치할 수 있습니다.",
         how: "계정, 캐릭터, 보유 아이템과 진행 정보를 관계형 구조로 나누고 연결 기준을 명확히 했습니다. 로그인 시 기본 캐릭터 정보부터 연관된 플레이 데이터까지 순서대로 읽어 런타임 상태를 구성합니다. 맵 변경과 연결 종료 시에는 현재 상태를 저장 형식으로 변환해 반영하고, 다음 접속에서 동일한 흐름으로 복원되도록 연결했습니다.",
         video: {
@@ -181,35 +181,35 @@ const projects = {
       {
         title: "분할 수신된 TCP 패킷과 메인 스레드 충돌",
         summary: "분할·병합되는 TCP 데이터와 Unity 스레드 제약을 안정적으로 분리했습니다.",
-        keywords: ["Packet Framing", "Accumulation Buffer", "Main Thread Dispatch"],
+        emphasis: ["길이와 ID", "헤더", "수신 데이터를 누적", "메인 스레드 작업 큐"],
         problem: "동시 접속과 전투 패킷이 늘어나자 하나의 패킷이 여러 번에 나뉘거나 여러 패킷이 한 번에 도착했습니다. 한 번의 수신을 하나의 메시지로 간주했을 때 길이와 ID 해석이 어긋났고, 수신 스레드에서 UI와 게임 오브젝트를 바로 갱신하면서 간헐적인 누락과 예외도 발생했습니다.",
         solution: "길이와 ID를 포함한 헤더를 기준으로 수신 데이터를 누적하고, 완전한 패킷이 만들어졌을 때만 순서대로 분리했습니다. 네트워크 단계는 해석과 데이터 보관까지만 담당하고, Unity 오브젝트 변경은 메인 스레드 작업 큐로 전달했습니다. 이동처럼 빈도가 높은 패킷은 로그에서 제외해 실제 오류 흐름을 빠르게 추적할 수 있게 했습니다.",
       },
       {
         title: "맵 전환 후 이전 월드 상태가 남는 문제",
         summary: "맵 이동 시 서버 세션·월드 오브젝트·전투 UI를 하나의 흐름으로 초기화했습니다.",
-        keywords: ["State Reset", "Map Session Boundary", "Safe Teleport"],
+        emphasis: ["상태 전환 절차", "서버 세션", "캐릭터 컨트롤러", "월드 오브젝트·전투 버퍼·타겟 UI"],
         problem: "맵을 옮긴 뒤에도 이전 지역의 몬스터와 다른 플레이어가 남거나, 타겟·HP UI와 공격 상태가 유지되는 현상이 나타났습니다. 서버 세션이 두 맵의 전송 대상에 동시에 포함되는 경우가 있었고, 활성화된 캐릭터 컨트롤러가 순간이동 좌표를 보정해 의도한 스폰 지점에서 벗어나기도 했습니다.",
         solution: "맵 전환을 단순한 화면 교체가 아닌 상태 전환 절차로 정의했습니다. 서버에서는 이전 맵 세션 제거, 새 위치와 맵 정보 갱신, 새 맵 세션 등록 순서를 보장했고, 클라이언트에서는 기존 월드 오브젝트·전투 버퍼·타겟 UI를 함께 정리했습니다. 위치 적용 중에는 캐릭터 컨트롤러를 잠시 비활성화하고, 전환 완료 후 새 맵의 플레이어와 몬스터 목록을 다시 구성했습니다.",
       },
       {
         title: "몬스터 리필 시 중복 생성과 지형 이탈",
         summary: "서버 기준 리필과 증분 전송으로 중복 생성과 지형 이탈 스폰을 줄였습니다.",
-        keywords: ["Server Authority", "Delta Broadcast", "Terrain Correction", "Idempotency"],
+        emphasis: ["서버", "인스턴스 ID", "새로 추가된 몬스터", "지면을 탐색"],
         problem: "몬스터가 처치된 뒤 각 클라이언트가 제각각 리젠을 판단하면 사용자마다 몬스터 수와 위치가 달라졌습니다. 서버가 리필할 때 전체 목록을 다시 보내는 방식은 이미 존재하는 몬스터를 중복 생성했고, 무작위 좌표를 그대로 사용하면 경사진 지형에서 공중이나 지면 아래에 스폰되는 경우도 발생했습니다.",
         solution: "리젠 시점과 인스턴스 ID는 서버가 단독으로 결정하도록 권한을 모았습니다. 서버 타이머가 맵별 최대 수량과 현재 수량의 차이만큼 생성하고, 새로 추가된 몬스터만 해당 맵에 전달했습니다. 클라이언트는 같은 인스턴스 ID를 다시 받으면 무시하고, 스폰 지점에서 지면을 탐색해 높이를 보정한 뒤 오브젝트를 배치했습니다.",
       },
       {
         title: "몬스터 제어권과 사망 요청 충돌",
         summary: "몬스터 제어권과 사망 요청을 검증해 클라이언트 간 상태 충돌을 막았습니다.",
-        keywords: ["Owner Authority", "Server Validation", "Duplicate Guard", "Rotation Offset"],
+        emphasis: ["제어권", "소유자", "보간", "사망 중복 방지", "회전 보정값"],
         problem: "여러 클라이언트가 같은 몬스터의 이동과 공격을 동시에 계산하면서 위치가 흔들리거나 서로 다른 대상을 추적했습니다. HP가 0이 되는 순간에는 여러 사망 요청이 겹쳐 중복 제거와 보상 위험이 생겼고, 모델마다 정면 축이 달라 서버 위치는 같아도 바라보는 방향이 어긋나는 문제도 확인했습니다.",
         solution: "피격자를 기준으로 한 명의 클라이언트에 몬스터 제어권을 부여하고, 나머지는 서버가 전달한 위치를 보간해 표현하도록 역할을 나눴습니다. 서버는 이동·공격·사망 요청이 현재 소유자에게서 왔는지 검증했으며, 클라이언트와 서버 양쪽에 사망 중복 방지를 적용했습니다. 모델별 정면 축 차이는 회전 보정값으로 흡수해 동기화 규칙과 표현 차이를 분리했습니다.",
       },
       {
         title: "맵 전환 후 미니맵 좌표가 어긋나는 문제",
         summary: "맵별 보정 데이터와 이벤트 흐름으로 미니맵을 월드 좌표에 맞췄습니다.",
-        keywords: ["Map Calibration", "Event-driven UI", "Late Initialization"],
+        emphasis: ["맵 데이터", "변경 이벤트", "보정값 전체", "한 번 더 동기화"],
         problem: "맵별 미니맵 이미지만 교체했을 때 플레이어 표식과 실제 월드 위치가 맞지 않았습니다. 이미지마다 기준 위치·회전·크기가 달랐고, 맵 전환 직후에는 이전 미니맵이 남거나 UI가 월드보다 늦게 준비되어 변경 이벤트를 놓치는 경우도 있었습니다.",
         solution: "미니맵을 단순 이미지가 아니라 이미지·위치·회전·크기 보정값이 묶인 맵 데이터로 관리했습니다. 월드가 바뀌면 로더가 변경 이벤트를 발행하고 UI는 해당 보정값 전체를 적용하도록 분리했습니다. UI가 늦게 초기화되는 상황에는 현재 맵 데이터를 한 번 더 동기화해 초기 로딩과 맵 전환 모두 같은 결과가 나오게 했습니다.",
       },
@@ -252,7 +252,7 @@ const projects = {
       {
         title: "아이템·대상 기반 상호작용 판정과 제작 흐름",
         summary: "손에 든 아이템과 바라보는 대상의 조합을 판정해 제작과 기능 해금까지 하나의 흐름으로 연결합니다.",
-        keywords: ["Interaction Rule", "Order-independent Recipe", "Feature Unlock"],
+        emphasis: ["아이템", "대상", "공통 판정 흐름", "선택 순서와 관계없이", "기능 해금·미션 진행·사운드·UI 피드백"],
         why: "플레이어가 손에 든 아이템과 바라보는 대상에 따라 낚시, 요리, 불 피우기, 벌목, 로켓 수리와 제작처럼 서로 다른 행동이 실행되어야 합니다. 이 조건이 입력 처리 곳곳에 흩어지면 새로운 상호작용을 추가할 때 기존 규칙과 충돌하기 쉽습니다.",
         how: "현재 아이템의 종류와 대상이 가진 역할을 함께 확인하는 공통 판정 흐름을 구성했습니다. 제작 재료는 선택 순서와 관계없이 같은 조합으로 비교하며, 제작이 끝나면 사용한 아이템을 정리하고 기능 해금·미션 진행·사운드·UI 피드백을 함께 갱신합니다.",
         video: {
@@ -263,7 +263,7 @@ const projects = {
       {
         title: "상태 머신으로 나눈 플레이어 행동 처리",
         summary: "이동·낚시·벌목·섭취·요리·수리의 입력과 시간, 애니메이션, 사운드 수명주기를 상태별로 관리합니다.",
-        keywords: ["State Machine", "Action Lifecycle", "Feedback Sync"],
+        emphasis: ["진입·갱신·종료", "이동과 입력", "행동 완료", "반복 사운드와 임시 상태"],
         why: "각 행동은 입력 가능 여부, 소요 시간, 이동 제한, 애니메이션과 사운드 종료 시점이 다릅니다. 이를 하나의 조건문 흐름에 모으면 행동 중 이동이 끼어들거나 종료된 행동의 사운드가 남는 등 상태 충돌이 발생하기 쉽습니다.",
         how: "현재 행동을 진입·갱신·종료 단계가 있는 상태로 나누고, 시간이 필요한 행동에서는 이동과 입력을 조절했습니다. 행동 완료를 아이템 획득·제작·미션 진행으로 연결하고, 종료 단계에서 반복 사운드와 임시 상태를 정리해 다음 행동으로 안정적으로 전환되도록 했습니다.",
         video: {
@@ -274,7 +274,7 @@ const projects = {
       {
         title: "미션 진행과 결과 화면 구성",
         summary: "제작·낚시·벌목 결과를 미션 진행과 클리어 타임이 포함된 결과 화면으로 연결합니다.",
-        keywords: ["Mission Data", "Progress Event", "Result UI"],
+        emphasis: ["정의 데이터", "완료 상태", "미션 진행", "결과 화면"],
         why: "제작, 낚시와 벌목 같은 핵심 행동은 단순히 실행되는 데서 끝나지 않고 플레이 목표와 클리어 결과로 이어져야 합니다. 미션 정의와 화면 표시가 뒤섞이면 결과 UI가 각 게임 기능의 내부 상태를 직접 찾아야 합니다.",
         how: "미션의 식별 정보·유형·설명은 정의 데이터로 관리하고, 플레이 중 완료 상태는 별도로 갱신했습니다. 각 행동이 끝나는 시점에 미션 진행을 알리며, 결과 화면은 미션 목록과 클리어 시간을 읽어 완료 여부를 한 번에 보여주도록 구성했습니다.",
         video: {
@@ -285,13 +285,50 @@ const projects = {
       {
         title: "월드 자원 랜덤 스폰과 배치 안정화",
         summary: "지형·겹침·가중치를 검증해 자원이 플레이 가능한 공간에 안정적으로 생성되게 합니다.",
-        keywords: ["Terrain Validation", "Overlap Check", "Weighted Spawn"],
+        emphasis: ["지형과의 실제 접점", "겹치는 위치", "등장 확률", "생성 간격"],
         why: "단순한 무작위 좌표에 자원을 생성하면 지형 밖이나 공중에 배치되거나 기존 오브젝트와 겹칠 수 있습니다. 생존 루프에 필요한 자원이 접근할 수 없는 곳에 생성되면 플레이 진행 자체가 막힙니다.",
         how: "월드 범위에서 후보 위치를 만든 뒤 지형과의 실제 접점을 확인하고, 주변 오브젝트와 겹치는 위치는 제외했습니다. 자원별 등장 확률을 반영해 후보를 선택하며, 현재 생성 수에 따라 생성 간격을 조절해 플레이 가능한 공간에 자원이 지속적으로 공급되도록 했습니다.",
         video: {
           src: "assets/gep/videos/04-world-spawn-stability.mp4",
           title: "월드 자원 랜덤 스폰과 배치 안정화 결과 영상",
         },
+      },
+    ],
+    troubleshooting: [
+      {
+        title: "행동 중복 입력으로 보상 흐름이 깨지는 문제",
+        summary: "시간이 필요한 행동을 잠가 중간 입력과 보상 중복을 함께 차단했습니다.",
+        emphasis: ["상태 전환", "상태 잠금", "이동·줍기·버리기 입력", "한 번만 지급"],
+        problem: "낚시·벌목·요리·수리 도중 이동이나 다른 상호작용이 들어오면 행동이 완료되기 전에 상태 전환이 발생했습니다. 남아 있던 타이머와 대상 참조가 다음 행동까지 이어지면서 완료 보상이 반복되거나, 이미 사라진 대상을 참조해 흐름이 중단될 가능성이 있었습니다.",
+        solution: "시간이 필요한 행동에 상태 잠금을 적용하고, 행동이 끝날 때까지 다른 상태 전환을 거부했습니다. 잠긴 동안에는 이동·줍기·버리기 입력도 처리하지 않으며, 완료 시 보상과 대상 정리를 끝낸 뒤 잠금을 해제했습니다. 그 결과 하나의 행동이 시작부터 종료까지 온전히 실행되고 보상도 한 번만 지급되도록 규칙을 명확히 했습니다.",
+      },
+      {
+        title: "상호작용 대상 오인과 자기 아이템 선택",
+        summary: "부채꼴 후보 탐색과 이중 제외 규칙으로 플레이어가 의도한 대상을 찾았습니다.",
+        emphasis: ["단일 Raycast", "전방 부채꼴 범위", "가장 가까운 대상", "현재 들고 있는 아이템", "감지 단계와 제작 판정 단계"],
+        problem: "초기의 단일 Raycast 판정은 콜라이더 높이나 시선 각도가 조금만 달라도 눈앞의 오브젝트를 놓쳤습니다. 탐색 범위를 넓힌 뒤에는 플레이어 자식으로 붙어 있던 현재 들고 있는 아이템까지 후보가 되어, 자기 자신을 제작 대상으로 판단하는 반대 문제가 나타났습니다.",
+        solution: "상호작용 레이어에 속한 오브젝트 중 전방 부채꼴 범위 안의 후보를 모으고, 거리 기준으로 가장 가까운 대상을 선택했습니다. 현재 들고 있는 아이템과 플레이어의 자식 오브젝트는 후보에서 제외했으며, 감지 단계와 제작 판정 단계 양쪽에서 같은 방어 규칙을 적용해 잘못된 대상이 다시 유입되지 않도록 했습니다.",
+      },
+      {
+        title: "재료 순서에 따라 제작 결과가 달라지는 문제",
+        summary: "순서 독립 비교 규칙으로 같은 재료 조합이 동일한 레시피가 되게 했습니다.",
+        emphasis: ["나무+철광석", "철광석+나무", "순서 독립 비교 규칙", "동일한 해시", "한 번만 등록"],
+        problem: "제작 레시피를 두 재료의 순서가 있는 조합으로 저장하자 나무+철광석은 성공하지만 철광석+나무는 실패했습니다. 같은 재료라도 무엇을 먼저 들었는지에 따라 결과가 달라져 플레이어 기대와 맞지 않았고, 반대 순서의 레시피를 매번 중복 등록해야 했습니다.",
+        solution: "두 재료의 앞뒤가 바뀌어도 같은 조합으로 판단하는 순서 독립 비교 규칙을 만들었습니다. 비교 결과뿐 아니라 재료 순서와 관계없이 동일한 해시가 생성되도록 맞춰 자료구조의 탐색 규칙도 일관되게 유지했습니다. 각 레시피를 한 번만 등록해도 양방향 조합이 동작하므로 제작 UX와 레시피 확장성을 함께 개선했습니다.",
+      },
+      {
+        title: "랜덤 자원이 지형 밖과 오브젝트 위에 생성되는 문제",
+        summary: "지형·겹침·거리 가중치를 검증해 무작위 스폰을 플레이 가능한 범위로 통제했습니다.",
+        emphasis: ["무작위 좌표", "지면 검증", "겹침 검사", "거리 기반 가중치", "생성 간격"],
+        problem: "철광석과 식물을 무작위 좌표에 바로 생성하자 공중이나 지형 밖에 배치되고, 기존 자원과 겹쳐 줍기 어려운 경우가 생겼습니다. 로켓 근처에 수리 재료가 몰리면 난이도가 지나치게 낮아지고, 반대로 멀리만 생성되면 수집 시간이 길어져 생존 루프의 균형도 흔들렸습니다.",
+        solution: "지정된 월드 범위에서 여러 무작위 좌표를 후보로 만든 뒤 아래 방향으로 지면 검증을 수행하고, 주변 자원과의 겹침 검사를 통과한 위치만 남겼습니다. 후보마다 로켓과의 거리에 따른 거리 기반 가중치를 부여해 랜덤성을 유지하면서 난이도를 조절했습니다. 누적 생성량에 따라 생성 간격도 늘려 시간 흐름에 따른 자원 공급 속도를 통제했습니다.",
+      },
+      {
+        title: "양동이 상태와 월드·인벤토리 표시 불일치",
+        summary: "하나의 상태 변경에서 데이터·월드 외형·인벤토리 UI를 함께 동기화했습니다.",
+        emphasis: ["내부 상태", "월드 머티리얼", "인벤토리 아이콘", "상태 변경 이벤트", "같은 시점"],
+        problem: "양동이의 내부 상태는 물이 찬 상태로 바뀌었지만 월드 머티리얼이나 인벤토리 아이콘이 이전 모습을 유지하는 경우가 있었습니다. 실제로는 나무에 물을 줄 수 있는데 화면에는 빈 양동이로 보이거나, 물을 사용한 뒤에도 찬 아이콘이 남아 플레이어가 현재 상태를 잘못 판단할 수 있었습니다.",
+        solution: "채우기와 비우기를 하나의 상태 변경 흐름으로 묶어 내부 상태, 월드 머티리얼, 인벤토리 아이콘을 같은 시점에 갱신했습니다. 상태 적용이 끝나면 상태 변경 이벤트를 발행해 인벤토리 UI가 즉시 현재 이미지를 다시 읽도록 했습니다. 게임 규칙과 두 표현 계층이 하나의 상태를 바라보게 만들어 시각 정보와 실제 동작의 불일치를 제거했습니다.",
       },
     ],
     feature: "",
@@ -418,6 +455,29 @@ const makeOutlineButton = (label, targetId, summary = "") => {
   return button;
 };
 
+const appendEmphasizedText = (target, copy, emphasis = []) => {
+  const terms = [...new Set(emphasis)]
+    .filter((term) => term && copy.includes(term))
+    .sort((left, right) => right.length - left.length);
+  if (!terms.length) {
+    target.textContent = copy;
+    return;
+  }
+
+  const escapedTerms = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = new RegExp(`(${escapedTerms.join("|")})`, "g");
+  copy.split(pattern).forEach((part) => {
+    if (!part) return;
+    if (terms.includes(part)) {
+      const strong = document.createElement("strong");
+      strong.textContent = part;
+      target.append(strong);
+      return;
+    }
+    target.append(document.createTextNode(part));
+  });
+};
+
 const buildProjectDetail = (project) => {
   const principles = project.principles || [];
   const coreFeatures = project.coreFeatures || [];
@@ -496,15 +556,6 @@ const buildProjectDetail = (project) => {
     title.textContent = feature.title;
     header.append(number, title);
 
-    const keywords = document.createElement("ul");
-    keywords.className = "feature-keywords";
-    keywords.setAttribute("aria-label", `${feature.title} 핵심 키워드`);
-    feature.keywords.forEach((keyword) => {
-      const item = document.createElement("li");
-      item.textContent = keyword;
-      keywords.append(item);
-    });
-
     const explanation = document.createElement("div");
     explanation.className = "feature-explanation";
     [["WHY", feature.why, null], ["HOW", feature.how, feature.video]].forEach(([label, copy, video]) => {
@@ -513,7 +564,7 @@ const buildProjectDetail = (project) => {
       const text = document.createElement("p");
       eyebrow.className = "eyebrow";
       eyebrow.textContent = label;
-      text.textContent = copy;
+      appendEmphasizedText(text, copy, feature.emphasis);
       block.append(eyebrow);
       if (video) {
         const videoTrigger = document.createElement("button");
@@ -528,7 +579,7 @@ const buildProjectDetail = (project) => {
       explanation.append(block);
     });
 
-    article.append(header, keywords, explanation);
+    article.append(header, explanation);
     modalFields.features.append(article);
   });
 
@@ -544,15 +595,6 @@ const buildProjectDetail = (project) => {
     title.textContent = item.title;
     header.append(number, title);
 
-    const keywords = document.createElement("ul");
-    keywords.className = "feature-keywords";
-    keywords.setAttribute("aria-label", `${item.title} 해결 키워드`);
-    item.keywords.forEach((keyword) => {
-      const keywordItem = document.createElement("li");
-      keywordItem.textContent = keyword;
-      keywords.append(keywordItem);
-    });
-
     const explanation = document.createElement("div");
     explanation.className = "feature-explanation troubleshooting-explanation";
     [["문제 상황", item.problem], ["해결 방안", item.solution]].forEach(([label, copy]) => {
@@ -561,12 +603,12 @@ const buildProjectDetail = (project) => {
       const text = document.createElement("p");
       eyebrow.className = "eyebrow";
       eyebrow.textContent = label;
-      text.textContent = copy;
+      appendEmphasizedText(text, copy, item.emphasis);
       block.append(eyebrow, text);
       explanation.append(block);
     });
 
-    article.append(header, keywords, explanation);
+    article.append(header, explanation);
     modalFields.troubleshooting.append(article);
   });
 };
