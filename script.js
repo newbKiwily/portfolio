@@ -177,6 +177,43 @@ const projects = {
         },
       },
     ],
+    troubleshooting: [
+      {
+        title: "분할 수신된 TCP 패킷과 메인 스레드 충돌",
+        summary: "분할·병합되는 TCP 데이터와 Unity 스레드 제약을 안정적으로 분리했습니다.",
+        keywords: ["Packet Framing", "Accumulation Buffer", "Main Thread Dispatch"],
+        problem: "동시 접속과 전투 패킷이 늘어나자 하나의 패킷이 여러 번에 나뉘거나 여러 패킷이 한 번에 도착했습니다. 한 번의 수신을 하나의 메시지로 간주했을 때 길이와 ID 해석이 어긋났고, 수신 스레드에서 UI와 게임 오브젝트를 바로 갱신하면서 간헐적인 누락과 예외도 발생했습니다.",
+        solution: "길이와 ID를 포함한 헤더를 기준으로 수신 데이터를 누적하고, 완전한 패킷이 만들어졌을 때만 순서대로 분리했습니다. 네트워크 단계는 해석과 데이터 보관까지만 담당하고, Unity 오브젝트 변경은 메인 스레드 작업 큐로 전달했습니다. 이동처럼 빈도가 높은 패킷은 로그에서 제외해 실제 오류 흐름을 빠르게 추적할 수 있게 했습니다.",
+      },
+      {
+        title: "맵 전환 후 이전 월드 상태가 남는 문제",
+        summary: "맵 이동 시 서버 세션·월드 오브젝트·전투 UI를 하나의 흐름으로 초기화했습니다.",
+        keywords: ["State Reset", "Map Session Boundary", "Safe Teleport"],
+        problem: "맵을 옮긴 뒤에도 이전 지역의 몬스터와 다른 플레이어가 남거나, 타겟·HP UI와 공격 상태가 유지되는 현상이 나타났습니다. 서버 세션이 두 맵의 전송 대상에 동시에 포함되는 경우가 있었고, 활성화된 캐릭터 컨트롤러가 순간이동 좌표를 보정해 의도한 스폰 지점에서 벗어나기도 했습니다.",
+        solution: "맵 전환을 단순한 화면 교체가 아닌 상태 전환 절차로 정의했습니다. 서버에서는 이전 맵 세션 제거, 새 위치와 맵 정보 갱신, 새 맵 세션 등록 순서를 보장했고, 클라이언트에서는 기존 월드 오브젝트·전투 버퍼·타겟 UI를 함께 정리했습니다. 위치 적용 중에는 캐릭터 컨트롤러를 잠시 비활성화하고, 전환 완료 후 새 맵의 플레이어와 몬스터 목록을 다시 구성했습니다.",
+      },
+      {
+        title: "몬스터 리필 시 중복 생성과 지형 이탈",
+        summary: "서버 기준 리필과 증분 전송으로 중복 생성과 지형 이탈 스폰을 줄였습니다.",
+        keywords: ["Server Authority", "Delta Broadcast", "Terrain Correction", "Idempotency"],
+        problem: "몬스터가 처치된 뒤 각 클라이언트가 제각각 리젠을 판단하면 사용자마다 몬스터 수와 위치가 달라졌습니다. 서버가 리필할 때 전체 목록을 다시 보내는 방식은 이미 존재하는 몬스터를 중복 생성했고, 무작위 좌표를 그대로 사용하면 경사진 지형에서 공중이나 지면 아래에 스폰되는 경우도 발생했습니다.",
+        solution: "리젠 시점과 인스턴스 ID는 서버가 단독으로 결정하도록 권한을 모았습니다. 서버 타이머가 맵별 최대 수량과 현재 수량의 차이만큼 생성하고, 새로 추가된 몬스터만 해당 맵에 전달했습니다. 클라이언트는 같은 인스턴스 ID를 다시 받으면 무시하고, 스폰 지점에서 지면을 탐색해 높이를 보정한 뒤 오브젝트를 배치했습니다.",
+      },
+      {
+        title: "몬스터 제어권과 사망 요청 충돌",
+        summary: "몬스터 제어권과 사망 요청을 검증해 클라이언트 간 상태 충돌을 막았습니다.",
+        keywords: ["Owner Authority", "Server Validation", "Duplicate Guard", "Rotation Offset"],
+        problem: "여러 클라이언트가 같은 몬스터의 이동과 공격을 동시에 계산하면서 위치가 흔들리거나 서로 다른 대상을 추적했습니다. HP가 0이 되는 순간에는 여러 사망 요청이 겹쳐 중복 제거와 보상 위험이 생겼고, 모델마다 정면 축이 달라 서버 위치는 같아도 바라보는 방향이 어긋나는 문제도 확인했습니다.",
+        solution: "피격자를 기준으로 한 명의 클라이언트에 몬스터 제어권을 부여하고, 나머지는 서버가 전달한 위치를 보간해 표현하도록 역할을 나눴습니다. 서버는 이동·공격·사망 요청이 현재 소유자에게서 왔는지 검증했으며, 클라이언트와 서버 양쪽에 사망 중복 방지를 적용했습니다. 모델별 정면 축 차이는 회전 보정값으로 흡수해 동기화 규칙과 표현 차이를 분리했습니다.",
+      },
+      {
+        title: "맵 전환 후 미니맵 좌표가 어긋나는 문제",
+        summary: "맵별 보정 데이터와 이벤트 흐름으로 미니맵을 월드 좌표에 맞췄습니다.",
+        keywords: ["Map Calibration", "Event-driven UI", "Late Initialization"],
+        problem: "맵별 미니맵 이미지만 교체했을 때 플레이어 표식과 실제 월드 위치가 맞지 않았습니다. 이미지마다 기준 위치·회전·크기가 달랐고, 맵 전환 직후에는 이전 미니맵이 남거나 UI가 월드보다 늦게 준비되어 변경 이벤트를 놓치는 경우도 있었습니다.",
+        solution: "미니맵을 단순 이미지가 아니라 이미지·위치·회전·크기 보정값이 묶인 맵 데이터로 관리했습니다. 월드가 바뀌면 로더가 변경 이벤트를 발행하고 UI는 해당 보정값 전체를 적용하도록 분리했습니다. UI가 늦게 초기화되는 상황에는 현재 맵 데이터를 한 번 더 동기화해 초기 로딩과 맵 전환 모두 같은 결과가 나오게 했습니다.",
+      },
+    ],
     feature: "",
     challenge: "",
     solution: "",
@@ -339,6 +376,8 @@ const modalFields = {
   outline: modal.querySelector("#modal-outline-list"),
   principles: modal.querySelector("#modal-principle-list"),
   features: modal.querySelector("#modal-feature-list"),
+  troubleshootingSection: modal.querySelector("#modal-troubleshooting"),
+  troubleshooting: modal.querySelector("#modal-troubleshooting-list"),
   story: modal.querySelector(".modal-story"),
   notion: modal.querySelector("#modal-notion"),
 };
@@ -380,12 +419,17 @@ const makeOutlineButton = (label, targetId, summary = "") => {
 };
 
 const buildProjectDetail = (project) => {
-  const hasDetail = Boolean(project.principles?.length || project.coreFeatures?.length);
+  const principles = project.principles || [];
+  const coreFeatures = project.coreFeatures || [];
+  const troubleshooting = project.troubleshooting || [];
+  const hasDetail = Boolean(principles.length || coreFeatures.length || troubleshooting.length);
   modalFields.detail.hidden = !hasDetail;
   overviewJumpButton.hidden = !hasDetail;
   modalFields.outline.replaceChildren();
   modalFields.principles.replaceChildren();
   modalFields.features.replaceChildren();
+  modalFields.troubleshooting.replaceChildren();
+  modalFields.troubleshootingSection.hidden = troubleshooting.length === 0;
   if (!hasDetail) return;
 
   const outlineItems = [["03", "Design Principles", "modal-principles"]];
@@ -398,21 +442,39 @@ const buildProjectDetail = (project) => {
     modalFields.outline.append(item);
   });
 
-  const featureOutline = document.createElement("li");
-  const featureNumber = document.createElement("span");
-  featureNumber.textContent = "04";
-  featureOutline.append(featureNumber, makeOutlineButton("Core Features", "modal-features"));
-  const nestedList = document.createElement("ol");
-  project.coreFeatures.forEach((feature, index) => {
-    const targetId = `modal-feature-${index + 1}`;
-    const nestedItem = document.createElement("li");
-    nestedItem.append(makeOutlineButton(`${String(index + 1).padStart(2, "0")}. ${feature.title}`, targetId, feature.summary));
-    nestedList.append(nestedItem);
-  });
-  featureOutline.append(nestedList);
-  modalFields.outline.append(featureOutline);
+  if (coreFeatures.length) {
+    const featureOutline = document.createElement("li");
+    const featureNumber = document.createElement("span");
+    featureNumber.textContent = "04";
+    featureOutline.append(featureNumber, makeOutlineButton("Core Features", "modal-features"));
+    const nestedList = document.createElement("ol");
+    coreFeatures.forEach((feature, index) => {
+      const targetId = `modal-feature-${index + 1}`;
+      const nestedItem = document.createElement("li");
+      nestedItem.append(makeOutlineButton(`${String(index + 1).padStart(2, "0")}. ${feature.title}`, targetId, feature.summary));
+      nestedList.append(nestedItem);
+    });
+    featureOutline.append(nestedList);
+    modalFields.outline.append(featureOutline);
+  }
 
-  project.principles.forEach(([title, copy]) => {
+  if (troubleshooting.length) {
+    const troubleshootingOutline = document.createElement("li");
+    const troubleshootingNumber = document.createElement("span");
+    troubleshootingNumber.textContent = "05";
+    troubleshootingOutline.append(troubleshootingNumber, makeOutlineButton("Troubleshooting", "modal-troubleshooting"));
+    const nestedList = document.createElement("ol");
+    troubleshooting.forEach((item, index) => {
+      const targetId = `modal-troubleshooting-${index + 1}`;
+      const nestedItem = document.createElement("li");
+      nestedItem.append(makeOutlineButton(`${String(index + 1).padStart(2, "0")}. ${item.title}`, targetId, item.summary));
+      nestedList.append(nestedItem);
+    });
+    troubleshootingOutline.append(nestedList);
+    modalFields.outline.append(troubleshootingOutline);
+  }
+
+  principles.forEach(([title, copy]) => {
     const item = document.createElement("li");
     const heading = document.createElement("strong");
     const description = document.createElement("p");
@@ -422,7 +484,7 @@ const buildProjectDetail = (project) => {
     modalFields.principles.append(item);
   });
 
-  project.coreFeatures.forEach((feature, index) => {
+  coreFeatures.forEach((feature, index) => {
     const article = document.createElement("article");
     article.className = "feature-detail";
     article.id = `modal-feature-${index + 1}`;
@@ -468,6 +530,44 @@ const buildProjectDetail = (project) => {
 
     article.append(header, keywords, explanation);
     modalFields.features.append(article);
+  });
+
+  troubleshooting.forEach((item, index) => {
+    const article = document.createElement("article");
+    article.className = "troubleshooting-detail";
+    article.id = `modal-troubleshooting-${index + 1}`;
+
+    const header = document.createElement("header");
+    const number = document.createElement("span");
+    const title = document.createElement("h4");
+    number.textContent = `${String(index + 1).padStart(2, "0")}.`;
+    title.textContent = item.title;
+    header.append(number, title);
+
+    const keywords = document.createElement("ul");
+    keywords.className = "feature-keywords";
+    keywords.setAttribute("aria-label", `${item.title} 해결 키워드`);
+    item.keywords.forEach((keyword) => {
+      const keywordItem = document.createElement("li");
+      keywordItem.textContent = keyword;
+      keywords.append(keywordItem);
+    });
+
+    const explanation = document.createElement("div");
+    explanation.className = "feature-explanation troubleshooting-explanation";
+    [["문제 상황", item.problem], ["해결 방안", item.solution]].forEach(([label, copy]) => {
+      const block = document.createElement("section");
+      const eyebrow = document.createElement("p");
+      const text = document.createElement("p");
+      eyebrow.className = "eyebrow";
+      eyebrow.textContent = label;
+      text.textContent = copy;
+      block.append(eyebrow, text);
+      explanation.append(block);
+    });
+
+    article.append(header, keywords, explanation);
+    modalFields.troubleshooting.append(article);
   });
 };
 
@@ -536,11 +636,11 @@ modalFields.outline.addEventListener("click", (event) => {
   if (!button) return;
   const target = modal.querySelector(`#${button.dataset.modalTarget}`);
   target?.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" });
-  if (!target?.classList.contains("feature-detail")) return;
+  if (!target?.matches(".feature-detail, .troubleshooting-detail")) return;
 
   window.clearTimeout(featureHighlightStartTimer);
   window.clearTimeout(featureHighlightEndTimer);
-  modal.querySelectorAll(".feature-detail.is-outline-highlight").forEach((item) => {
+  modal.querySelectorAll(".is-outline-highlight").forEach((item) => {
     item.classList.remove("is-outline-highlight");
   });
   featureHighlightStartTimer = window.setTimeout(() => {

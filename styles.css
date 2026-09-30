@@ -272,6 +272,18 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .project-body { display: flex; flex-direction: column; min-height: 25rem; padding: 1.2rem; }
 .project-type, .project-period { font-size: .78rem; font-weight: 850; text-transform: uppercase; }
 .project-type { margin-bottom: .3rem; color: var(--green); }
+.project-type.is-main-project {
+  width: max-content;
+  background: linear-gradient(90deg,#ff4d6d,#ff9f43,#ffe66d,#55ef8b,#5ee7f7,#6c8cff,#d86cff,#ff4d6d) 0 50%/240% 100%;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  filter: drop-shadow(0 0 5px rgba(255,225,109,.38));
+  animation: main-project-star-power 1.8s linear infinite;
+}
+@keyframes main-project-star-power {
+  to { background-position: 240% 50%; }
+}
 .project-period { margin-bottom: .9rem; color: var(--muted); }
 .project-caption-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; align-items: stretch; margin-bottom: .9rem; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .project-caption-grid > p { min-width: 0; margin: 0; padding: .55rem .65rem; }
@@ -306,7 +318,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .modal-header { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 2rem; margin-bottom: 2rem; }
 .modal-header h2, .modal-header p { margin-bottom: 0; }
 .modal-header > p { color: var(--muted); }
-.modal-gallery, .modal-overview, .modal-outline, .modal-principles, .modal-features, .modal-story { border-top: 1px solid var(--line); padding-top: 1.5rem; }
+.modal-gallery, .modal-overview, .modal-outline, .modal-principles, .modal-features, .modal-troubleshooting, .modal-story { border-top: 1px solid var(--line); padding-top: 1.5rem; }
 .modal-section-title { display: flex; align-items: baseline; gap: .8rem; margin-bottom: 1rem; }
 .modal-section-title span, .modal-index { color: var(--orange); font-size: .78rem; font-weight: 900; }
 .modal-section-title h3 { margin-bottom: 0; }
@@ -341,7 +353,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .modal-info-list dd { border-left: 1px solid var(--line); color: var(--text); font-size: .86rem; overflow-wrap: anywhere; }
 .modal-info-list dt:last-of-type, .modal-info-list dd:last-of-type { border-bottom: 0; }
 .modal-detail { margin-top: 2.2rem; }
-.modal-outline, .modal-principles, .modal-features, .feature-detail { scroll-margin-top: 1rem; }
+.modal-outline, .modal-principles, .modal-features, .modal-troubleshooting, .feature-detail, .troubleshooting-detail { scroll-margin-top: 1rem; }
 .modal-outline-list { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
 .modal-outline-list > li { display: grid; grid-template-columns: 2rem minmax(0,1fr); align-items: start; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 .modal-outline-list > li > span { padding: .75rem 0 .75rem .85rem; color: var(--orange); font-size: .74rem; font-weight: 900; }
@@ -352,22 +364,24 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .outline-title { display: block; color: inherit; }
 .outline-summary { display: block; margin: .3rem 0 0; color: var(--muted); font-size: .76rem; font-weight: 500; line-height: 1.55; }
 .modal-outline-list ol button:hover .outline-summary { color: var(--text); }
-.modal-principles, .modal-features { margin-top: 2.2rem; }
+.modal-principles, .modal-features, .modal-troubleshooting { margin-top: 2.2rem; }
 .principle-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; margin: 0; padding: 0; list-style: none; }
 .principle-list li { min-width: 0; border: 1px solid var(--line); border-radius: 5px; padding: 1rem; background: var(--panel); }
 .principle-list li::before { content: "◆"; margin-right: .55rem; color: var(--orange); font-size: .65rem; }
 .principle-list strong { color: var(--yellow); }
 .principle-list p { margin: .45rem 0 0; color: var(--muted); font-size: .9rem; }
-.feature-detail-list { display: grid; gap: .8rem; }
-.feature-detail { border: 1px solid var(--line); border-radius: 5px; padding: 1.2rem; background: var(--panel); }
-.feature-detail.is-outline-highlight { animation: feature-outline-highlight 1.5s ease-out; }
+.feature-detail-list, .troubleshooting-list { display: grid; gap: .8rem; }
+.feature-detail, .troubleshooting-detail { border: 1px solid var(--line); border-radius: 5px; padding: 1.2rem; background: var(--panel); }
+.feature-detail.is-outline-highlight, .troubleshooting-detail.is-outline-highlight { animation: feature-outline-highlight 1.5s ease-out; }
 @keyframes feature-outline-highlight {
   0%, 35% { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,218,109,.34), 0 0 24px rgba(255,183,92,.22); }
   100% { border-color: var(--line); box-shadow: 0 0 0 0 rgba(255,218,109,0), 0 0 0 rgba(255,183,92,0); }
 }
-.feature-detail header { display: flex; align-items: baseline; gap: .75rem; }
-.feature-detail header span { color: var(--orange); font-size: .75rem; font-weight: 900; }
-.feature-detail h4 { margin: 0; color: var(--yellow); font-size: 1.05rem; }
+.feature-detail header, .troubleshooting-detail header { display: flex; align-items: baseline; gap: .75rem; }
+.feature-detail header span, .troubleshooting-detail header span { color: var(--orange); font-size: .75rem; font-weight: 900; }
+.feature-detail h4, .troubleshooting-detail h4 { margin: 0; color: var(--yellow); font-size: 1.05rem; }
+.troubleshooting-detail { background: linear-gradient(90deg,rgba(255,150,53,.045),transparent 38%),var(--panel); }
+.troubleshooting-explanation .eyebrow { color: var(--peach); }
 .feature-keywords { display: flex; flex-wrap: wrap; gap: .35rem; margin: .8rem 0 1rem; padding: 0; list-style: none; }
 .feature-keywords li { border: 1px solid rgba(117,213,218,.28); border-radius: 4px; padding: .25rem .48rem; background: rgba(117,213,218,.07); color: #d6f8f9; font-size: .72rem; font-weight: 800; }
 .feature-explanation { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
@@ -479,6 +493,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .project-type.is-main-project { background-position: 45% 50%; }
   .hero, .about-section, .skills-section, .projects-section { --world-dim: .08 !important; --world-shift: 0px !important; }
   .about-section { --resume-dim: 0 !important; }
 }
