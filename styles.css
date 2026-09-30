@@ -243,10 +243,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .project-heading { display: block; max-width: none; }
 .project-heading h2, .project-heading p { margin-bottom: 0; }
 .project-heading > p { margin-top: .8rem; white-space: nowrap; }
-.project-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 1rem; }
-.project-card { grid-column: span 2; }
-.project-card:nth-child(4) { grid-column: 2 / span 2; }
-.project-card:nth-child(5) { grid-column: 4 / span 2; }
+.project-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
 .project-card { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(21,30,52,.94); box-shadow: 0 18px 40px rgba(0,0,0,.28); backdrop-filter: blur(2px); }
 .project-cover { position: relative; display: grid; place-items: center; aspect-ratio: 16/9; overflow: hidden; background: linear-gradient(rgba(11,16,32,.1),rgba(11,16,32,.6)), url("assets/pixel-sunset-sky.png") center/cover; image-rendering: pixelated; }
 .cover-one {
@@ -267,7 +264,6 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .cover-two::after { background: url("assets/gep/gep-cover.png") center/contain no-repeat; }
 .cover-three { background-position: 70% center; filter: hue-rotate(185deg) saturate(.8); }
 .cover-four { background-position: 48% center; filter: hue-rotate(250deg) saturate(.85); }
-.cover-five { background-position: 82% center; filter: hue-rotate(105deg) saturate(.9); }
 .project-cover span { color: rgba(255,255,255,.92); font-size: clamp(3rem,7vw,5.4rem); font-weight: 950; line-height: 1; text-shadow: 4px 4px 0 rgba(23,25,45,.65); }
 .project-body { display: flex; flex-direction: column; min-height: 25rem; padding: 1.2rem; }
 .project-type, .project-period { font-size: .78rem; font-weight: 850; text-transform: uppercase; }
@@ -410,7 +406,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 
 @media (max-width: 1000px) {
   .project-grid { grid-template-columns: 1fr; }
-  .project-card, .project-card:nth-child(4), .project-card:nth-child(5) { grid-column: auto; }
+  .project-card { grid-column: auto; }
   .project-card { display: grid; grid-template-columns: minmax(16rem,.9fr) minmax(0,1.1fr); }
   .project-cover { aspect-ratio: auto; }
   .project-body { min-height: 22rem; }

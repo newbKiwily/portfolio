@@ -370,20 +370,6 @@ const projects = {
       { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 4 플레이 이미지 자리", label: "GAMEPLAY" },
     ],
   },
-  "project-5": {
-    type: "Graphics Project",
-    title: "프로젝트 이름 05",
-    period: "2026.00 - 2026.00 / 개인",
-    feature: "렌더링 파이프라인을 직접 구성하며 구현한 조명, 머티리얼과 후처리 기능을 소개합니다.",
-    challenge: "렌더링 단계가 늘면서 상태 전환 순서에 따라 화면 결과가 달라지고 원인을 찾기 어려웠습니다.",
-    solution: "패스별 입력과 출력을 구조화하고 디버그 뷰를 추가해 각 렌더링 단계의 결과를 개별 검증했습니다.",
-    tags: ["DirectX11", "HLSL", "Rendering"],
-    images: [
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 5 대표 렌더링 이미지 자리", label: "RENDER RESULT" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 5 조명 이미지 자리", label: "LIGHTING" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 5 디버그 이미지 자리", label: "DEBUG VIEW" },
-    ],
-  },
 };
 
 const modal = document.querySelector("#project-modal");
