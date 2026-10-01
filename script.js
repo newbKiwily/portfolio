@@ -379,6 +379,12 @@ const projects = {
         emphasis: ["Diffuse Map", "Normal Map", "Cube Map", "텍스처 슬롯", "TextureCube"],
         why: "하나의 텍스처만으로는 표면의 색상, 미세 굴곡과 주변 환경을 모두 표현하기 어렵습니다. 각 텍스처가 어떤 정보를 담고 셰이더의 어느 계산에 쓰이는지 구분할 필요가 있었습니다.",
         how: "Diffuse Map은 기본 색상, Normal Map은 조명 계산용 표면 방향, Cube Map은 스카이박스의 환경 정보로 사용했습니다. 여러 텍스처를 정해진 텍스처 슬롯에 바인딩하고 같은 렌더 패스에서 샘플링했으며, 큐브맵은 방향 벡터를 사용하는 TextureCube 방식으로 처리했습니다.",
+        media: {
+          type: "image",
+          src: "assets/rpg-field/multi-texturing.png",
+          title: "멀티 텍스처링 결과 사진",
+          alt: "두 텍스처를 조합해 지형 표면을 표현한 멀티 텍스처링 결과",
+        },
       },
       {
         title: "스킨드 메시 애니메이션과 인터랙션",
@@ -386,6 +392,11 @@ const projects = {
         emphasis: ["Assimp", "본 계층·키프레임·가중치", "최종 본 행렬", "레이와 AABB", "시각적 피드백"],
         why: "필드 캐릭터가 자연스럽게 움직이려면 정적 메시만 출력하는 것을 넘어 모델 파일의 본 계층과 시간별 키프레임을 해석해야 합니다. 사용자 입력 역시 화면 좌표에서 실제 월드 오브젝트까지 연결되어야 게임 장면의 상호작용으로 기능합니다.",
         how: "Assimp로 메시·재질·본 계층·키프레임·가중치를 읽고 시간에 따라 최종 본 행렬을 계산해 셰이더에 전달했습니다. 화면 좌표에서는 월드 공간 레이를 만들고 오브젝트의 AABB와 교차 여부를 판정했으며, 선택 결과를 조명 색 변화 같은 시각적 피드백으로 연결했습니다.",
+        media: {
+          type: "video",
+          src: "assets/rpg-field/interaction-animation.mp4",
+          title: "스킨드 메시 애니메이션과 인터랙션 결과 영상",
+        },
       },
       {
         title: "데이터 기반 반복 오브젝트 인스턴스 배치",
@@ -393,6 +404,12 @@ const projects = {
         emphasis: ["위치 목록", "동일한 모델 리소스", "개별 인스턴스", "월드 행렬", "공통 렌더 루프"],
         why: "필드에는 같은 종류의 나무처럼 반복되는 오브젝트가 많이 필요합니다. 오브젝트마다 생성과 렌더링 코드를 따로 작성하면 배치 수가 늘어날수록 중복 코드가 커지고, 위치를 수정하거나 개수를 확장하기도 어려워집니다.",
         how: "나무가 배치될 좌표를 위치 목록으로 분리하고, 목록을 순회하며 동일한 모델 리소스를 사용하는 개별 인스턴스를 생성했습니다. 각 인스턴스에는 자신의 위치만 보관하고 하나의 컨테이너에서 관리합니다. 렌더링 단계에서는 공통 렌더 루프가 인스턴스별 위치로 월드 행렬을 구성해 같은 모델을 여러 장소에 배치하도록 만들었습니다.",
+        media: {
+          type: "image",
+          src: "assets/rpg-field/instancing.png",
+          title: "반복 오브젝트 배치 결과 사진",
+          alt: "동일한 나무 모델을 여러 위치에 반복 배치한 RPG Field Scene 결과",
+        },
       },
     ],
     feature: "",
@@ -428,6 +445,7 @@ const overviewJumpButton = modal.querySelector("#modal-jump-overview");
 const videoModal = document.querySelector("#video-modal");
 const videoModalTitle = videoModal.querySelector("#video-modal-title");
 const featureVideo = videoModal.querySelector("#feature-video");
+const featureImage = videoModal.querySelector("#feature-image");
 const videoModalClose = videoModal.querySelector(".video-modal-close");
 const modalFields = {
   type: modal.querySelector("#modal-type"),
@@ -614,7 +632,7 @@ const buildProjectDetail = (project) => {
 
     const explanation = document.createElement("div");
     explanation.className = "feature-explanation";
-    [["WHY", feature.why, null], ["HOW", feature.how, feature.video]].forEach(([label, copy, video]) => {
+    [["WHY", feature.why, null], ["HOW", feature.how, feature.media || feature.video]].forEach(([label, copy, media]) => {
       const block = document.createElement("section");
       const eyebrow = document.createElement("p");
       const text = document.createElement("p");
@@ -622,14 +640,17 @@ const buildProjectDetail = (project) => {
       eyebrow.textContent = label;
       appendEmphasizedText(text, copy, feature.emphasis);
       block.append(eyebrow);
-      if (video) {
-        const videoTrigger = document.createElement("button");
-        videoTrigger.type = "button";
-        videoTrigger.className = "feature-video-trigger";
-        videoTrigger.dataset.videoSrc = video.src;
-        videoTrigger.dataset.videoTitle = video.title;
-        videoTrigger.textContent = "결과 영상 보기";
-        block.append(videoTrigger);
+      if (media) {
+        const resultTrigger = document.createElement("button");
+        const mediaType = media.type || "video";
+        resultTrigger.type = "button";
+        resultTrigger.className = "feature-result-trigger";
+        resultTrigger.dataset.mediaType = mediaType;
+        resultTrigger.dataset.mediaSrc = media.src;
+        resultTrigger.dataset.mediaTitle = media.title;
+        resultTrigger.dataset.mediaAlt = media.alt || media.title || "";
+        resultTrigger.textContent = mediaType === "image" ? "결과 사진 보기" : "결과 영상 보기";
+        block.append(resultTrigger);
       }
       block.append(text);
       explanation.append(block);
@@ -753,30 +774,42 @@ overviewJumpButton.addEventListener("click", () => {
   modalFields.detail.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
 });
 
-const closeFeatureVideo = () => {
+const closeFeatureMedia = () => {
   featureVideo.pause();
   featureVideo.removeAttribute("src");
   featureVideo.load();
+  featureVideo.hidden = true;
+  featureImage.removeAttribute("src");
+  featureImage.alt = "";
+  featureImage.hidden = true;
   videoModal.close();
 };
 
 modalFields.features.addEventListener("click", (event) => {
-  const trigger = event.target.closest(".feature-video-trigger");
+  const trigger = event.target.closest(".feature-result-trigger");
   if (!trigger) return;
-  videoModalTitle.textContent = trigger.dataset.videoTitle || "결과 영상";
-  featureVideo.src = trigger.dataset.videoSrc;
+  const mediaType = trigger.dataset.mediaType || "video";
+  videoModalTitle.textContent = trigger.dataset.mediaTitle || (mediaType === "image" ? "결과 사진" : "결과 영상");
+  featureVideo.hidden = mediaType !== "video";
+  featureImage.hidden = mediaType !== "image";
+  if (mediaType === "image") {
+    featureImage.src = trigger.dataset.mediaSrc;
+    featureImage.alt = trigger.dataset.mediaAlt || videoModalTitle.textContent;
+  } else {
+    featureVideo.src = trigger.dataset.mediaSrc;
+  }
   videoModal.showModal();
-  featureVideo.play().catch(() => {});
+  if (mediaType === "video") featureVideo.play().catch(() => {});
   videoModalClose.focus();
 });
 
-videoModalClose.addEventListener("click", closeFeatureVideo);
+videoModalClose.addEventListener("click", closeFeatureMedia);
 videoModal.addEventListener("click", (event) => {
-  if (event.target === videoModal) closeFeatureVideo();
+  if (event.target === videoModal) closeFeatureMedia();
 });
 videoModal.addEventListener("cancel", (event) => {
   event.preventDefault();
-  closeFeatureVideo();
+  closeFeatureMedia();
 });
 
 closeButton.addEventListener("click", () => modal.close());
