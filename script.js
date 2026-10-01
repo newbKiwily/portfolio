@@ -471,17 +471,39 @@ const projects = {
     ],
   },
   "project-4": {
-    type: "Network Project",
-    title: "프로젝트 이름 04",
-    period: "2026.00 - 2026.00 / 2인 팀",
-    feature: "멀티플레이 환경의 상태 동기화, 패킷 처리와 연결 상태 관리 등 네트워크 핵심 기능을 소개합니다.",
-    challenge: "지연과 패킷 순서 차이로 클라이언트마다 서로 다른 상태가 보이는 문제가 발생했습니다.",
-    solution: "서버 권한 범위를 명확히 정하고 메시지 처리 순서와 보정 규칙을 통합해 상태 차이를 줄였습니다.",
-    tags: ["C++", "Network", "Protocol"],
-    images: [
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 4 대표 인게임 이미지 자리", label: "MAIN SCREEN" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 4 네트워크 테스트 이미지 자리", label: "NETWORK TEST" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 4 플레이 이미지 자리", label: "GAMEPLAY" },
+    type: "Other Sub Projects",
+    title: "Side Projects",
+    period: "3개 미니 프로젝트",
+    tags: [],
+    images: [],
+    otherProjects: [
+      {
+        eyebrow: "GAME 01 · PERSONAL",
+        title: "게임 이름 01",
+        genre: "2D 액션 · 개인 프로젝트",
+        summary: "핵심 조작과 전투 루프를 짧은 플레이 안에서 확인할 수 있도록 구성한 게임입니다.",
+        image: "assets/pixel-sunset-sky.png",
+        alt: "게임 이름 01 더미 이미지",
+        tech: ["Unity", "C#", "2D Action"],
+      },
+      {
+        eyebrow: "GAME 02 · TEAM",
+        title: "게임 이름 02",
+        genre: "캐주얼 퍼즐 · 팀 프로젝트",
+        summary: "간단한 규칙을 단계적으로 확장하고 점수와 난이도 흐름을 다듬은 캐주얼 게임입니다.",
+        image: "assets/pixel-world-ground.png",
+        alt: "게임 이름 02 더미 이미지",
+        tech: ["C++", "Gameplay", "Level Design"],
+      },
+      {
+        eyebrow: "GAME 03 · PROTOTYPE",
+        title: "게임 이름 03",
+        genre: "시스템 프로토타입 · 개인 프로젝트",
+        summary: "짧은 제작 기간 동안 하나의 아이디어를 플레이 가능한 형태로 완성한 프로토타입입니다.",
+        image: "assets/pixel-world-cavern.png",
+        alt: "게임 이름 03 더미 이미지",
+        tech: ["Unity", "C#", "UI"],
+      },
     ],
   },
 };
@@ -502,7 +524,10 @@ const modalFields = {
   challenge: modal.querySelector("#modal-challenge"),
   solution: modal.querySelector("#modal-solution"),
   tags: modal.querySelector("#modal-tags"),
+  gallerySection: modal.querySelector(".modal-gallery"),
   gallery: modal.querySelector("#modal-gallery-images"),
+  otherProjectsSection: modal.querySelector("#modal-other-projects"),
+  otherProjects: modal.querySelector("#modal-other-project-list"),
   overview: modal.querySelector("#modal-overview"),
   overviewTitle: modal.querySelector("#modal-overview-title"),
   overviewCopy: modal.querySelector("#modal-overview-copy"),
@@ -522,6 +547,7 @@ const modalFields = {
   troubleshootingIndex: modal.querySelector("#modal-troubleshooting-index"),
   troubleshooting: modal.querySelector("#modal-troubleshooting-list"),
   story: modal.querySelector(".modal-story"),
+  footer: modal.querySelector(".modal-footer"),
   notion: modal.querySelector("#modal-notion"),
 };
 
@@ -548,6 +574,47 @@ const buildGallery = (images) => {
     }
     modalFields.gallery.append(figure);
   });
+};
+
+const buildOtherProjects = (items = []) => {
+  modalFields.otherProjects.replaceChildren(
+    ...items.map((item, index) => {
+      const article = document.createElement("article");
+      article.className = "other-project-card";
+
+      const figure = document.createElement("figure");
+      const image = document.createElement("img");
+      const placeholder = document.createElement("span");
+      image.src = item.image;
+      image.alt = item.alt;
+      placeholder.textContent = "DUMMY IMAGE";
+      figure.append(image, placeholder);
+
+      const body = document.createElement("div");
+      const eyebrow = document.createElement("p");
+      const title = document.createElement("h4");
+      const genre = document.createElement("p");
+      const summary = document.createElement("p");
+      const tags = document.createElement("ul");
+      eyebrow.className = "eyebrow";
+      eyebrow.textContent = item.eyebrow || `GAME ${String(index + 1).padStart(2, "0")}`;
+      title.textContent = item.title;
+      genre.className = "other-project-genre";
+      genre.textContent = item.genre;
+      summary.className = "other-project-summary";
+      summary.textContent = item.summary;
+      tags.className = "tag-list";
+      tags.setAttribute("aria-label", `${item.title} 사용 기술`);
+      tags.append(...item.tech.map((tech) => {
+        const tag = document.createElement("li");
+        tag.textContent = tech;
+        return tag;
+      }));
+      body.append(eyebrow, title, genre, summary, tags);
+      article.append(figure, body);
+      return article;
+    }),
+  );
 };
 
 const makeOutlineButton = (label, targetId, summary = "") => {
@@ -740,13 +807,18 @@ const buildProjectDetail = (project) => {
 const openProject = (projectId) => {
   const project = projects[projectId];
   if (!project) return;
+  const isCollection = Boolean(project.otherProjects?.length);
 
   modalFields.type.textContent = project.type;
   modalFields.title.textContent = project.title;
   modalFields.period.textContent = project.period;
-  modalFields.feature.textContent = project.feature;
-  modalFields.challenge.textContent = project.challenge;
-  modalFields.solution.textContent = project.solution;
+  modalFields.feature.textContent = project.feature || "";
+  modalFields.challenge.textContent = project.challenge || "";
+  modalFields.solution.textContent = project.solution || "";
+  modalFields.gallerySection.hidden = isCollection;
+  modalFields.otherProjectsSection.hidden = !isCollection;
+  modalFields.footer.hidden = isCollection;
+  buildOtherProjects(project.otherProjects || []);
   const hasOverview = Boolean(project.overviewTitle || project.overview || project.info?.length);
   modalFields.overview.hidden = !hasOverview;
   modalFields.overviewTitle.textContent = project.overviewTitle || "";
@@ -764,7 +836,7 @@ const openProject = (projectId) => {
       return [term, description];
     }),
   );
-  modalFields.story.hidden = !(project.feature || project.challenge || project.solution);
+  modalFields.story.hidden = isCollection || !(project.feature || project.challenge || project.solution);
   modalFields.notion.href = project.notion || "#";
   if (project.notion) {
     modalFields.notion.target = "_blank";
@@ -774,14 +846,14 @@ const openProject = (projectId) => {
     modalFields.notion.removeAttribute("rel");
   }
   modalFields.tags.replaceChildren(
-    ...project.tags.map((tag) => {
+    ...(project.tags || []).map((tag) => {
       const item = document.createElement("li");
       item.textContent = tag;
       return item;
     }),
   );
-  modalFields.tags.hidden = project.tags.length === 0;
-  buildGallery(project.images);
+  modalFields.tags.hidden = (project.tags || []).length === 0;
+  buildGallery(project.images || []);
   buildProjectDetail(project);
 
   modal.showModal();
