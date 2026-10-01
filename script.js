@@ -43,13 +43,16 @@ const updateWorldScenes = () => {
 
   worldScenes.forEach((scene) => {
     const rect = scene.getBoundingClientRect();
-    const entering = clamp((viewportHeight - rect.top) / fadeDistance, 0, 1);
+    const entering = scene === aboutSection
+      ? clamp((viewportHeight * 0.56 - rect.top) / (viewportHeight * 0.42), 0, 1)
+      : clamp((viewportHeight - rect.top) / fadeDistance, 0, 1);
     const leaving = clamp(rect.bottom / fadeDistance, 0, 1);
     const reveal = smoothstep(Math.min(entering, leaving));
     const inactiveDim = scene.id === "intro" ? 0.86 : 0.96;
     const dim = 0.08 + (1 - reveal) * (inactiveDim - 0.08);
     const sceneCenter = rect.top + rect.height / 2;
-    const shift = clamp((viewportHeight / 2 - sceneCenter) * 0.045, -36, 36);
+    const isIntroTransition = scene.matches(".hero, .about-section");
+    const shift = isIntroTransition ? 0 : clamp((viewportHeight / 2 - sceneCenter) * 0.045, -36, 36);
 
     scene.style.setProperty("--world-dim", dim.toFixed(3));
     scene.style.setProperty("--world-shift", `${shift.toFixed(1)}px`);

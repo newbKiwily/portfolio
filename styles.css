@@ -17,6 +17,8 @@
   --shadow: rgba(2, 5, 14, 0.42);
   --max: 1180px;
   --radius: 8px;
+  --intro-world-span: max(100vw, calc(80svh * 2.492));
+  --world-transition: #091427;
 }
 
 * { box-sizing: border-box; }
@@ -90,14 +92,22 @@ h1, h2, h3, p, figure { margin-top: 0; }
 }
 .hero-bg {
   position: absolute;
-  inset: -3rem 0;
+  inset: 0;
   z-index: -2;
-  background: linear-gradient(90deg, rgba(255,226,173,.42), transparent 52%), url("assets/pixel-level-up-world.png") center/cover no-repeat;
+  background:
+    linear-gradient(90deg, rgba(255,226,173,.42), transparent 52%) center/100% 100% no-repeat,
+    url("assets/pixel-level-up-world.png") center bottom/var(--intro-world-span) auto no-repeat;
+  background-color: #f5a35f;
   image-rendering: pixelated;
-  transform: translate3d(0,var(--world-shift,0),0);
-  will-change: transform;
 }
-.hero::after { position: absolute; inset: auto 0 0; z-index: -1; height: 22%; background: linear-gradient(to bottom, transparent, var(--bg)); content: ""; }
+.hero::after {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: -1;
+  height: 12rem;
+  background: linear-gradient(to bottom, transparent, rgba(9,20,39,.24) 48%, rgba(9,20,39,.7));
+  content: "";
+}
 .hero, .about-section, .skills-section, .projects-section {
   --world-dim: .08;
   --world-shift: 0px;
@@ -109,10 +119,13 @@ h1, h2, h3, p, figure { margin-top: 0; }
   inset: 0;
   z-index: 12;
   pointer-events: none;
-  background: #050811;
+  background: #07101f;
   opacity: var(--world-dim);
   transition: opacity 90ms linear;
   will-change: opacity;
+}
+.about-section > .world-fade-overlay {
+  background: #07101f;
 }
 .hero-content { width: min(100%, 70rem); }
 .eyebrow { margin-bottom: .8rem; color: var(--orange); font-size: .78rem; font-weight: 900; letter-spacing: .08rem; text-transform: uppercase; }
@@ -148,10 +161,12 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .about-section {
   width: 100%;
   max-width: none;
-  padding: 5rem max(1rem,calc((100vw - var(--max))/2)) 6rem;
+  padding: 5rem max(1rem,calc((100vw - var(--max))/2)) 2rem;
   background:
-    linear-gradient(to bottom, rgba(11,16,32,.68), rgba(11,16,32,.5) 38%, rgba(11,16,32,.82)),
-    url("assets/pixel-world-ground.png") center calc(50% + var(--world-shift))/cover no-repeat;
+    linear-gradient(to bottom, rgba(9,20,39,.66), rgba(11,16,32,.38) 9rem, rgba(11,16,32,.46) 52%, rgba(6,16,30,.5)) center/100% 100% no-repeat,
+    url("assets/pixel-world-ground.png") center/cover no-repeat;
+  background-color: #11182b;
+  box-shadow: inset 0 9rem 8rem -7rem rgba(9,20,39,.72), inset 0 -8rem 7rem -7rem rgba(6,16,30,.3);
   image-rendering: pixelated;
 }
 .about-layout { display: grid; grid-template-columns: minmax(13rem,17rem) minmax(0,1fr); gap: clamp(2rem,4vw,4rem); align-items: start; }
@@ -210,10 +225,11 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .skills-section {
   width: 100%;
   max-width: none;
-  padding-inline: max(1rem,calc((100vw - var(--max))/2));
+  padding: 2rem max(1rem,calc((100vw - var(--max))/2)) 6rem;
   background:
-    linear-gradient(to bottom, rgba(6,12,25,.8), rgba(6,12,25,.58) 36%, rgba(6,12,25,.82)),
+    linear-gradient(to bottom, rgba(6,16,30,.58), rgba(6,12,25,.54) 8rem, rgba(6,12,25,.58) 36%, rgba(6,12,25,.82)),
     url("assets/pixel-world-cavern.png") center calc(50% + var(--world-shift))/cover no-repeat;
+  box-shadow: inset 0 7rem 7rem -7rem rgba(6,16,30,.34), inset 0 -9rem 8rem -7rem rgba(6,16,30,.68);
   image-rendering: pixelated;
 }
 .skill-guide { display: flex; flex-wrap: wrap; gap: .4rem 1rem; }
@@ -426,15 +442,15 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
   .site-header { align-items: flex-start; flex-direction: column; }
   .main-nav { justify-content: flex-start; }
   .hero { min-height: 760px; padding-top: 15rem; }
-  .hero-bg { background-position: 68% center; }
+  .hero-bg { background-position: center, 68% bottom; background-size: 100% 100%, auto 46rem; }
   .about-layout, .modal-header, .modal-story { grid-template-columns: 1fr; }
   .about-layout { gap: 3rem; }
   .about-section {
     scroll-margin-top: 7rem;
     padding-top: 1.25rem;
     background-color: #11182b;
-    background-position: center, 72% calc(0% + var(--world-shift));
-    background-size: 100% 100%, auto 52rem;
+    background-position: center, center;
+    background-size: 100% 100%, cover;
     background-repeat: no-repeat;
   }
   .resume-world-fade { opacity: var(--resume-dim,.06); }
