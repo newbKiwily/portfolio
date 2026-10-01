@@ -372,6 +372,12 @@ const projects = {
         emphasis: ["Ambient·Diffuse·Specular", "상수 버퍼", "법선·빛·시선 방향", "텍스처 색상"],
         why: "조명은 단순히 물체를 밝게 만드는 효과가 아니라 표면 법선, 빛 방향과 시선 방향의 관계를 계산해 형태와 재질을 드러내는 과정입니다. CPU 데이터와 셰이더 계산이 분리되어 있어 두 단계의 계약을 함께 이해해야 했습니다.",
         how: "C++에서 행렬, 카메라 위치와 광원 정보를 상수 버퍼로 구성하고 HLSL에 바인딩했습니다. 픽셀 셰이더에서는 법선·빛·시선 방향을 사용해 Ambient·Diffuse·Specular 항을 계산하고 텍스처 색상과 합성했습니다. 노멀맵을 사용할 때는 접선 공간을 구성해 표면 법선을 보정했습니다.",
+        media: {
+          type: "image",
+          src: "assets/rpg-field/phong-lighting.png",
+          title: "Phong 조명 결과 사진",
+          alt: "여러 광원으로 나무와 건물, 가로등의 명암을 표현한 RPG Field Scene",
+        },
       },
       {
         title: "멀티 텍스처링과 환경 표현",
