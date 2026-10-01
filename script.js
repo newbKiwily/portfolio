@@ -358,13 +358,6 @@ const projects = {
       ["외부 라이브러리", "Assimp, DDS Texture Loader"],
       ["구현 범위", "렌더링·조명·텍스처·애니메이션·인터랙션·UI"],
     ],
-    principles: [
-      ["기존 구조를 이해한 뒤 확장", "Rastertek의 실행 흐름과 클래스 책임을 먼저 분석하고, 그래픽스 기능을 기존 렌더링 단계 안에 연결했습니다."],
-      ["공간 변환의 역할 분리", "World·View·Projection 행렬을 분리해 오브젝트 배치, 카메라 기준 변환과 화면 투영의 책임을 명확히 했습니다."],
-      ["CPU와 셰이더의 데이터 계약", "C++에서 구성한 행렬·조명·카메라·텍스처 데이터가 상수 버퍼와 리소스 슬롯을 거쳐 HLSL에 전달되도록 흐름을 정리했습니다."],
-      ["리소스 의미에 따른 조합", "Diffuse·Normal·Cube Map을 같은 이미지가 아닌 서로 다른 역할의 데이터로 구분하고 최종 픽셀 결과에 합성했습니다."],
-      ["3D 장면과 화면 UI 분리", "원근 투영을 사용하는 필드 장면과 직교 투영을 사용하는 고정 UI를 별도 렌더링 단계로 구성했습니다."],
-    ],
     coreFeatures: [
       {
         title: "렌더링 파이프라인과 WVP 변환",
@@ -395,11 +388,11 @@ const projects = {
         how: "Assimp로 메시·재질·본 계층·키프레임·가중치를 읽고 시간에 따라 최종 본 행렬을 계산해 셰이더에 전달했습니다. 화면 좌표에서는 월드 공간 레이를 만들고 오브젝트의 AABB와 교차 여부를 판정했으며, 선택 결과를 조명 색 변화 같은 시각적 피드백으로 연결했습니다.",
       },
       {
-        title: "직교 투영 기반 디버그 UI",
-        summary: "3D 카메라의 원근감과 분리된 화면 공간에 런타임 정보를 안정적으로 표시합니다.",
-        emphasis: ["직교 투영", "화면 좌표", "FPS·CPU·오브젝트·폴리곤 수", "깊이 처리"],
-        why: "FPS나 CPU 사용량처럼 항상 같은 위치에 보여야 하는 정보는 카메라 거리와 원근감의 영향을 받으면 안 됩니다. 3D 장면 위에 안정적으로 출력하려면 투영 방식과 깊이 처리를 별도로 구성해야 했습니다.",
-        how: "3D 장면의 원근 투영과 별도로 직교 투영 행렬을 사용해 텍스트를 화면 좌표에 배치했습니다. FPS·CPU·오브젝트·폴리곤 수를 런타임에 갱신하고, 깊이 처리와 렌더링 순서를 분리해 카메라 이동과 무관하게 UI가 장면 위에 유지되도록 했습니다.",
+        title: "데이터 기반 반복 오브젝트 인스턴스 배치",
+        summary: "동일한 나무 모델을 위치 데이터로 반복 생성하고 인스턴스별 변환을 일괄 관리합니다.",
+        emphasis: ["위치 목록", "동일한 모델 리소스", "개별 인스턴스", "월드 행렬", "공통 렌더 루프"],
+        why: "필드에는 같은 종류의 나무처럼 반복되는 오브젝트가 많이 필요합니다. 오브젝트마다 생성과 렌더링 코드를 따로 작성하면 배치 수가 늘어날수록 중복 코드가 커지고, 위치를 수정하거나 개수를 확장하기도 어려워집니다.",
+        how: "나무가 배치될 좌표를 위치 목록으로 분리하고, 목록을 순회하며 동일한 모델 리소스를 사용하는 개별 인스턴스를 생성했습니다. 각 인스턴스에는 자신의 위치만 보관하고 하나의 컨테이너에서 관리합니다. 렌더링 단계에서는 공통 렌더 루프가 인스턴스별 위치로 월드 행렬을 구성해 같은 모델을 여러 장소에 배치하도록 만들었습니다.",
       },
     ],
     feature: "",
@@ -408,9 +401,9 @@ const projects = {
     tags: [],
     notion: "https://app.notion.com/p/3e8e8789789b817c987ccd7dff729e0d",
     images: [
-      { src: "assets/pixel-mmorpg-night.png", alt: "RPG Field Scene 대표 화면 더미 이미지", label: "MAIN SCENE", background: "blur", placeholder: true },
-      { src: "assets/pixel-world-ground.png", alt: "RPG Field Scene 렌더링 화면 더미 이미지", label: "RENDERING", background: "blur", placeholder: true },
-      { src: "assets/pixel-world-dungeon.png", alt: "RPG Field Scene 애니메이션 화면 더미 이미지", label: "ANIMATION", background: "blur", placeholder: true },
+      { src: "assets/rpg-field-scene-01.png", alt: "RPG Field Scene 조작 안내 화면", label: "SCENE GUIDE", background: "blur" },
+      { src: "assets/rpg-field-scene-02.png", alt: "RPG Field Scene 모닥불 상호작용 화면", label: "INTERACTION", background: "blur" },
+      { src: "assets/rpg-field-scene-03.png", alt: "RPG Field Scene 필드 렌더링 화면", label: "FIELD RENDERING", background: "blur" },
     ],
   },
   "project-4": {
@@ -455,8 +448,13 @@ const modalFields = {
   detail: modal.querySelector("#modal-detail"),
   outline: modal.querySelector("#modal-outline-list"),
   principles: modal.querySelector("#modal-principle-list"),
+  principlesSection: modal.querySelector("#modal-principles"),
+  principlesIndex: modal.querySelector("#modal-principles-index"),
   features: modal.querySelector("#modal-feature-list"),
+  featuresSection: modal.querySelector("#modal-features"),
+  featuresIndex: modal.querySelector("#modal-features-index"),
   troubleshootingSection: modal.querySelector("#modal-troubleshooting"),
+  troubleshootingIndex: modal.querySelector("#modal-troubleshooting-index"),
   troubleshooting: modal.querySelector("#modal-troubleshooting-list"),
   story: modal.querySelector(".modal-story"),
   notion: modal.querySelector("#modal-notion"),
@@ -538,23 +536,29 @@ const buildProjectDetail = (project) => {
   modalFields.principles.replaceChildren();
   modalFields.features.replaceChildren();
   modalFields.troubleshooting.replaceChildren();
+  modalFields.principlesSection.hidden = principles.length === 0;
+  modalFields.featuresSection.hidden = coreFeatures.length === 0;
   modalFields.troubleshootingSection.hidden = troubleshooting.length === 0;
   if (!hasDetail) return;
 
-  const outlineItems = [["03", "Design Principles", "modal-principles"]];
-
-  outlineItems.forEach(([index, label, targetId]) => {
+  let sectionIndex = 3;
+  if (principles.length) {
+    const index = String(sectionIndex).padStart(2, "0");
     const item = document.createElement("li");
     const number = document.createElement("span");
     number.textContent = index;
-    item.append(number, makeOutlineButton(label, targetId));
+    modalFields.principlesIndex.textContent = index;
+    item.append(number, makeOutlineButton("Design Principles", "modal-principles"));
     modalFields.outline.append(item);
-  });
+    sectionIndex += 1;
+  }
 
   if (coreFeatures.length) {
+    const index = String(sectionIndex).padStart(2, "0");
     const featureOutline = document.createElement("li");
     const featureNumber = document.createElement("span");
-    featureNumber.textContent = "04";
+    featureNumber.textContent = index;
+    modalFields.featuresIndex.textContent = index;
     featureOutline.append(featureNumber, makeOutlineButton("Core Features", "modal-features"));
     const nestedList = document.createElement("ol");
     coreFeatures.forEach((feature, index) => {
@@ -565,12 +569,15 @@ const buildProjectDetail = (project) => {
     });
     featureOutline.append(nestedList);
     modalFields.outline.append(featureOutline);
+    sectionIndex += 1;
   }
 
   if (troubleshooting.length) {
+    const index = String(sectionIndex).padStart(2, "0");
     const troubleshootingOutline = document.createElement("li");
     const troubleshootingNumber = document.createElement("span");
-    troubleshootingNumber.textContent = "05";
+    troubleshootingNumber.textContent = index;
+    modalFields.troubleshootingIndex.textContent = index;
     troubleshootingOutline.append(troubleshootingNumber, makeOutlineButton("Troubleshooting", "modal-troubleshooting"));
     const nestedList = document.createElement("ol");
     troubleshooting.forEach((item, index) => {

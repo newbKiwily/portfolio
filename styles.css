@@ -260,12 +260,16 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
   image-rendering: auto;
 }
 .cover-two::before, .cover-two::after { content: ""; position: absolute; inset: 0; }
-.cover-two::before { background: url("assets/gep/gep-cover.png") center/cover no-repeat; filter: blur(10px) brightness(.7); transform: scale(1.08); }
-.cover-two::after { background: url("assets/gep/gep-cover.png") center/contain no-repeat; }
+.cover-two::before { background: url("assets/gep/gep-feed-cover.png") center/cover no-repeat; filter: blur(10px) brightness(.7); transform: scale(1.08); }
+.cover-two::after { background: url("assets/gep/gep-feed-cover.png") center/contain no-repeat; }
 .cover-three {
-  background-image: linear-gradient(rgba(11,16,32,.12),rgba(11,16,32,.68)), url("assets/pixel-mmorpg-night.png");
-  background-position: center;
+  background-color: #d9c9a6;
+  background-image: none;
+  image-rendering: auto;
 }
+.cover-three::before, .cover-three::after { content: ""; position: absolute; inset: 0; }
+.cover-three::before { background: url("assets/rpg-field-cover.png") center/cover no-repeat; filter: blur(10px) brightness(.7); transform: scale(1.08); }
+.cover-three::after { background: url("assets/rpg-field-cover.png") center/contain no-repeat; }
 .cover-four { background-position: 48% center; filter: hue-rotate(250deg) saturate(.85); }
 .project-cover span { color: rgba(255,255,255,.92); font-size: clamp(2rem,4vw,3.6rem); font-weight: 950; line-height: 1; text-align: center; text-shadow: 4px 4px 0 rgba(23,25,45,.65); }
 .project-body { display: flex; flex-direction: column; min-height: 25rem; padding: 1.2rem; }
