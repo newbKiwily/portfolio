@@ -343,17 +343,74 @@ const projects = {
     ],
   },
   "project-3": {
-    type: "Tool Project",
-    title: "프로젝트 이름 03",
-    period: "2026.00 - 2026.00 / 개인",
-    feature: "반복되는 콘텐츠 데이터 생성과 유효성 검사를 자동화한 에디터 도구의 핵심 기능을 소개합니다.",
-    challenge: "작업자가 입력 실수를 발견하지 못한 채 빌드 단계까지 진행하는 문제가 있었고, 데이터가 늘수록 수동 확인 시간이 길어졌습니다.",
-    solution: "입력 단계에서 즉시 검증하고 오류 위치를 안내하도록 제작 흐름을 바꿨습니다. 공통 규칙은 재사용 가능한 검증 모듈로 분리했습니다.",
-    tags: ["Editor Tool", "Automation", "Workflow"],
+    type: "Sub Project",
+    title: "RPG Field Scene",
+    period: "2025.03.01 - 2025.12.01 / 개인 프로젝트",
+    overviewTitle: "기초 컴퓨터 그래픽스 이론을 실제 렌더링 기능으로 연결한 DirectX11 필드 씬",
+    overview: "Rastertek DirectX11 기본 구조를 분석한 뒤 렌더링 파이프라인, Phong 조명, 멀티 텍스처링, 스킨드 메시 애니메이션과 화면 공간 UI를 RPG 필드 장면에 확장·통합한 그래픽스 실습 프로젝트입니다.",
+    motivationTitle: "그래픽스 이론과 셰이더 데이터 흐름을 하나의 장면으로 연결",
+    motivation: "행렬 변환과 조명 공식을 학습하는 데 그치지 않고, C++에서 구성한 데이터가 HLSL 셰이더와 GPU 렌더링 결과로 이어지는 과정을 직접 확인하기 위해 개발했습니다. 기존 프레임워크의 실행 흐름을 이해하고 필요한 기능을 단계적으로 확장하며 엔진 내부 동작을 익히는 데 집중했습니다.",
+    info: [
+      ["개발 기간", "2025.03.01 - 2025.12.01"],
+      ["구성", "개인 프로젝트"],
+      ["기반", "Rastertek DirectX11 튜토리얼"],
+      ["언어 / API", "C++, DirectX11, HLSL"],
+      ["외부 라이브러리", "Assimp, DDS Texture Loader"],
+      ["구현 범위", "렌더링·조명·텍스처·애니메이션·인터랙션·UI"],
+    ],
+    principles: [
+      ["기존 구조를 이해한 뒤 확장", "Rastertek의 실행 흐름과 클래스 책임을 먼저 분석하고, 그래픽스 기능을 기존 렌더링 단계 안에 연결했습니다."],
+      ["공간 변환의 역할 분리", "World·View·Projection 행렬을 분리해 오브젝트 배치, 카메라 기준 변환과 화면 투영의 책임을 명확히 했습니다."],
+      ["CPU와 셰이더의 데이터 계약", "C++에서 구성한 행렬·조명·카메라·텍스처 데이터가 상수 버퍼와 리소스 슬롯을 거쳐 HLSL에 전달되도록 흐름을 정리했습니다."],
+      ["리소스 의미에 따른 조합", "Diffuse·Normal·Cube Map을 같은 이미지가 아닌 서로 다른 역할의 데이터로 구분하고 최종 픽셀 결과에 합성했습니다."],
+      ["3D 장면과 화면 UI 분리", "원근 투영을 사용하는 필드 장면과 직교 투영을 사용하는 고정 UI를 별도 렌더링 단계로 구성했습니다."],
+    ],
+    coreFeatures: [
+      {
+        title: "렌더링 파이프라인과 WVP 변환",
+        summary: "로컬 좌표를 월드·카메라·클립 공간으로 변환해 오브젝트를 화면에 배치합니다.",
+        emphasis: ["World·View·Projection", "World Matrix", "View Matrix", "Projection Matrix", "직교 투영"],
+        why: "3D 오브젝트를 의도한 위치와 시점으로 화면에 표현하려면 로컬 좌표가 어떤 공간을 거쳐 변환되는지 이해해야 합니다. 변환 책임이 섞이면 오브젝트 이동, 카메라 회전과 화면 투영 중 어느 단계에서 문제가 생겼는지 추적하기 어렵습니다.",
+        how: "오브젝트별 World Matrix로 위치·회전·크기를 구성하고, 카메라의 View Matrix와 화면 비율을 반영한 Projection Matrix를 순서대로 셰이더에 전달했습니다. 정점 셰이더에서 World·View·Projection 변환을 적용했으며, 화면 고정 UI에는 별도의 직교 투영을 사용했습니다.",
+      },
+      {
+        title: "Phong 조명과 HLSL 데이터 바인딩",
+        summary: "C++의 조명·카메라 데이터를 셰이더에 전달해 표면의 입체감과 재질감을 계산합니다.",
+        emphasis: ["Ambient·Diffuse·Specular", "상수 버퍼", "법선·빛·시선 방향", "텍스처 색상"],
+        why: "조명은 단순히 물체를 밝게 만드는 효과가 아니라 표면 법선, 빛 방향과 시선 방향의 관계를 계산해 형태와 재질을 드러내는 과정입니다. CPU 데이터와 셰이더 계산이 분리되어 있어 두 단계의 계약을 함께 이해해야 했습니다.",
+        how: "C++에서 행렬, 카메라 위치와 광원 정보를 상수 버퍼로 구성하고 HLSL에 바인딩했습니다. 픽셀 셰이더에서는 법선·빛·시선 방향을 사용해 Ambient·Diffuse·Specular 항을 계산하고 텍스처 색상과 합성했습니다. 노멀맵을 사용할 때는 접선 공간을 구성해 표면 법선을 보정했습니다.",
+      },
+      {
+        title: "멀티 텍스처링과 환경 표현",
+        summary: "Diffuse·Normal·Cube Map을 목적별로 샘플링해 표면과 주변 환경을 함께 표현합니다.",
+        emphasis: ["Diffuse Map", "Normal Map", "Cube Map", "텍스처 슬롯", "TextureCube"],
+        why: "하나의 텍스처만으로는 표면의 색상, 미세 굴곡과 주변 환경을 모두 표현하기 어렵습니다. 각 텍스처가 어떤 정보를 담고 셰이더의 어느 계산에 쓰이는지 구분할 필요가 있었습니다.",
+        how: "Diffuse Map은 기본 색상, Normal Map은 조명 계산용 표면 방향, Cube Map은 스카이박스의 환경 정보로 사용했습니다. 여러 텍스처를 정해진 텍스처 슬롯에 바인딩하고 같은 렌더 패스에서 샘플링했으며, 큐브맵은 방향 벡터를 사용하는 TextureCube 방식으로 처리했습니다.",
+      },
+      {
+        title: "스킨드 메시 애니메이션과 인터랙션",
+        summary: "모델의 본 계층과 키프레임을 계산하고 레이 판정 결과를 장면 반응으로 연결합니다.",
+        emphasis: ["Assimp", "본 계층·키프레임·가중치", "최종 본 행렬", "레이와 AABB", "시각적 피드백"],
+        why: "필드 캐릭터가 자연스럽게 움직이려면 정적 메시만 출력하는 것을 넘어 모델 파일의 본 계층과 시간별 키프레임을 해석해야 합니다. 사용자 입력 역시 화면 좌표에서 실제 월드 오브젝트까지 연결되어야 게임 장면의 상호작용으로 기능합니다.",
+        how: "Assimp로 메시·재질·본 계층·키프레임·가중치를 읽고 시간에 따라 최종 본 행렬을 계산해 셰이더에 전달했습니다. 화면 좌표에서는 월드 공간 레이를 만들고 오브젝트의 AABB와 교차 여부를 판정했으며, 선택 결과를 조명 색 변화 같은 시각적 피드백으로 연결했습니다.",
+      },
+      {
+        title: "직교 투영 기반 디버그 UI",
+        summary: "3D 카메라의 원근감과 분리된 화면 공간에 런타임 정보를 안정적으로 표시합니다.",
+        emphasis: ["직교 투영", "화면 좌표", "FPS·CPU·오브젝트·폴리곤 수", "깊이 처리"],
+        why: "FPS나 CPU 사용량처럼 항상 같은 위치에 보여야 하는 정보는 카메라 거리와 원근감의 영향을 받으면 안 됩니다. 3D 장면 위에 안정적으로 출력하려면 투영 방식과 깊이 처리를 별도로 구성해야 했습니다.",
+        how: "3D 장면의 원근 투영과 별도로 직교 투영 행렬을 사용해 텍스트를 화면 좌표에 배치했습니다. FPS·CPU·오브젝트·폴리곤 수를 런타임에 갱신하고, 깊이 처리와 렌더링 순서를 분리해 카메라 이동과 무관하게 UI가 장면 위에 유지되도록 했습니다.",
+      },
+    ],
+    feature: "",
+    challenge: "",
+    solution: "",
+    tags: [],
+    notion: "https://app.notion.com/p/3e8e8789789b817c987ccd7dff729e0d",
     images: [
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 3 대표 도구 이미지 자리", label: "TOOL SCREEN" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 3 도구 이미지 두 번째 자리", label: "WORKFLOW 01" },
-      { src: "assets/pixel-sunset-sky.png", alt: "프로젝트 3 도구 이미지 세 번째 자리", label: "WORKFLOW 02" },
+      { src: "assets/pixel-mmorpg-night.png", alt: "RPG Field Scene 대표 화면 더미 이미지", label: "MAIN SCENE", background: "blur", placeholder: true },
+      { src: "assets/pixel-world-ground.png", alt: "RPG Field Scene 렌더링 화면 더미 이미지", label: "RENDERING", background: "blur", placeholder: true },
+      { src: "assets/pixel-world-dungeon.png", alt: "RPG Field Scene 애니메이션 화면 더미 이미지", label: "ANIMATION", background: "blur", placeholder: true },
     ],
   },
   "project-4": {
@@ -420,6 +477,12 @@ const buildGallery = (images) => {
       img.style.backgroundColor = image.background;
     }
     figure.append(img);
+    if (image.placeholder) {
+      const label = document.createElement("span");
+      label.className = "shot-placeholder-label";
+      label.textContent = "IMAGE PLACEHOLDER";
+      figure.append(label);
+    }
     modalFields.gallery.append(figure);
   });
 };
