@@ -353,8 +353,8 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .project-modal { width: min(calc(100% - 2rem),1120px); max-height: calc(100svh - 2rem); margin: auto; border: 1px solid var(--line-bright); border-radius: var(--radius); padding: 0; overflow: auto; background: var(--bg-soft); color: var(--text); box-shadow: 0 28px 90px rgba(0,0,0,.75); }
 .project-modal::backdrop { background: rgba(3,6,15,.82); backdrop-filter: blur(8px); }
 .modal-shell { position: relative; padding: clamp(1.25rem,4vw,3rem); }
-.project-modal.is-collection { width: min(calc(100% - 1rem),1280px); max-height: calc(100svh - 1rem); overflow: hidden; }
-.project-modal.is-collection .modal-shell { padding: 1.25rem 2rem 1.5rem; }
+.project-modal.is-collection { width: min(calc(100% - .5rem),1400px); height: calc(100svh - .5rem); max-height: calc(100svh - .5rem); overflow: hidden; }
+.project-modal.is-collection .modal-shell { box-sizing: border-box; height: 100%; padding: 1.25rem 2rem 1.5rem; }
 .project-modal.is-collection .modal-toolbar { position: absolute; top: 1rem; right: 1rem; margin: 0; }
 .project-modal.is-collection .modal-header { align-items: center; margin: 0 4rem .85rem 0; }
 .project-modal.is-collection .modal-other-projects { padding-top: .85rem; }
@@ -391,23 +391,27 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .modal-overview { margin-top: 2.2rem; }
 .modal-gallery[hidden], .modal-other-projects[hidden], .modal-overview[hidden], .modal-detail[hidden], .modal-story[hidden], .modal-footer[hidden] { display: none; }
 .other-project-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; }
-.other-project-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); box-shadow: 0 16px 34px rgba(0,0,0,.22); }
+.other-project-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); box-shadow: 0 16px 34px rgba(0,0,0,.22); }
 .other-project-card figure { position: relative; aspect-ratio: 16/9; margin: 0; overflow: hidden; background: #050811; }
 .other-project-card figure::after { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to bottom,rgba(5,8,17,.08),rgba(5,8,17,.3)); content: ""; pointer-events: none; }
 .other-project-card figure img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .other-project-image-backdrop { z-index: 0; object-fit: cover; transform: scale(1.12); filter: blur(18px) saturate(.75) brightness(.48); }
 .other-project-image-logo { z-index: 1; object-fit: contain; padding: .35rem; filter: drop-shadow(0 5px 12px rgba(0,0,0,.7)); }
 .other-project-card figure span { position: absolute; right: .6rem; bottom: .55rem; z-index: 1; border: 1px solid rgba(255,225,140,.5); border-radius: 3px; padding: .28rem .42rem; background: rgba(11,16,32,.82); color: var(--yellow); font-size: .58rem; font-weight: 900; }
-.other-project-card > div { padding: 1rem; }
+.other-project-card > div { display: flex; flex: 1; flex-direction: column; padding: 1rem; }
 .other-project-card .eyebrow { margin-bottom: .35rem; font-size: .64rem; }
 .other-project-card h4 { margin: 0; color: var(--text); font-size: 1.08rem; }
 .other-project-genre { margin: .25rem 0 .55rem; color: var(--cyan); font-size: .74rem; font-weight: 750; }
 .other-project-summary { min-height: 2.6rem; margin-bottom: .7rem; color: var(--muted); font-size: .78rem; line-height: 1.5; }
-.other-project-info { display: grid; grid-template-columns: max-content minmax(0,1fr); margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 4px; }
+.other-project-info { display: grid; grid-template-columns: max-content minmax(0,1fr); margin: auto 0 0; overflow: hidden; border: 1px solid var(--line); border-radius: 4px; }
 .other-project-info dt, .other-project-info dd { margin: 0; border-bottom: 1px solid var(--line); padding: .42rem .5rem; }
 .other-project-info dt { color: var(--orange); font-size: .62rem; font-weight: 900; }
 .other-project-info dd { border-left: 1px solid var(--line); color: var(--text); font-size: .68rem; line-height: 1.4; word-break: keep-all; }
 .other-project-info dt:last-of-type, .other-project-info dd:last-of-type { border-bottom: 0; }
+.other-project-feature-cell { display: flex; align-items: center; justify-content: space-between; gap: .55rem; }
+.other-project-feature-cell > span { min-width: 0; }
+.other-project-media-trigger { flex: 0 0 auto; border: 1px solid rgba(255,183,92,.55); border-radius: 3px; padding: .3rem .42rem; background: rgba(255,150,53,.09); color: var(--yellow); font-size: .58rem; font-weight: 900; white-space: nowrap; }
+.other-project-media-trigger:hover { border-color: var(--orange); background: rgba(255,150,53,.18); color: #fff3c4; }
 .modal-overview-grid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(18rem,.8fr); gap: 1rem; }
 .modal-concept, .modal-info-list { min-width: 0; margin: 0; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 .modal-concept { padding: 1.35rem; box-shadow: inset 4px 0 0 var(--orange); }
@@ -468,7 +472,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .modal-index { display: block; margin-bottom: .7rem; }
 .modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1.4rem; }
 
-.video-modal { width: min(calc(100% - 2rem),960px); max-height: calc(100svh - 2rem); margin: auto; border: 1px solid var(--line-bright); border-radius: var(--radius); padding: 0; overflow: hidden; background: #050811; color: var(--text); box-shadow: 0 28px 90px rgba(0,0,0,.82); }
+.video-modal { width: min(calc(100% - 2rem),1180px); max-height: calc(100svh - 2rem); margin: auto; border: 1px solid var(--line-bright); border-radius: var(--radius); padding: 0; overflow: auto; background: #050811; color: var(--text); box-shadow: 0 28px 90px rgba(0,0,0,.82); }
 .video-modal::backdrop { background: rgba(3,6,15,.88); backdrop-filter: blur(8px); }
 .video-modal-shell { padding: 1rem; }
 .video-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; }
@@ -478,6 +482,15 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .video-modal video,
 .video-modal img { display: block; width: 100%; max-height: min(72svh,720px); aspect-ratio: 16/9; background: #000; object-fit: contain; }
 .video-modal [hidden] { display: none; }
+.feature-media-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; }
+.feature-media-grid[data-count="1"] { grid-template-columns: minmax(0,720px); justify-content: center; }
+.feature-media-grid[data-count="2"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.feature-media-item { min-width: 0; margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+.video-modal .feature-media-item video,
+.video-modal .feature-media-item img,
+.feature-media-placeholder { display: grid; width: 100%; max-height: none; aspect-ratio: 16/9; place-items: center; background: #10182b; object-fit: contain; }
+.feature-media-placeholder { color: var(--muted); font-size: .7rem; font-weight: 900; }
+.feature-media-item figcaption { border-top: 1px solid var(--line); padding: .65rem .75rem; color: var(--yellow); font-size: .75rem; font-weight: 850; text-align: center; }
 
 @media (max-width: 1000px) {
   .project-grid { grid-template-columns: 1fr; }
@@ -530,6 +543,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
   .other-project-grid { grid-template-columns: 1fr; }
   .other-project-summary { min-height: 0; }
   .project-modal.is-collection { overflow: auto; }
+  .feature-media-grid, .feature-media-grid[data-count="2"] { grid-template-columns: 1fr; }
   .modal-outline-list ol, .principle-list, .feature-explanation { grid-template-columns: 1fr; }
   .feature-explanation section + section { border-top: 1px solid var(--line); border-left: 0; padding-top: 1rem; padding-left: 0; }
   .modal-story { gap: 1.4rem; }

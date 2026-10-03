@@ -481,30 +481,42 @@ const projects = {
         eyebrow: "개인 프로젝트",
         title: "Server Racing",
         genre: "4P 2D Racing Game",
-        summary: "개인 프로젝트로 제작한 4인용 2D 레이싱 게임입니다.",
+        summary: "서버 기초 이론과 EventAsyncSelected 모델을 사용하여 만들었습니다.",
         image: "assets/side-project-server-racing.png",
         alt: "Server Racing 로고",
-        info: [["개발 기간", "2025.03 - 2025.06"], ["구성", "개인 프로젝트"], ["사용 엔진", "Unity"]],
+        info: [["개발 기간", "2025.03 - 2025.06"], ["구성", "개인 프로젝트"], ["엔진/언어", "Unity, C#, C++"]],
+        features: [
+          { title: "패킷 & 교환 파싱", media: { type: "placeholder" } },
+          { title: "위치 동기화", media: { type: "placeholder" } },
+        ],
         tech: [],
       },
       {
         eyebrow: "팀 프로젝트",
         title: "Lone Lantern",
         genre: "2D Puzzle Adventure",
-        summary: "프로그래머 2명, 디자이너 3명, 기획자 1명이 함께 제작한 프로젝트입니다.",
+        summary: "팀 단위 개발의 첫 완성형 게임으로 다른 게임 분야 역할군과의 협업 경험을 쌓았습니다.",
         image: "assets/side-project-lone-lantern.png",
         alt: "Lone Lantern 로고",
-        info: [["개발 기간", "2024.03 - 2024.12"], ["구성", "프로그래머 2명, 디자이너 3명, 기획자 1명"], ["사용 엔진", "Unity"]],
+        info: [["개발 기간", "2024.03 - 2024.12"], ["구성", "프로그래머 2명, 디자이너 3명, 기획자 1명"], ["엔진/언어", "Unity, C#"]],
+        features: [
+          { title: "Inventory & Item", media: { type: "placeholder" } },
+          { title: "Lantern System", media: { type: "placeholder" } },
+          { title: "Dialogue", media: { type: "placeholder" } },
+        ],
         tech: [],
       },
       {
         eyebrow: "팀 프로젝트",
         title: "홍캠몬스터",
         genre: "2D Mini-game Collection",
-        summary: "프로그래머 3명과 디자이너 3명이 함께 제작한 미니게임 컬렉션입니다.",
+        summary: "유니티를 사용하여 만든 첫 게임으로 유니티 툴의 기초를 배울 수 있었습니다.",
         image: "assets/side-project-school-monster.png",
         alt: "홍캠몬스터 로고",
-        info: [["개발 기간", "2021.03 - 2021.12"], ["구성", "프로그래머 3명, 디자이너 3명"], ["사용 엔진", "Unity"]],
+        info: [["개발 기간", "2021.03 - 2021.12"], ["구성", "프로그래머 3명, 디자이너 3명"], ["엔진/언어", "Unity, C#"]],
+        features: [
+          { title: "Drag & Drop", media: { type: "placeholder" } },
+        ],
         tech: [],
       },
     ],
@@ -518,6 +530,7 @@ const videoModal = document.querySelector("#video-modal");
 const videoModalTitle = videoModal.querySelector("#video-modal-title");
 const featureVideo = videoModal.querySelector("#feature-video");
 const featureImage = videoModal.querySelector("#feature-image");
+const featureMediaGrid = videoModal.querySelector("#feature-media-grid");
 const videoModalClose = videoModal.querySelector(".video-modal-close");
 const modalFields = {
   type: modal.querySelector("#modal-type"),
@@ -579,7 +592,10 @@ const buildGallery = (images) => {
   });
 };
 
+let activeOtherProjects = [];
+
 const buildOtherProjects = (items = []) => {
+  activeOtherProjects = items;
   modalFields.otherProjects.replaceChildren(
     ...items.map((item, index) => {
       const article = document.createElement("article");
@@ -619,6 +635,25 @@ const buildOtherProjects = (items = []) => {
         description.textContent = value;
         return [term, description];
       }));
+      const features = item.features || [];
+      if (features.length) {
+        const featureTerm = document.createElement("dt");
+        const featureDescription = document.createElement("dd");
+        const featureNames = document.createElement("span");
+        featureTerm.textContent = "구현 기능";
+        featureDescription.className = "other-project-feature-cell";
+        featureNames.textContent = features.map((feature) => feature.title).join(", ");
+        featureDescription.append(featureNames);
+        if (features.some((feature) => feature.media)) {
+          const mediaButton = document.createElement("button");
+          mediaButton.type = "button";
+          mediaButton.className = "other-project-media-trigger";
+          mediaButton.dataset.projectIndex = String(index);
+          mediaButton.textContent = "사진/영상 보기";
+          featureDescription.append(mediaButton);
+        }
+        info.append(featureTerm, featureDescription);
+      }
       tags.className = "tag-list";
       tags.setAttribute("aria-label", `${item.title} 사용 기술`);
       tags.append(...item.tech.map((tech) => {
@@ -921,13 +956,70 @@ const closeFeatureMedia = () => {
   featureImage.removeAttribute("src");
   featureImage.alt = "";
   featureImage.hidden = true;
+  featureMediaGrid.querySelectorAll("video").forEach((video) => video.pause());
+  featureMediaGrid.replaceChildren();
+  featureMediaGrid.hidden = true;
   videoModal.close();
 };
+
+modalFields.otherProjects.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".other-project-media-trigger");
+  if (!trigger) return;
+  const project = activeOtherProjects[Number(trigger.dataset.projectIndex)];
+  const mediaItems = (project?.features || []).filter((feature) => feature.media);
+  if (!project || mediaItems.length === 0) return;
+
+  featureVideo.pause();
+  featureVideo.removeAttribute("src");
+  featureVideo.load();
+  featureVideo.hidden = true;
+  featureImage.removeAttribute("src");
+  featureImage.hidden = true;
+  featureMediaGrid.replaceChildren(...mediaItems.map((feature) => {
+    const figure = document.createElement("figure");
+    const media = feature.media;
+    let content;
+    figure.className = "feature-media-item";
+
+    if (media.type === "video") {
+      content = document.createElement("video");
+      content.src = media.src;
+      content.controls = true;
+      content.loop = true;
+      content.muted = true;
+      content.playsInline = true;
+      content.preload = "metadata";
+    } else if (media.type === "image") {
+      content = document.createElement("img");
+      content.src = media.src;
+      content.alt = media.alt || `${feature.title} 결과`;
+    } else {
+      content = document.createElement("div");
+      content.className = "feature-media-placeholder";
+      const placeholderLabel = document.createElement("span");
+      placeholderLabel.textContent = "MEDIA PLACEHOLDER";
+      content.append(placeholderLabel);
+    }
+
+    const caption = document.createElement("figcaption");
+    caption.textContent = feature.title;
+    figure.append(content, caption);
+    return figure;
+  }));
+  featureMediaGrid.dataset.count = String(mediaItems.length);
+  featureMediaGrid.hidden = false;
+  videoModalTitle.textContent = `${project.title} 구현 기능`;
+  videoModal.showModal();
+  featureMediaGrid.querySelectorAll("video").forEach((video) => video.play().catch(() => {}));
+  videoModalClose.focus();
+});
 
 modalFields.features.addEventListener("click", (event) => {
   const trigger = event.target.closest(".feature-result-trigger");
   if (!trigger) return;
   const mediaType = trigger.dataset.mediaType || "video";
+  featureMediaGrid.replaceChildren();
+  featureMediaGrid.hidden = true;
   videoModalTitle.textContent = trigger.dataset.mediaTitle || (mediaType === "image" ? "결과 사진" : "결과 영상");
   featureVideo.hidden = mediaType !== "video";
   featureImage.hidden = mediaType !== "image";
