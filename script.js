@@ -473,36 +473,39 @@ const projects = {
   "project-4": {
     type: "Other Sub Projects",
     title: "Side Projects",
-    period: "3개 미니 프로젝트",
+    period: "",
     tags: [],
     images: [],
     otherProjects: [
       {
-        eyebrow: "GAME 01 · PERSONAL",
-        title: "게임 이름 01",
-        genre: "2D 액션 · 개인 프로젝트",
-        summary: "핵심 조작과 전투 루프를 짧은 플레이 안에서 확인할 수 있도록 구성한 게임입니다.",
-        image: "assets/pixel-sunset-sky.png",
-        alt: "게임 이름 01 더미 이미지",
-        tech: ["Unity", "C#", "2D Action"],
+        eyebrow: "개인 프로젝트",
+        title: "Server Racing",
+        genre: "4P 2D Racing Game",
+        summary: "개인 프로젝트로 제작한 4인용 2D 레이싱 게임입니다.",
+        image: "assets/side-project-server-racing.png",
+        alt: "Server Racing 로고",
+        info: [["개발 기간", "2025.03 - 2025.06"], ["구성", "개인 프로젝트"], ["사용 엔진", "Unity"]],
+        tech: [],
       },
       {
-        eyebrow: "GAME 02 · TEAM",
-        title: "게임 이름 02",
-        genre: "캐주얼 퍼즐 · 팀 프로젝트",
-        summary: "간단한 규칙을 단계적으로 확장하고 점수와 난이도 흐름을 다듬은 캐주얼 게임입니다.",
-        image: "assets/pixel-world-ground.png",
-        alt: "게임 이름 02 더미 이미지",
-        tech: ["C++", "Gameplay", "Level Design"],
+        eyebrow: "팀 프로젝트",
+        title: "Lone Lantern",
+        genre: "2D Puzzle Adventure",
+        summary: "프로그래머 2명, 디자이너 3명, 기획자 1명이 함께 제작한 프로젝트입니다.",
+        image: "assets/side-project-lone-lantern.png",
+        alt: "Lone Lantern 로고",
+        info: [["개발 기간", "2024.03 - 2024.12"], ["구성", "프로그래머 2명, 디자이너 3명, 기획자 1명"], ["사용 엔진", "Unity"]],
+        tech: [],
       },
       {
-        eyebrow: "GAME 03 · PROTOTYPE",
-        title: "게임 이름 03",
-        genre: "시스템 프로토타입 · 개인 프로젝트",
-        summary: "짧은 제작 기간 동안 하나의 아이디어를 플레이 가능한 형태로 완성한 프로토타입입니다.",
-        image: "assets/pixel-world-cavern.png",
-        alt: "게임 이름 03 더미 이미지",
-        tech: ["Unity", "C#", "UI"],
+        eyebrow: "팀 프로젝트",
+        title: "홍캠몬스터",
+        genre: "2D Mini-game Collection",
+        summary: "프로그래머 3명과 디자이너 3명이 함께 제작한 미니게임 컬렉션입니다.",
+        image: "assets/side-project-school-monster.png",
+        alt: "홍캠몬스터 로고",
+        info: [["개발 기간", "2021.03 - 2021.12"], ["구성", "프로그래머 3명, 디자이너 3명"], ["사용 엔진", "Unity"]],
+        tech: [],
       },
     ],
   },
@@ -583,18 +586,23 @@ const buildOtherProjects = (items = []) => {
       article.className = "other-project-card";
 
       const figure = document.createElement("figure");
+      const backdrop = document.createElement("img");
       const image = document.createElement("img");
-      const placeholder = document.createElement("span");
+      backdrop.className = "other-project-image-backdrop";
+      backdrop.src = item.image;
+      backdrop.alt = "";
+      backdrop.setAttribute("aria-hidden", "true");
+      image.className = "other-project-image-logo";
       image.src = item.image;
       image.alt = item.alt;
-      placeholder.textContent = "DUMMY IMAGE";
-      figure.append(image, placeholder);
+      figure.append(backdrop, image);
 
       const body = document.createElement("div");
       const eyebrow = document.createElement("p");
       const title = document.createElement("h4");
       const genre = document.createElement("p");
       const summary = document.createElement("p");
+      const info = document.createElement("dl");
       const tags = document.createElement("ul");
       eyebrow.className = "eyebrow";
       eyebrow.textContent = item.eyebrow || `GAME ${String(index + 1).padStart(2, "0")}`;
@@ -603,6 +611,14 @@ const buildOtherProjects = (items = []) => {
       genre.textContent = item.genre;
       summary.className = "other-project-summary";
       summary.textContent = item.summary;
+      info.className = "other-project-info";
+      info.append(...(item.info || []).flatMap(([label, value]) => {
+        const term = document.createElement("dt");
+        const description = document.createElement("dd");
+        term.textContent = label;
+        description.textContent = value;
+        return [term, description];
+      }));
       tags.className = "tag-list";
       tags.setAttribute("aria-label", `${item.title} 사용 기술`);
       tags.append(...item.tech.map((tech) => {
@@ -610,7 +626,8 @@ const buildOtherProjects = (items = []) => {
         tag.textContent = tech;
         return tag;
       }));
-      body.append(eyebrow, title, genre, summary, tags);
+      body.append(eyebrow, title, genre, summary, info);
+      if (item.tech.length) body.append(tags);
       article.append(figure, body);
       return article;
     }),
@@ -809,9 +826,12 @@ const openProject = (projectId) => {
   if (!project) return;
   const isCollection = Boolean(project.otherProjects?.length);
 
+  modal.classList.toggle("is-collection", isCollection);
+
   modalFields.type.textContent = project.type;
   modalFields.title.textContent = project.title;
   modalFields.period.textContent = project.period;
+  modalFields.period.hidden = isCollection;
   modalFields.feature.textContent = project.feature || "";
   modalFields.challenge.textContent = project.challenge || "";
   modalFields.solution.textContent = project.solution || "";
