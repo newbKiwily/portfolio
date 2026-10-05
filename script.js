@@ -484,6 +484,10 @@ const projects = {
         summary: "서버 기초 이론과 EventAsyncSelected 모델을 사용하여 만들었습니다.",
         image: "assets/side-project-server-racing.png",
         alt: "Server Racing 로고",
+        screenshots: [
+          { src: "assets/side-project-server-racing-01.png", alt: "Server Racing 서버와 클라이언트 실행 화면" },
+          { src: "assets/side-project-server-racing-02.png", alt: "Server Racing 트랙 주행 화면" },
+        ],
         info: [["개발 기간", "2025.03 - 2025.06"], ["구성", "개인 프로젝트"], ["엔진/언어", "Unity, C#, C++"]],
         features: [
           { title: "패킷 & 교환 파싱", media: { type: "placeholder" } },
@@ -498,6 +502,10 @@ const projects = {
         summary: "팀 단위 개발의 첫 완성형 게임으로 다른 게임 분야 역할군과의 협업 경험을 쌓았습니다.",
         image: "assets/side-project-lone-lantern.png",
         alt: "Lone Lantern 로고",
+        screenshots: [
+          { src: "assets/side-project-lone-lantern-01.png", alt: "Lone Lantern 타이틀 화면" },
+          { src: "assets/side-project-lone-lantern-02.png", alt: "Lone Lantern 인게임 화면" },
+        ],
         info: [["개발 기간", "2024.03 - 2024.12"], ["구성", "프로그래머 2명, 디자이너 3명, 기획자 1명"], ["엔진/언어", "Unity, C#"]],
         features: [
           { title: "Inventory & Item", media: { type: "placeholder" } },
@@ -513,6 +521,10 @@ const projects = {
         summary: "유니티를 사용하여 만든 첫 게임으로 유니티 툴의 기초를 배울 수 있었습니다.",
         image: "assets/side-project-school-monster.png",
         alt: "홍캠몬스터 로고",
+        screenshots: [
+          { src: "assets/side-project-school-monster-01.png", alt: "홍캠몬스터 타이틀 화면" },
+          { src: "assets/side-project-school-monster-02.png", alt: "홍캠몬스터 뼈 배치 미니게임 화면" },
+        ],
         info: [["개발 기간", "2021.03 - 2021.12"], ["구성", "프로그래머 3명, 디자이너 3명"], ["엔진/언어", "Unity, C#"]],
         features: [
           { title: "Drag & Drop", media: { type: "placeholder" } },
@@ -601,17 +613,26 @@ const buildOtherProjects = (items = []) => {
       const article = document.createElement("article");
       article.className = "other-project-card";
 
-      const figure = document.createElement("figure");
-      const backdrop = document.createElement("img");
-      const image = document.createElement("img");
-      backdrop.className = "other-project-image-backdrop";
-      backdrop.src = item.image;
-      backdrop.alt = "";
-      backdrop.setAttribute("aria-hidden", "true");
-      image.className = "other-project-image-logo";
-      image.src = item.image;
-      image.alt = item.alt;
-      figure.append(backdrop, image);
+      const mediaStack = document.createElement("div");
+      mediaStack.className = "other-project-media-stack";
+      const mediaItems = [
+        { src: item.image, alt: item.alt },
+        ...(item.screenshots || []),
+      ];
+      mediaStack.append(...mediaItems.map((media) => {
+        const figure = document.createElement("figure");
+        const backdrop = document.createElement("img");
+        const image = document.createElement("img");
+        backdrop.className = "other-project-image-backdrop";
+        backdrop.src = media.src;
+        backdrop.alt = "";
+        backdrop.setAttribute("aria-hidden", "true");
+        image.className = "other-project-image-foreground";
+        image.src = media.src;
+        image.alt = media.alt;
+        figure.append(backdrop, image);
+        return figure;
+      }));
 
       const body = document.createElement("div");
       const eyebrow = document.createElement("p");
@@ -663,7 +684,7 @@ const buildOtherProjects = (items = []) => {
       }));
       body.append(eyebrow, title, genre, summary, info);
       if (item.tech.length) body.append(tags);
-      article.append(figure, body);
+      article.append(mediaStack, body);
       return article;
     }),
   );
