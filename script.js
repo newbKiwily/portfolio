@@ -490,8 +490,23 @@ const projects = {
         ],
         info: [["개발 기간", "2025.03 - 2025.06"], ["구성", "개인 프로젝트"], ["엔진/언어", "Unity, C#, C++"]],
         features: [
-          { title: "패킷 & 교환 파싱", media: { type: "placeholder" } },
-          { title: "위치 동기화", media: { type: "placeholder" } },
+          {
+            title: "패킷 교환 & 파싱",
+            media: {
+              type: "image",
+              src: "assets/server-racing-packet-flow.png",
+              alt: "Server Racing 패킷 교환과 파싱 구조 다이어그램",
+              zoomable: true,
+            },
+          },
+          {
+            title: "위치 동기화",
+            media: {
+              type: "video",
+              src: "assets/videos/server-racing-position-sync.mp4",
+              alt: "두 플레이어의 위치가 동기화되는 Server Racing 실행 화면",
+            },
+          },
         ],
         tech: [],
       },
@@ -508,9 +523,18 @@ const projects = {
         ],
         info: [["개발 기간", "2024.03 - 2024.12"], ["구성", "프로그래머 2명, 디자이너 3명, 기획자 1명"], ["엔진/언어", "Unity, C#"]],
         features: [
-          { title: "Inventory & Item", media: { type: "placeholder" } },
-          { title: "Lantern System", media: { type: "placeholder" } },
-          { title: "Dialogue", media: { type: "placeholder" } },
+          {
+            title: "Inventory & Item",
+            media: { type: "video", src: "assets/videos/lone-lantern-inventory-item.mp4" },
+          },
+          {
+            title: "Lantern System",
+            media: { type: "video", src: "assets/videos/lone-lantern-lantern-system.mp4" },
+          },
+          {
+            title: "Dialogue",
+            media: { type: "video", src: "assets/videos/lone-lantern-dialogue.mp4" },
+          },
         ],
         tech: [],
       },
@@ -527,7 +551,10 @@ const projects = {
         ],
         info: [["개발 기간", "2021.03 - 2021.12"], ["구성", "프로그래머 3명, 디자이너 3명"], ["엔진/언어", "Unity, C#"]],
         features: [
-          { title: "Drag & Drop", media: { type: "placeholder" } },
+          {
+            title: "Drag & Drop",
+            media: { type: "video", src: "assets/videos/school-monster-drag-drop.mp4" },
+          },
         ],
         tech: [],
       },
@@ -544,6 +571,10 @@ const featureVideo = videoModal.querySelector("#feature-video");
 const featureImage = videoModal.querySelector("#feature-image");
 const featureMediaGrid = videoModal.querySelector("#feature-media-grid");
 const videoModalClose = videoModal.querySelector(".video-modal-close");
+const imageZoomOverlay = videoModal.querySelector("#image-zoom-overlay");
+const imageZoomTitle = videoModal.querySelector("#image-zoom-title");
+const imageZoomImage = videoModal.querySelector("#image-zoom-image");
+const imageZoomClose = videoModal.querySelector(".image-zoom-close");
 const modalFields = {
   type: modal.querySelector("#modal-type"),
   title: modal.querySelector("#modal-title"),
@@ -670,7 +701,10 @@ const buildOtherProjects = (items = []) => {
           mediaButton.type = "button";
           mediaButton.className = "other-project-media-trigger";
           mediaButton.dataset.projectIndex = String(index);
-          mediaButton.textContent = "사진/영상 보기";
+          const mediaFeatures = features.filter((feature) => feature.media);
+          mediaButton.textContent = mediaFeatures.every((feature) => feature.media.type === "video")
+            ? "영상 보기"
+            : "사진/영상 보기";
           featureDescription.append(mediaButton);
         }
         info.append(featureTerm, featureDescription);
@@ -980,6 +1014,9 @@ const closeFeatureMedia = () => {
   featureMediaGrid.querySelectorAll("video").forEach((video) => video.pause());
   featureMediaGrid.replaceChildren();
   featureMediaGrid.hidden = true;
+  imageZoomOverlay.hidden = true;
+  imageZoomImage.removeAttribute("src");
+  imageZoomImage.alt = "";
   videoModal.close();
 };
 
@@ -1014,6 +1051,17 @@ modalFields.otherProjects.addEventListener("click", (event) => {
       content = document.createElement("img");
       content.src = media.src;
       content.alt = media.alt || `${feature.title} 결과`;
+      if (media.zoomable) {
+        const zoomTrigger = document.createElement("button");
+        zoomTrigger.type = "button";
+        zoomTrigger.className = "feature-media-zoom-trigger";
+        zoomTrigger.dataset.mediaSrc = media.src;
+        zoomTrigger.dataset.mediaAlt = content.alt;
+        zoomTrigger.dataset.mediaTitle = feature.title;
+        zoomTrigger.setAttribute("aria-label", `${feature.title} 이미지 확대 보기`);
+        zoomTrigger.append(content);
+        content = zoomTrigger;
+      }
     } else {
       content = document.createElement("div");
       content.className = "feature-media-placeholder";
@@ -1033,6 +1081,27 @@ modalFields.otherProjects.addEventListener("click", (event) => {
   videoModal.showModal();
   featureMediaGrid.querySelectorAll("video").forEach((video) => video.play().catch(() => {}));
   videoModalClose.focus();
+});
+
+const closeImageZoom = () => {
+  imageZoomOverlay.hidden = true;
+  imageZoomImage.removeAttribute("src");
+  imageZoomImage.alt = "";
+};
+
+featureMediaGrid.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".feature-media-zoom-trigger");
+  if (!trigger) return;
+  imageZoomTitle.textContent = trigger.dataset.mediaTitle || "이미지 확대 보기";
+  imageZoomImage.src = trigger.dataset.mediaSrc;
+  imageZoomImage.alt = trigger.dataset.mediaAlt || imageZoomTitle.textContent;
+  imageZoomOverlay.hidden = false;
+  imageZoomClose.focus();
+});
+
+imageZoomClose.addEventListener("click", closeImageZoom);
+imageZoomOverlay.addEventListener("click", (event) => {
+  if (event.target === imageZoomOverlay) closeImageZoom();
 });
 
 modalFields.features.addEventListener("click", (event) => {
@@ -1061,6 +1130,10 @@ videoModal.addEventListener("click", (event) => {
 });
 videoModal.addEventListener("cancel", (event) => {
   event.preventDefault();
+  if (!imageZoomOverlay.hidden) {
+    closeImageZoom();
+    return;
+  }
   closeFeatureMedia();
 });
 

@@ -487,11 +487,21 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .feature-media-grid[data-count="1"] { grid-template-columns: minmax(0,720px); justify-content: center; }
 .feature-media-grid[data-count="2"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .feature-media-item { min-width: 0; margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+.feature-media-zoom-trigger { position: relative; display: block; width: 100%; border: 0; padding: 0; background: #000; cursor: zoom-in; }
+.feature-media-zoom-trigger::after { position: absolute; right: .55rem; bottom: .55rem; border: 1px solid rgba(255,183,92,.55); border-radius: 3px; padding: .3rem .45rem; background: rgba(5,8,17,.86); color: var(--yellow); content: "확대 보기"; font-size: .6rem; font-weight: 900; }
+.feature-media-zoom-trigger:hover::after { border-color: var(--orange); color: #fff3c4; }
 .video-modal .feature-media-item video,
 .video-modal .feature-media-item img,
 .feature-media-placeholder { display: grid; width: 100%; max-height: none; aspect-ratio: 16/9; place-items: center; background: #10182b; object-fit: contain; }
 .feature-media-placeholder { color: var(--muted); font-size: .7rem; font-weight: 900; }
 .feature-media-item figcaption { border-top: 1px solid var(--line); padding: .65rem .75rem; color: var(--yellow); font-size: .75rem; font-weight: 850; text-align: center; }
+.image-zoom-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 1rem; background: rgba(3,6,15,.94); }
+.image-zoom-panel { width: min(96vw,1500px); max-height: 96svh; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 5px; padding: .8rem; background: #050811; box-shadow: 0 24px 80px rgba(0,0,0,.8); }
+.image-zoom-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.image-zoom-header h3 { margin: 0; color: var(--yellow); font-size: .9rem; }
+.image-zoom-close { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 1px solid var(--line); border-radius: 50%; padding: 0; background: var(--panel); color: var(--text); font-size: 1.4rem; }
+.image-zoom-close:hover { border-color: var(--orange); color: var(--peach); }
+.video-modal .image-zoom-overlay img { display: block; width: auto; max-width: 100%; height: auto; max-height: calc(96svh - 5.2rem); margin: auto; aspect-ratio: auto; background: transparent; object-fit: contain; }
 
 @media (max-width: 1000px) {
   .project-grid { grid-template-columns: 1fr; }
