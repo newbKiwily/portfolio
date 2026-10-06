@@ -134,7 +134,7 @@ h1 span { color: #6a2a17; text-shadow: 3px 3px 0 rgba(255,245,210,.48); }
 h2 { margin-bottom: .9rem; font-size: clamp(1.9rem, 3.7vw, 3.55rem); line-height: 1.18; letter-spacing: 0; }
 h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .hero-thesis { max-width: 58rem; margin-bottom: .7rem; color: #5d2717; font-size: clamp(1.16rem,2vw,1.52rem); font-weight: 900; white-space: nowrap; }
-.hero-copy { max-width: 45rem; margin-bottom: 1.8rem; color: #3a2a2a; font-size: clamp(1rem, 2vw, 1.12rem); font-weight: 650; }
+.hero-copy { max-width: 45rem; margin-bottom: 1.8rem; color: #3a2a2a; font-size: clamp(1rem, 2vw, 1.12rem); font-weight: 650; word-break: keep-all; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: .7rem; }
 .button, .open-project {
   display: inline-flex;
@@ -391,7 +391,8 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .modal-overview { margin-top: 2.2rem; }
 .modal-gallery[hidden], .modal-other-projects[hidden], .modal-overview[hidden], .modal-detail[hidden], .modal-story[hidden], .modal-footer[hidden] { display: none; }
 .other-project-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; }
-.other-project-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); box-shadow: 0 16px 34px rgba(0,0,0,.22); }
+.other-project-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 2px solid rgba(255,183,92,.62); border-radius: 5px; background: var(--panel); box-shadow: 0 16px 34px rgba(0,0,0,.28), inset 0 0 0 1px rgba(103,211,255,.08); }
+.other-project-number { border-bottom: 2px solid rgba(255,183,92,.62); padding: .55rem .75rem .48rem; background: linear-gradient(90deg,rgba(255,150,53,.16),rgba(11,16,32,.96) 52%); color: var(--yellow); font-size: 1rem; font-weight: 950; line-height: 1; }
 .other-project-media-stack { display: grid; gap: .5rem; border-bottom: 1px solid var(--line); padding: .5rem; background: rgba(5,8,17,.58); }
 .other-project-card figure { position: relative; aspect-ratio: 16/9; margin: 0; overflow: hidden; background: #050811; }
 .other-project-card figure::after { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to bottom,rgba(5,8,17,.08),rgba(5,8,17,.3)); content: ""; pointer-events: none; }

@@ -642,7 +642,11 @@ const buildOtherProjects = (items = []) => {
   modalFields.otherProjects.replaceChildren(
     ...items.map((item, index) => {
       const article = document.createElement("article");
+      const projectNumber = document.createElement("div");
       article.className = "other-project-card";
+      projectNumber.className = "other-project-number";
+      projectNumber.setAttribute("aria-hidden", "true");
+      projectNumber.textContent = `${String(index + 1).padStart(2, "0")}.`;
 
       const mediaStack = document.createElement("div");
       mediaStack.className = "other-project-media-stack";
@@ -718,7 +722,7 @@ const buildOtherProjects = (items = []) => {
       }));
       body.append(eyebrow, title, genre, summary, info);
       if (item.tech.length) body.append(tags);
-      article.append(mediaStack, body);
+      article.append(projectNumber, mediaStack, body);
       return article;
     }),
   );
