@@ -562,9 +562,565 @@ const projects = {
   },
 };
 
+const everwindDesignDocument = {
+  kicker: "EVERWIND / 상세 설계 기록",
+  title: "확장되는 RPG를 지탱하는 책임과 데이터의 경계",
+  summary: "기능을 많이 붙이는 것보다, 콘텐츠가 늘어날 때 무엇이 바뀌고 무엇은 유지되어야 하는지를 먼저 설계했습니다. 아래 문서는 핵심 기능의 구현 근거와 Unity 클라이언트, C++ IOCP 서버, MariaDB까지 이어지는 전체 흐름을 책임 관계 중심으로 설명합니다.",
+  keywords: ["확장성", "상태 패턴", "이벤트 기반", "스레드 경계", "맵 컨텍스트", "비동기 수명주기", "영속화"],
+  systemFlow: ["Unity Client", "TCP Binary Protocol", "C++ IOCP Server", "Queries", "MariaDB"],
+  coreFeatures: [
+    {
+      title: "데이터 중심 RPG 콘텐츠 확장",
+      intent: "새 콘텐츠를 추가하는 작업이 기존 시스템을 수정하는 작업으로 번지지 않게 한다.",
+      keywords: ["정의/상태 분리", "공통 계약", "다형성", "데이터 에셋"],
+      problem: "스킬·아이템·퀘스트의 정의와 플레이 중 상태가 섞이면 유형별 예외가 관리자에 누적되고, 콘텐츠 하나를 추가할 때 실행 로직·UI·저장 구조를 함께 건드리게 됩니다.",
+      decisions: [
+        ["정의 데이터", "아이템·레시피·퀘스트의 변하지 않는 규칙은 ScriptableObject로 공유했습니다."],
+        ["실행 상태", "수량·쿨다운·장착·진행도는 런타임 객체와 DB 상태로 분리했습니다."],
+        ["확장 지점", "공통 수명주기는 계약으로 고정하고 효과·공격 방식·조건 판정만 파생 구현으로 열었습니다."],
+      ],
+      result: "아이템 12종과 제작 레시피 8종이 같은 데이터·실행 경로를 사용하며, 새 스킬과 퀘스트는 정의 데이터와 유형별 동작을 추가하는 방식으로 확장됩니다.",
+      tradeoff: "상속은 초기 확장 지점을 명확히 하지만 조합 축이 늘면 타입 수도 증가합니다. 효과·타깃·비용·조건을 전략 객체로 분리하는 것이 다음 단계입니다.",
+      diagram: {
+        title: "콘텐츠 정의와 실행 책임 UML",
+        groups: [
+          { title: "Definition", nodes: ["InventoryItem", "CraftItemRecipe", "Quest"] },
+          { title: "Runtime", nodes: ["ItemMediator", "CombatManager", "QuestManager"] },
+          { title: "Variant", nodes: ["ConsumeItem", "EquipmentItem", "NormalSkill", "SmashSkill", "Windmill"] },
+        ],
+        relations: [
+          ["ConsumeItem", "inheritance", "InventoryItem", "유형 확장"],
+          ["EquipmentItem", "inheritance", "InventoryItem", "유형 확장"],
+          ["CombatManager", "aggregation", "Skill", "실행 관리"],
+          ["QuestManager", "aggregation", "Quest", "진행 상태"],
+          ["CraftItemRecipe", "dependency", "InventoryItem", "재료·결과 정의"],
+        ],
+      },
+    },
+    {
+      title: "상태 머신 기반 전투 흐름",
+      intent: "행동 충돌을 조건문으로 막지 않고, 허용 가능한 상태 전환으로 제한한다.",
+      keywords: ["진입/갱신/종료", "전환 규칙", "판정/표현 분리", "인터럽트"],
+      problem: "이동·추적·공격·피격·사망을 한 갱신 흐름에서 처리하면 여러 조건이 동시에 참이 되고, 애니메이션과 실제 판정 시점도 쉽게 어긋납니다.",
+      decisions: [
+        ["상태 수명주기", "모든 행동을 진입·갱신·종료 단계로 통일해 정리 시점을 보장했습니다."],
+        ["전환 책임", "PlayerStateContexter가 현재 상태와 우선순위를 관리하고 상태는 자신의 규칙만 담당합니다."],
+        ["판정 시점", "CombatManager의 전투 판단과 Animation Event의 유효 프레임을 연결했습니다."],
+      ],
+      result: "타깃 접근부터 공격·피격·사망까지 전환 경로가 명시되어, 새 행동을 추가해도 Player의 조건문이 연쇄적으로 증가하지 않습니다.",
+      tradeoff: "상태 수가 늘수록 전환표와 인터럽트 우선순위를 함께 관리해야 합니다. 디버그 로그와 상태 전이 시각화가 보완 지점입니다.",
+      diagram: {
+        title: "플레이어 행동 상태 UML",
+        groups: [
+          { title: "Context", nodes: ["Player", "PlayerStateContexter", "CombatManager", "AnimationContexter"] },
+          { title: "State Contract", nodes: ["IState"] },
+          { title: "Concrete State", nodes: ["IdleState", "MoveState", "CombatRunState", "AttackState", "DamagedState", "DeadState"] },
+        ],
+        relations: [
+          ["Player", "composition", "PlayerStateContexter", "행동 소유"],
+          ["Player", "composition", "CombatManager", "전투 판단"],
+          ["PlayerStateContexter", "aggregation", "IState", "현재 상태"],
+          ["AttackState", "implementation", "IState", "상태 계약"],
+          ["AttackState", "dependency", "CombatManager", "판정 요청"],
+          ["PlayerStateContexter", "dependency", "AnimationContexter", "표현 명령"],
+        ],
+      },
+    },
+    {
+      title: "이벤트 기반 퀘스트·튜토리얼",
+      intent: "게임플레이 시스템은 사건만 알리고, 진행 콘텐츠가 그 의미를 해석하게 한다.",
+      keywords: ["도메인 이벤트", "생산자/소비자 분리", "진행 상태", "재사용"],
+      problem: "퀘스트가 전투·채집·제작 시스템을 직접 조회하면 새 목표를 추가할 때 생산 시스템과 진행 시스템을 함께 수정해야 합니다.",
+      decisions: [
+        ["사건 발행", "처치·획득·채집·제작·상호작용을 공통 PlayEvents로 발행했습니다."],
+        ["조건 해석", "QuestRequirement가 목표 정의를, QuestProgressData가 플레이어별 현재 수치를 담당합니다."],
+        ["다중 소비", "QuestManager와 TutorialGuide가 동일한 사건을 각자의 규칙으로 소비합니다."],
+      ],
+      result: "전투와 제작 코드는 퀘스트 존재를 알지 않고, 기존 사건 범위의 새 콘텐츠는 생산 시스템 수정 없이 정의 데이터로 추가됩니다.",
+      tradeoff: "결합도는 낮아졌지만 실행 흐름과 구독 해제를 추적하기 어려워집니다. 타입 안전 이벤트와 구독 수명주기 검증이 필요합니다.",
+      diagram: {
+        title: "게임 사건 전달 UML",
+        groups: [
+          { title: "Producer", nodes: ["Enemy", "FieldItem", "CraftUI"] },
+          { title: "Event Hub", nodes: ["PlayEvents"] },
+          { title: "Consumer", nodes: ["QuestManager", "TutorialGuide", "QuestUI"] },
+          { title: "Progress", nodes: ["Quest", "QuestRequirement", "QuestProgressData"] },
+        ],
+        relations: [
+          ["Enemy", "event", "PlayEvents", "처치"],
+          ["FieldItem", "event", "PlayEvents", "획득"],
+          ["CraftUI", "event", "PlayEvents", "제작"],
+          ["PlayEvents", "event", "QuestManager", "진행 갱신"],
+          ["PlayEvents", "event", "TutorialGuide", "단계 전환"],
+          ["QuestManager", "aggregation", "QuestProgressData", "플레이어 상태"],
+        ],
+      },
+    },
+    {
+      title: "Unity 메인 스레드와 지연 데이터 조립",
+      intent: "데이터가 도착한 시점과 Unity 오브젝트를 만들 수 있는 시점을 분리한다.",
+      keywords: ["스레드 경계", "작업 큐", "DataCenter", "초기화 순서"],
+      problem: "소켓 응답은 씬과 GameObject가 준비되기 전에 도착할 수 있고, 수신 스레드에서 Unity API를 직접 호출하면 엔진의 스레드 제약을 위반합니다.",
+      decisions: [
+        ["수신 스레드", "바이트 수신·패킷 분리·역직렬화·순수 데이터 보관까지만 수행합니다."],
+        ["메인 스레드", "GameObject 생성, Transform, UI, 애니메이션 변경은 Dispatcher 작업 큐에서 실행합니다."],
+        ["지연 조립", "DataCenter에 상태를 보관하고 SceneLoader와 WorldLoader가 준비된 뒤 순서대로 소비합니다."],
+      ],
+      result: "로그인 응답의 도착 속도와 씬 로딩 순서가 달라도 사용자·월드·원격 객체를 같은 순서로 구성할 수 있습니다.",
+      tradeoff: "데이터 소비 완료와 재접속 중복 반영을 명시적인 상태로 관리해야 하며, 초기화 실패 시 재시도 정책도 필요합니다.",
+      diagram: {
+        title: "네트워크 수신과 Unity 반영 UML",
+        groups: [
+          { title: "Receive Thread", nodes: ["NetworkClient", "PacketMethod"] },
+          { title: "Boundary", nodes: ["DataCenter", "UnityMainThreadDispatcher"] },
+          { title: "Main Thread", nodes: ["SceneLoader", "WorldLoader", "OtherPlayerManager", "EnemySpawner"] },
+        ],
+        relations: [
+          ["NetworkClient", "dependency", "PacketMethod", "역직렬화"],
+          ["PacketMethod", "data", "DataCenter", "상태 보관"],
+          ["PacketMethod", "event", "UnityMainThreadDispatcher", "작업 등록"],
+          ["UnityMainThreadDispatcher", "dependency", "SceneLoader", "씬 전환"],
+          ["WorldLoader", "dependency", "DataCenter", "준비 후 소비"],
+          ["WorldLoader", "dependency", "OtherPlayerManager", "원격 객체 구성"],
+        ],
+      },
+    },
+    {
+      title: "맵 단위 멀티플레이 동기화",
+      intent: "같은 월드를 공유하는 세션만 연결하고 상태의 결정권자를 명확히 한다.",
+      keywords: ["맵 컨텍스트", "관심 범위", "원격 객체 수명", "소유권"],
+      problem: "모든 상태를 모든 사용자에게 전파하면 트래픽과 객체 관리 비용이 커지고, 동일한 몬스터를 여러 클라이언트가 갱신하면 결과가 충돌합니다.",
+      decisions: [
+        ["전파 범위", "세션을 MapData에 소속시키고 같은 맵 사용자에게만 입장·이동·전투 이벤트를 전달합니다."],
+        ["객체 수명", "입장 패킷으로 원격 객체를 생성하고 퇴장·맵 변경에서 객체와 관련 UI를 함께 정리합니다."],
+        ["갱신 책임", "프로토타입에서는 몬스터별 한 클라이언트에 갱신 소유권을 부여하고 서버가 상태를 중계합니다."],
+      ],
+      result: "맵 전환을 기준으로 이전 월드가 정리되고 새 컨텍스트의 플레이어와 몬스터만 다시 구성됩니다.",
+      tradeoff: "클라이언트 소유권은 완성 속도에는 유리하지만 치트 방지와 일관성에 한계가 있습니다. 상용 구조에서는 서버 권위 시뮬레이션으로 이전해야 합니다.",
+      diagram: {
+        title: "맵 컨텍스트 동기화 UML",
+        groups: [
+          { title: "Unity Client", nodes: ["NetworkClient", "OtherPlayerManager", "EnemyNetworkSync"] },
+          { title: "IOCP Server", nodes: ["IOCPServer", "SessionManager", "MapDataManager", "MapData"] },
+          { title: "World Object", nodes: ["Session", "Enemy"] },
+        ],
+        relations: [
+          ["NetworkClient", "data", "IOCPServer", "TCP"],
+          ["IOCPServer", "composition", "SessionManager", "접속 관리"],
+          ["SessionManager", "composition", "MapDataManager", "월드 경계"],
+          ["MapDataManager", "aggregation", "MapData", "맵 목록"],
+          ["MapData", "aggregation", "Session", "같은 맵"],
+          ["MapData", "aggregation", "Enemy", "월드 상태"],
+        ],
+      },
+    },
+    {
+      title: "IOCP 비동기 세션과 패킷 수명주기",
+      intent: "I/O 완료가 돌아올 때까지 객체와 버퍼가 살아 있다는 불변식을 코드 구조로 보장한다.",
+      keywords: ["소유권", "OVERLAPPED", "패킷 프레이밍", "송신 큐", "종료 경합"],
+      problem: "비동기 요청은 함수 반환 뒤에도 세션과 버퍼를 참조합니다. TCP 스트림은 패킷이 분할·병합될 수 있고 연결 종료와 완료 통지가 경쟁할 수도 있습니다.",
+      decisions: [
+        ["객체 수명", "shared·weak·unique ownership을 역할에 맞게 나눠 완료 전 파괴와 순환 참조를 방지했습니다."],
+        ["수신 경계", "누적 버퍼에서 헤더 길이를 검증하고 완전한 패킷만 핸들러로 전달합니다."],
+        ["송신 직렬화", "세션별 송신 큐가 버퍼 순서를 보존하고 한 번에 하나의 비동기 송신만 유지합니다."],
+      ],
+      result: "수신 횟수와 메시지 개수를 분리해 처리하고, 세션·IOContext·버퍼의 수명을 완료 통지 흐름에 맞춰 관리했습니다.",
+      tradeoff: "부분 송신, 오류 시 큐 정리, 종료와 완료의 경합을 운영 수준으로 검증하는 테스트가 남아 있습니다.",
+      diagram: {
+        title: "IOCP 세션 수명 UML",
+        groups: [
+          { title: "Server", nodes: ["IOCPServer", "SessionManager", "PacketMethod"] },
+          { title: "Connection", nodes: ["Session", "IOContext", "ReceiveBuffer", "SendQueue"] },
+          { title: "Protocol", nodes: ["PacketHeader", "Packet"] },
+        ],
+        relations: [
+          ["IOCPServer", "aggregation", "SessionManager", "접속 등록"],
+          ["SessionManager", "aggregation", "Session", "공유 수명"],
+          ["Session", "composition", "IOContext", "비동기 작업"],
+          ["Session", "composition", "SendQueue", "순서 보존"],
+          ["ReceiveBuffer", "dependency", "PacketHeader", "길이 검증"],
+          ["Session", "dependency", "PacketMethod", "완전한 패킷"],
+        ],
+      },
+    },
+    {
+      title: "재접속 가능한 게임 상태 영속화",
+      intent: "런타임 객체의 수명과 무관하게 플레이어의 진행 상태를 다시 조립할 수 있게 한다.",
+      keywords: ["관계형 상태", "정의 ID", "복원 순서", "Prepared Statement", "체크포인트"],
+      problem: "맵·위치·스탯·인벤토리·장비·퀘스트 진행도는 서로 연결되어 있어 일부만 저장되거나 잘못된 순서로 복원되면 플레이 상태가 불일치합니다.",
+      decisions: [
+        ["관계 분리", "계정, 캐릭터, 인벤토리, 퀘스트와 조건별 진행도를 역할별 테이블로 나눴습니다."],
+        ["복원 흐름", "로그인에서 기본 상태를 조회하고 연관 데이터를 순차 전송한 뒤 DataCenter를 거쳐 런타임 객체로 조립합니다."],
+        ["저장 경계", "맵 변경과 연결 종료에서 런타임 상태를 DB 모델로 변환하고 Prepared Statement로 반영합니다."],
+      ],
+      result: "재로그인 시 저장된 맵·위치·스탯·인벤토리·장비·퀘스트 상태를 동일한 데이터 흐름으로 복원합니다.",
+      tradeoff: "종료 시점 중심 저장은 비정상 종료에 취약합니다. 중요 이벤트 체크포인트, 트랜잭션, DB 작업 큐와 커넥션 풀이 다음 개선 순서입니다.",
+      diagram: {
+        title: "런타임 상태 영속화 UML",
+        groups: [
+          { title: "Client", nodes: ["DataCenter", "Inventory", "QuestManager", "PlayerStatManager"] },
+          { title: "Server", nodes: ["Session", "PacketMethod", "Queries", "DBManager"] },
+          { title: "Database", nodes: ["UserAccount", "UserInfo", "InventoryRow", "UserQuest", "QuestProgress"] },
+        ],
+        relations: [
+          ["DataCenter", "data", "Inventory", "런타임 조립"],
+          ["PacketMethod", "dependency", "Queries", "조회·저장"],
+          ["Queries", "dependency", "DBManager", "Prepared Statement"],
+          ["UserAccount", "composition", "UserInfo", "1:1"],
+          ["UserAccount", "aggregation", "InventoryRow", "1:N"],
+          ["UserQuest", "composition", "QuestProgress", "조건별 진행"],
+        ],
+      },
+    },
+  ],
+  technicalDocs: [
+    {
+      id: "client",
+      label: "CLIENT",
+      title: "Unity 클라이언트 시스템 아키텍처",
+      summary: "입력·상태 판정·게임 규칙·표현·네트워크 반영을 분리하고, 콘텐츠 정의와 플레이 상태가 섞이지 않도록 경계를 세웠습니다.",
+      keywords: ["상태 패턴", "ScriptableObject", "이벤트", "메인 스레드 큐", "씬 수명주기"],
+      responsibilities: [
+        ["Core", "SingletonManager가 DataCenter·NetworkClient·SceneLoader·WorldLoader의 초기화 순서를 조정합니다."],
+        ["Gameplay", "PlayerStateContexter와 CombatManager가 행동 전환과 전투 판단을 분리합니다."],
+        ["Content", "아이템·스킬·퀘스트는 정의 데이터와 런타임 진행 상태를 분리합니다."],
+        ["Presentation", "AnimationContexter·EffectManager·UIEvents가 판정 결과를 화면 표현으로 변환합니다."],
+        ["Network Boundary", "수신 스레드는 데이터를 보관하고 메인 스레드가 오브젝트와 UI를 갱신합니다."],
+      ],
+      flow: ["입력", "상태 판정", "게임 규칙", "도메인 이벤트", "UI·Animation", "NetworkClient"],
+      notes: [
+        ["변경 범위", "새 행동은 상태와 전환 조건, 새 스킬은 파생 동작과 정의 데이터가 주된 추가 지점입니다."],
+        ["초기화", "로그인 데이터는 DataCenter에 대기시키고 씬과 매니저가 준비된 뒤 월드를 조립합니다."],
+        ["한계", "전역 관리자 접근은 빠르지만 숨은 의존성과 초기화 순서를 만들 수 있어 의존성 주입으로 발전할 수 있습니다."],
+      ],
+      features: [
+        {
+          title: "코어 초기화와 월드 조립",
+          summary: "씬보다 오래 살아야 하는 서비스와 인게임에 종속된 객체를 분리하고, 준비 순서를 한 곳에서 통제했습니다.",
+          details: [
+            ["설계 의도", "네트워크 응답 속도와 씬 로딩 속도가 달라도 동일한 순서로 월드를 만들 수 있게 합니다."],
+            ["구현 방식", "SingletonManager가 DataCenter·NetworkClient·SceneLoader를 먼저 준비하고 WorldLoader가 맵·로컬 플레이어·원격 객체·몬스터를 조립합니다."],
+            ["변경 지점", "새 씬 의존 객체는 WorldLoader 단계에 연결하고, 여러 씬에서 유지되는 상태는 DataCenter 경계 안에 둡니다."],
+          ],
+        },
+        {
+          title: "플레이어 상태와 전투",
+          summary: "이동·추적·공격·피격·사망을 상태 단위로 나누고 전투 판정과 애니메이션 표현을 분리했습니다.",
+          details: [
+            ["설계 의도", "행동 충돌을 조건문으로 봉합하지 않고 허용 가능한 상태 전환으로 제한합니다."],
+            ["구현 방식", "PlayerStateContexter가 IState의 진입·갱신·종료를 관리하고 CombatManager가 타깃·스킬·쿨다운을 판단합니다."],
+            ["변경 지점", "새 행동은 상태 클래스와 전환 조건에, 새 표현은 AnimationSet과 Override 데이터에 추가합니다."],
+          ],
+        },
+        {
+          title: "스킬·아이템·장비·제작",
+          summary: "정의 데이터와 플레이 중 상태를 분리해 콘텐츠 추가가 관리자 조건문의 증가로 이어지지 않게 했습니다.",
+          details: [
+            ["설계 의도", "새 콘텐츠가 공통 실행 흐름을 재사용하면서 유형별 차이만 구현하도록 만듭니다."],
+            ["구현 방식", "ScriptableObject가 아이템·레시피 정의를 보관하고, 추상 스킬과 IUsableItem 계약이 실행 수명주기를 통일합니다."],
+            ["변경 지점", "새 아이템·스킬은 정의 에셋과 파생 동작을 추가하며 슬롯·장비·제작 UI는 상태 변경 이벤트를 구독합니다."],
+          ],
+        },
+        {
+          title: "퀘스트·튜토리얼 이벤트",
+          summary: "전투·채집·제작 시스템은 사건만 발행하고 퀘스트와 튜토리얼이 각자의 규칙으로 해석합니다.",
+          details: [
+            ["설계 의도", "진행 콘텐츠가 생산 시스템을 직접 조회하지 않게 해 양쪽의 변경을 분리합니다."],
+            ["구현 방식", "PlayEvents가 처치·획득·제작·상호작용을 전달하고 QuestManager와 TutorialGuide가 필요한 사건만 소비합니다."],
+            ["변경 지점", "기존 사건을 사용하는 목표는 정의 데이터로 추가하고, 새로운 목표 유형만 이벤트 계약과 처리기를 확장합니다."],
+          ],
+        },
+        {
+          title: "네트워크 수신과 Unity 반영",
+          summary: "소켓 스레드의 데이터 처리와 Unity 메인 스레드의 GameObject·UI 갱신을 작업 큐로 분리했습니다.",
+          details: [
+            ["설계 의도", "Unity API의 스레드 제약을 지키면서 네트워크 도착 시점과 객체 생성 시점을 독립시킵니다."],
+            ["구현 방식", "수신 스레드는 패킷 분리·역직렬화·DataCenter 보관까지만 수행하고 Dispatcher가 메인 스레드 작업을 실행합니다."],
+            ["변경 지점", "새 수신 기능은 순수 데이터 변환과 Unity 반영 작업을 나누어 등록합니다."],
+          ],
+        },
+      ],
+      diagram: {
+        title: "클라이언트 책임 지도",
+        groups: [
+          { title: "Bootstrap", nodes: ["SingletonManager", "SceneLoader", "WorldLoader", "DataCenter"] },
+          { title: "Player", nodes: ["Player", "PlayerStateContexter", "CombatManager", "AnimationContexter"] },
+          { title: "Content", nodes: ["ItemMediator", "QuestManager", "TutorialGuide", "CraftUI"] },
+          { title: "Network", nodes: ["NetworkClient", "PacketMethod", "UnityMainThreadDispatcher"] },
+        ],
+        relations: [
+          ["SingletonManager", "aggregation", "DataCenter", "공유 상태"],
+          ["Player", "composition", "PlayerStateContexter", "행동"],
+          ["Player", "composition", "CombatManager", "전투"],
+          ["QuestManager", "event", "ItemMediator", "보상"],
+          ["PacketMethod", "data", "DataCenter", "지연 데이터"],
+          ["PacketMethod", "event", "UnityMainThreadDispatcher", "Unity 반영"],
+        ],
+      },
+    },
+    {
+      id: "server",
+      label: "SERVER",
+      title: "C++ IOCP 서버와 게임 월드",
+      summary: "완료 통지 기반 네트워크 위에 세션·패킷·맵·몬스터·타이머를 배치하고, 비동기 객체의 소유권과 공유 상태의 불변식을 관리했습니다.",
+      keywords: ["IOCP", "Session", "MapData", "Packet Framing", "Send Queue", "Timer"],
+      responsibilities: [
+        ["I/O", "IOCPServer가 Accept·Recv·Send 완료를 워커 스레드에서 처리합니다."],
+        ["Session", "SessionManager가 연결의 등록·제거와 비동기 작업 수명을 관리합니다."],
+        ["Protocol", "누적 버퍼와 헤더 길이 검증으로 분할·병합되는 TCP 스트림을 패킷으로 복원합니다."],
+        ["World", "MapDataManager가 맵별 세션과 몬스터를 보유하고 같은 맵에만 이벤트를 전파합니다."],
+        ["Schedule", "TimerManager가 몬스터 리필과 지연 작업을 I/O 흐름과 분리합니다."],
+      ],
+      flow: ["WSARecv 등록", "완료 바이트 누적", "헤더·길이 검증", "패킷 라우팅", "월드 상태 갱신", "맵 단위 전파"],
+      notes: [
+        ["동시성", "atomic은 단일 상태, mutex는 컨테이너 불변식, condition_variable은 작업 대기에 사용했습니다."],
+        ["소유권", "shared ownership은 완료 전 수명을 보장하고 weak ownership은 순환 참조를 끊습니다."],
+        ["한계", "부분 송신·오류 큐 정리·종료 경합·가상 클라이언트 부하 테스트가 운영 수준의 남은 검증입니다."],
+      ],
+      features: [
+        {
+          title: "IOCP 완료 통지와 세션 수명",
+          summary: "I/O 요청 이후에도 커널이 참조하는 세션·OVERLAPPED 컨텍스트·버퍼의 수명을 완료 시점까지 보장합니다.",
+          details: [
+            ["설계 의도", "연결 종료와 완료 통지가 경쟁해도 해제된 객체에 접근하지 않는 불변식을 만듭니다."],
+            ["구현 방식", "SessionManager가 세션을 공유 소유하고 IOContext가 작업과 세션 수명을 묶으며 완료 루틴이 연결 상태를 재확인합니다."],
+            ["동시성", "atomic은 단일 상태 전이, mutex는 세션·맵 컨테이너, condition_variable은 작업 대기에 사용합니다."],
+          ],
+        },
+        {
+          title: "TCP 패킷 프레이밍과 송신 큐",
+          summary: "바이트 스트림에서 완전한 메시지만 분리하고 세션별 송신 순서와 버퍼 수명을 함께 관리합니다.",
+          details: [
+            ["설계 의도", "한 번의 recv와 한 패킷이 일치한다는 잘못된 가정을 제거합니다."],
+            ["구현 방식", "누적 버퍼의 헤더·길이를 검증해 완성 패킷만 라우팅하고 잔여 바이트를 다음 수신으로 넘깁니다."],
+            ["송신 규칙", "세션별 큐에서 한 번에 하나의 비동기 송신만 진행하고 완료 후 다음 버퍼를 이어 보냅니다."],
+          ],
+        },
+        {
+          title: "맵 단위 세션과 멀티플레이 전파",
+          summary: "접속 전체가 아니라 같은 MapData에 속한 플레이어에게만 입장·이동·전투 상태를 전파합니다.",
+          details: [
+            ["설계 의도", "월드 경계를 명확히 해 불필요한 브로드캐스트와 원격 객체 관리를 줄입니다."],
+            ["구현 방식", "MapDataManager가 맵별 Session과 Enemy를 보유하고 PacketMethod가 세션의 현재 맵을 기준으로 대상을 선택합니다."],
+            ["확장 방향", "월드 규모가 커지면 맵 단위 경계를 공간 분할과 AOI로 세분화합니다."],
+          ],
+        },
+        {
+          title: "몬스터 월드와 타이머",
+          summary: "몬스터 상태와 주기 작업을 네트워크 I/O 흐름에서 분리해 게임 월드의 시간 기반 작업을 관리합니다.",
+          details: [
+            ["설계 의도", "주기 이벤트가 워커 스레드를 점유하거나 I/O 완료 처리와 뒤섞이지 않게 합니다."],
+            ["구현 방식", "TimerManager가 우선순위 큐와 condition_variable로 단발·반복 작업을 실행하고 맵별 최대 수를 기준으로 몬스터를 보충합니다."],
+            ["권위 경계", "현재 일부 몬스터 갱신은 클라이언트 소유이며 운영 구조에서는 AI와 판정을 서버로 이전해야 합니다."],
+          ],
+        },
+        {
+          title: "패킷 라우팅과 DB 접근 경계",
+          summary: "Packet ID별 게임 요청을 세션·월드·Queries 책임으로 나눠 네트워크 코드가 SQL 세부사항을 직접 갖지 않게 했습니다.",
+          details: [
+            ["설계 의도", "전송 계층과 게임 규칙, 영속화 변경이 서로 직접 전파되지 않게 합니다."],
+            ["구현 방식", "PacketMethod가 사용자·맵 상태를 확인해 처리기를 선택하고 Queries가 Prepared Statement 기반 조회·저장을 담당합니다."],
+            ["확장 방향", "DB 작업 큐와 커넥션 풀을 추가해 네트워크 워커가 쿼리 완료를 기다리지 않게 합니다."],
+          ],
+        },
+      ],
+      diagram: {
+        title: "서버 계층 UML",
+        groups: [
+          { title: "I/O", nodes: ["IOCPServer", "IOContext", "Worker"] },
+          { title: "Session", nodes: ["SessionManager", "Session", "SendQueue"] },
+          { title: "World", nodes: ["MapDataManager", "MapData", "Enemy", "TimerManager"] },
+          { title: "Application", nodes: ["PacketMethod", "Queries"] },
+        ],
+        relations: [
+          ["IOCPServer", "aggregation", "SessionManager", "연결 관리"],
+          ["Session", "composition", "IOContext", "비동기 수명"],
+          ["SessionManager", "composition", "MapDataManager", "월드 경계"],
+          ["MapData", "aggregation", "Session", "브로드캐스트 범위"],
+          ["MapData", "aggregation", "Enemy", "게임 상태"],
+          ["PacketMethod", "dependency", "Queries", "영속화 경계"],
+        ],
+      },
+    },
+    {
+      id: "database",
+      label: "DATABASE",
+      title: "MariaDB 게임 상태 영속화",
+      summary: "로그인 확인을 넘어 계정·캐릭터·인벤토리·퀘스트를 관계형 상태로 분리하고, 런타임 객체와 영속 데이터 사이의 변환 경계를 만들었습니다.",
+      keywords: ["관계형 모델", "Prepared Statement", "정의 ID", "복원", "트랜잭션"],
+      responsibilities: [
+        ["UserAccount", "로그인 ID와 인증 정보를 보관하는 사용자 기준입니다."],
+        ["UserInfo", "맵·위치·튜토리얼·전투 스탯을 캐릭터 상태로 보관합니다."],
+        ["Inventory", "아이템 정의 ID·수량·슬롯·장착 여부를 사용자별 행으로 저장합니다."],
+        ["UserQuest", "퀘스트 수락·완료·보상 상태를 관리합니다."],
+        ["UserQuestProgress", "퀘스트의 조건별 현재 진행 수치를 분리해 저장합니다."],
+        ["MapInfo", "플레이어와 몬스터 스폰 정보 및 맵별 최대 개체 수의 기준입니다."],
+      ],
+      flow: ["DB 조회", "Session 상태 구성", "패킷 전송", "DataCenter 보관", "런타임 객체 조립", "체크포인트 저장"],
+      notes: [
+        ["복원", "ScriptableObject의 정의 ID와 DB 진행 상태를 결합해 아이템·퀘스트 런타임 인스턴스를 구성합니다."],
+        ["안전성", "Prepared Statement로 쿼리 구조와 값 바인딩을 분리하고, 누락 데이터에는 기본 상태 정책이 필요합니다."],
+        ["한계", "여러 테이블을 함께 바꾸는 보상·제작·퀘스트 완료에는 트랜잭션과 주기적 저장, DB 작업 큐가 필요합니다."],
+      ],
+      features: [
+        {
+          title: "계정·캐릭터 식별과 로그인 복원",
+          summary: "인증 정보와 플레이 상태를 분리하고 로그인 시 캐릭터·맵·기본 스탯을 하나의 복원 흐름으로 구성합니다.",
+          details: [
+            ["테이블 경계", "UserAccount는 인증 기준, UserInfo는 맵·위치·튜토리얼·전투 스탯을 담당하는 1:1 상태입니다."],
+            ["복원 방식", "로그인 성공 후 UserInfo와 MapInfo를 조회해 세션 상태를 만들고 클라이언트 DataCenter로 전달합니다."],
+            ["보안 과제", "고정 솔트와 평문 TCP는 운영 수준이 아니므로 사용자별 솔트와 TLS 적용이 필요합니다."],
+          ],
+        },
+        {
+          title: "인벤토리·장비 상태",
+          summary: "아이템 정의 자체가 아니라 사용자별 보유량·슬롯·장착 여부만 행 단위로 저장합니다.",
+          details: [
+            ["테이블 경계", "Inventory가 UserID와 ItemID를 연결하고 Amount·SlotIndex·IsEquipped를 플레이 상태로 보관합니다."],
+            ["복원 방식", "DB의 ItemID와 클라이언트 ScriptableObject 정의를 결합해 런타임 아이템과 슬롯을 재구성합니다."],
+            ["설계 판단", "정의 데이터의 중복 저장을 피했지만 클라이언트와 DB가 동일한 정의 ID 계약을 유지해야 합니다."],
+          ],
+        },
+        {
+          title: "퀘스트·조건별 진행 상태",
+          summary: "퀘스트의 완료 상태와 반복 가능한 조건 진행도를 서로 다른 관계로 분리했습니다.",
+          details: [
+            ["테이블 경계", "UserQuest는 수락·완료·보상 상태를, UserQuestProgress는 ConditionIndex별 CurrentCount를 저장합니다."],
+            ["복원 방식", "퀘스트 정의 ID에 조건별 진행 행을 결합해 QuestProgressData를 다시 구성합니다."],
+            ["트랜잭션", "보상 수령은 완료 상태·보상 플래그·인벤토리 지급을 하나의 트랜잭션으로 묶는 것이 다음 단계입니다."],
+          ],
+        },
+        {
+          title: "맵·몬스터 스폰 기준",
+          summary: "플레이어의 현재 위치와 월드의 스폰 정의를 MapInfo를 중심으로 연결했습니다.",
+          details: [
+            ["테이블 경계", "MapInfo는 플레이어·몬스터 스폰 좌표와 최대 개체 수를, Monster는 맵에서 생성할 몬스터 종류를 가리킵니다."],
+            ["서버 연결", "서버가 맵 진입 시 스폰 기준을 읽어 MapData를 구성하고 세션의 현재 맵을 갱신합니다."],
+            ["설계 판단", "정적 월드 정의가 커지면 전용 콘텐츠 데이터와 런타임 스폰 상태를 추가로 분리해야 합니다."],
+          ],
+        },
+        {
+          title: "저장 시점과 일관성",
+          summary: "맵 이동·연결 종료를 기본 체크포인트로 사용하고 여러 테이블의 변경 경계를 명시했습니다.",
+          details: [
+            ["현재 구현", "맵·위치·스탯·인벤토리·퀘스트 진행 상태를 런타임 모델에서 DB 행으로 변환해 저장합니다."],
+            ["문제 인식", "종료 시점 중심 저장은 비정상 종료에 취약하고 여러 테이블이 일부만 반영될 수 있습니다."],
+            ["개선 방향", "중요 이벤트 체크포인트, 주기 저장, 트랜잭션, 비동기 DB 작업 큐를 순서대로 추가합니다."],
+          ],
+        },
+      ],
+      diagram: {
+        kind: "er",
+        source: String.raw`erDiagram
+    UserAccount ||--|| UserInfo : has
+    UserAccount ||--o{ Inventory : owns
+    UserAccount ||--o{ UserQuest : tracks
+    UserQuest ||--o{ UserQuestProgress : contains
+    MapInfo ||--o{ UserInfo : locates
+    MapInfo ||--o{ Monster : spawns
+
+    UserAccount {
+        string UserID PK
+        string PasswordHash
+        string Salt
+    }
+    UserInfo {
+        string UserID PK
+        int MapId FK
+        float PosX
+        float PosY
+        float PosZ
+        int TutorialStep
+        float HP
+        int AttackPower
+        int DefencePower
+    }
+    Inventory {
+        string UserID FK
+        string ItemID
+        int Amount
+        int SlotIndex
+        boolean IsEquipped
+    }
+    UserQuest {
+        string UserID PK
+        int QuestId PK
+        boolean IsCompleted
+        boolean RewardClaimed
+    }
+    UserQuestProgress {
+        string UserID PK
+        int QuestId PK
+        int ConditionIndex PK
+        int CurrentCount
+    }
+    MapInfo {
+        int MapId PK
+        float SpawnX
+        float SpawnY
+        float SpawnZ
+        int MaxEnemyCount
+    }
+    Monster {
+        int MonsterId PK
+        int MapId FK
+    }`,
+        entities: [
+          { name: "UserAccount", fields: ["PK  UserID", "PasswordHash", "Salt"] },
+          { name: "UserInfo", fields: ["PK  UserID", "FK  MapId", "PosX / PosY / PosZ", "TutorialStep", "HP / Attack / Defence"] },
+          { name: "MapInfo", fields: ["PK  MapId", "SpawnX / SpawnY / SpawnZ", "MaxEnemyCount"] },
+          { name: "Inventory", fields: ["FK  UserID", "ItemID", "Amount", "SlotIndex", "IsEquipped"] },
+          { name: "UserQuest", fields: ["PK  UserID + QuestId", "IsCompleted", "RewardClaimed"] },
+          { name: "Monster", fields: ["PK  MonsterId", "FK  MapId"] },
+          { name: "UserQuestProgress", fields: ["PK  UserID + QuestId", "PK  ConditionIndex", "CurrentCount"] },
+        ],
+        erRelations: [
+          ["UserAccount", "UserInfo", "1", "1", "계정 상태"],
+          ["UserAccount", "Inventory", "1", "N", "보유 아이템"],
+          ["UserAccount", "UserQuest", "1", "N", "퀘스트 상태"],
+          ["UserQuest", "UserQuestProgress", "1", "N", "조건별 진행"],
+          ["MapInfo", "UserInfo", "1", "N", "현재 맵"],
+          ["MapInfo", "Monster", "1", "N", "스폰 정의"],
+        ],
+        title: "게임 상태 테이블 ER 다이어그램",
+        groups: [
+          { title: "Identity", nodes: ["UserAccount", "UserInfo"] },
+          { title: "Progress", nodes: ["Inventory", "UserQuest", "UserQuestProgress"] },
+          { title: "World", nodes: ["MapInfo", "Monster"] },
+          { title: "Access", nodes: ["Queries", "DBManager"] },
+        ],
+        relations: [
+          ["UserAccount", "composition", "UserInfo", "1:1"],
+          ["UserAccount", "aggregation", "Inventory", "1:N"],
+          ["UserAccount", "aggregation", "UserQuest", "1:N"],
+          ["UserQuest", "composition", "UserQuestProgress", "1:N"],
+          ["MapInfo", "aggregation", "UserInfo", "현재 맵"],
+          ["MapInfo", "aggregation", "Monster", "스폰 정의"],
+          ["Queries", "dependency", "DBManager", "Prepared Statement"],
+        ],
+      },
+    },
+  ],
+};
+
+projects["project-1"].designDocument = everwindDesignDocument;
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
+const designOpenButton = modal.querySelector("#modal-open-design");
+const designModal = document.querySelector("#design-modal");
+const designModalClose = designModal.querySelector(".design-modal-close");
+const designToc = designModal.querySelector("#design-toc-list");
+const designFeatureList = designModal.querySelector("#design-feature-list");
+const technicalDocumentList = designModal.querySelector("#technical-document-list");
+const designFields = {
+  kicker: designModal.querySelector("#design-document-kicker"),
+  title: designModal.querySelector("#design-document-title"),
+  summary: designModal.querySelector("#design-document-summary"),
+  keywords: designModal.querySelector("#design-document-keywords"),
+  systemFlow: designModal.querySelector("#design-system-flow"),
+};
 const videoModal = document.querySelector("#video-modal");
 const videoModalTitle = videoModal.querySelector("#video-modal-title");
 const featureVideo = videoModal.querySelector("#feature-video");
@@ -607,7 +1163,6 @@ const modalFields = {
   troubleshooting: modal.querySelector("#modal-troubleshooting-list"),
   story: modal.querySelector(".modal-story"),
   footer: modal.querySelector(".modal-footer"),
-  notion: modal.querySelector("#modal-notion"),
 };
 
 const buildGallery = (images) => {
@@ -768,6 +1323,347 @@ const appendEmphasizedText = (target, copy, emphasis = []) => {
   });
 };
 
+const MERMAID_MODULE_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.esm.min.mjs";
+let mermaidModulePromise;
+let mermaidRenderQueue = Promise.resolve();
+let mermaidRenderIndex = 0;
+let mermaidDiagramObserver;
+
+const loadMermaid = () => {
+  if (mermaidModulePromise) return mermaidModulePromise;
+  mermaidModulePromise = import(MERMAID_MODULE_URL).then(({ default: mermaid }) => {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      theme: "base",
+      themeVariables: {
+        darkMode: true,
+        background: "#060a12",
+        primaryColor: "#111a2e",
+        primaryTextColor: "#edf2ff",
+        primaryBorderColor: "#ffb75c",
+        secondaryColor: "#17213a",
+        secondaryTextColor: "#edf2ff",
+        secondaryBorderColor: "#67d3ff",
+        tertiaryColor: "#0b1020",
+        tertiaryTextColor: "#edf2ff",
+        lineColor: "#8ab7d6",
+        textColor: "#edf2ff",
+        mainBkg: "#111a2e",
+        secondBkg: "#17213a",
+        classText: "#edf2ff",
+        noteBkgColor: "#191f2e",
+        noteTextColor: "#ffe18c",
+        fontFamily: "Arial, 'Noto Sans KR', sans-serif",
+      },
+      class: { useMaxWidth: false },
+      er: { useMaxWidth: false },
+    });
+    return mermaid;
+  });
+  return mermaidModulePromise;
+};
+
+const makeMermaidIdentifier = (value, fallback) => {
+  const identifier = value.replace(/[^A-Za-z0-9_]/g, "");
+  return identifier && !/^\d/.test(identifier) ? identifier : fallback;
+};
+
+const makeMermaidSource = (diagram) => {
+  if (diagram.source) return diagram.source.trim();
+
+  const knownNodes = new Set(diagram.groups.flatMap((group) => group.nodes));
+  const externalNodes = [...new Set(diagram.relations.flatMap(([from, , to]) => [from, to]))]
+    .filter((node) => !knownNodes.has(node));
+  const groups = externalNodes.length
+    ? [...diagram.groups, { title: "Shared Contract", nodes: externalNodes }]
+    : diagram.groups;
+  const lines = ["classDiagram", "direction LR"];
+
+  groups.forEach((group, index) => {
+    const namespace = makeMermaidIdentifier(group.title, `Group${index + 1}`);
+    lines.push(`namespace ${namespace} {`);
+    group.nodes.forEach((node) => lines.push(`  class ${node}`));
+    lines.push("}");
+  });
+
+  diagram.relations.forEach(([from, type, to, note]) => {
+    const label = note ? ` : ${note.replaceAll(":", "·")}` : "";
+    if (type === "inheritance") lines.push(`${to} <|-- ${from}${label}`);
+    else if (type === "implementation") lines.push(`${to} <|.. ${from}${label}`);
+    else if (type === "composition") lines.push(`${from} *-- ${to}${label}`);
+    else if (type === "aggregation") lines.push(`${from} o-- ${to}${label}`);
+    else if (["dependency", "event", "data"].includes(type)) lines.push(`${from} ..> ${to}${label}`);
+    else lines.push(`${from} --> ${to}${label}`);
+  });
+  return lines.join("\n");
+};
+
+const renderMermaidCanvas = async (canvas) => {
+  if (canvas.dataset.rendered === "true" || canvas.dataset.rendering === "true") return;
+  canvas.dataset.rendering = "true";
+  canvas.classList.add("is-loading");
+  canvas.setAttribute("aria-busy", "true");
+
+  try {
+    const mermaid = await loadMermaid();
+    const { svg, bindFunctions } = await mermaid.render(
+      `everwind-mermaid-${++mermaidRenderIndex}`,
+      canvas.dataset.mermaidSource,
+    );
+    canvas.innerHTML = svg;
+    bindFunctions?.(canvas);
+    canvas.dataset.rendered = "true";
+    canvas.classList.remove("is-loading");
+    canvas.removeAttribute("aria-busy");
+  } catch (error) {
+    canvas.classList.remove("is-loading");
+    canvas.classList.add("is-render-error");
+    canvas.removeAttribute("aria-busy");
+    canvas.textContent = "다이어그램을 불러오지 못했습니다. 네트워크 연결 후 다시 열어 주세요.";
+    console.error("Mermaid diagram render failed", error);
+  }
+};
+
+const queueMermaidRender = (canvas) => {
+  mermaidRenderQueue = mermaidRenderQueue
+    .then(() => renderMermaidCanvas(canvas))
+    .catch(() => undefined);
+};
+
+const observeMermaidDiagrams = () => {
+  mermaidDiagramObserver?.disconnect();
+  const canvases = [...designModal.querySelectorAll(".mermaid-canvas")];
+  if (!("IntersectionObserver" in window)) {
+    canvases.forEach(queueMermaidRender);
+    return;
+  }
+  mermaidDiagramObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      mermaidDiagramObserver.unobserve(entry.target);
+      queueMermaidRender(entry.target);
+    });
+  }, { root: designModal, rootMargin: "420px 0px", threshold: 0.01 });
+  canvases.forEach((canvas) => mermaidDiagramObserver.observe(canvas));
+};
+
+const makeKeywordList = (keywords = []) => {
+  const list = document.createElement("ul");
+  list.className = "design-keywords";
+  list.append(...keywords.map((keyword) => {
+    const item = document.createElement("li");
+    item.textContent = keyword;
+    return item;
+  }));
+  return list;
+};
+
+const makeSystemFlow = (steps = []) => {
+  const flow = document.createElement("div");
+  flow.className = "system-flow";
+  flow.append(...steps.flatMap((step, index) => {
+    const node = document.createElement("span");
+    node.className = "system-flow-node";
+    node.textContent = step;
+    if (index === steps.length - 1) return [node];
+    const arrow = document.createElement("span");
+    arrow.className = "system-flow-arrow";
+    arrow.textContent = "→";
+    arrow.setAttribute("aria-hidden", "true");
+    return [node, arrow];
+  }));
+  return flow;
+};
+
+const makeUmlDiagram = (diagram) => {
+  const figure = document.createElement("figure");
+  const caption = document.createElement("figcaption");
+  const hint = document.createElement("span");
+  const canvas = document.createElement("div");
+  const loading = document.createElement("span");
+  figure.className = "uml-diagram";
+  if (diagram.kind === "er") figure.classList.add("is-er-diagram");
+  caption.textContent = diagram.title;
+  hint.textContent = diagram.kind === "er" ? "Mermaid ERD · 실제 쿼리 컬럼 기준" : "Mermaid UML · 메서드·속성 제외";
+  caption.append(hint);
+  canvas.className = "mermaid-canvas";
+  canvas.dataset.mermaidSource = makeMermaidSource(diagram);
+  loading.className = "mermaid-loading";
+  loading.textContent = "다이어그램 준비 중";
+  canvas.append(loading);
+  figure.append(caption, canvas);
+  return figure;
+};
+
+const makeDesignTocButton = (number, label, targetId, level = "root") => {
+  const item = document.createElement("li");
+  const button = document.createElement("button");
+  const index = document.createElement("span");
+  const title = document.createElement("span");
+  if (level === "feature") item.className = "is-nested";
+  if (level === "domain") item.className = "is-nested is-domain";
+  if (level === "deep") item.className = "is-nested is-deep";
+  button.type = "button";
+  button.dataset.designTarget = targetId;
+  index.textContent = number;
+  title.textContent = label;
+  button.append(index, title);
+  item.append(button);
+  return item;
+};
+
+const makeDecisionList = (items = [], className = "design-decision-list") => {
+  const list = document.createElement("dl");
+  list.className = className;
+  list.append(...items.flatMap(([label, copy]) => {
+    const term = document.createElement("dt");
+    const description = document.createElement("dd");
+    term.textContent = label;
+    description.textContent = copy;
+    return [term, description];
+  }));
+  return list;
+};
+
+const buildDesignDocument = (documentData) => {
+  designFields.kicker.textContent = documentData.kicker;
+  designFields.title.textContent = documentData.title;
+  designFields.summary.textContent = documentData.summary;
+  designFields.keywords.replaceChildren(...makeKeywordList(documentData.keywords).children);
+  designFields.systemFlow.replaceChildren(...makeSystemFlow(documentData.systemFlow).children);
+  designToc.replaceChildren(
+    makeDesignTocButton("00", "문서 개요", "design-intro"),
+    makeDesignTocButton("01", "핵심 기능 설계", "design-core-features"),
+    ...documentData.coreFeatures.map((feature, index) => makeDesignTocButton(
+      `01-${index + 1}`,
+      feature.title,
+      `design-feature-${index + 1}`,
+      "feature",
+    )),
+    makeDesignTocButton("02", "분야 & 기능별 상세 기술 문서", "design-technical-docs"),
+    ...documentData.technicalDocs.flatMap((documentItem, index) => [
+      makeDesignTocButton(
+        `02-${index + 1}`,
+        documentItem.label,
+        `design-doc-${documentItem.id}`,
+        "domain",
+      ),
+      ...(documentItem.features || []).map((feature, featureIndex) => makeDesignTocButton(
+        `02-${index + 1}.${featureIndex + 1}`,
+        feature.title,
+        `design-doc-${documentItem.id}-${featureIndex + 1}`,
+        "deep",
+      )),
+    ]),
+  );
+
+  designFeatureList.replaceChildren(...documentData.coreFeatures.map((feature, index) => {
+    const article = document.createElement("article");
+    const header = document.createElement("header");
+    const number = document.createElement("span");
+    const headingGroup = document.createElement("div");
+    const title = document.createElement("h4");
+    const intent = document.createElement("p");
+    const context = document.createElement("div");
+    const problem = document.createElement("section");
+    const problemLabel = document.createElement("p");
+    const problemCopy = document.createElement("p");
+    const result = document.createElement("section");
+    const resultLabel = document.createElement("p");
+    const resultCopy = document.createElement("p");
+    const tradeoff = document.createElement("aside");
+    const tradeoffTitle = document.createElement("strong");
+    const tradeoffCopy = document.createElement("p");
+    article.className = "design-feature-card";
+    article.id = `design-feature-${index + 1}`;
+    number.textContent = String(index + 1).padStart(2, "0");
+    title.textContent = feature.title;
+    intent.textContent = feature.intent;
+    headingGroup.append(title, intent);
+    header.append(number, headingGroup);
+    problemLabel.className = "eyebrow";
+    problemLabel.textContent = "해결하려는 문제";
+    problemCopy.textContent = feature.problem;
+    problem.append(problemLabel, problemCopy);
+    resultLabel.className = "eyebrow";
+    resultLabel.textContent = "구현 결과";
+    resultCopy.textContent = feature.result;
+    result.append(resultLabel, resultCopy);
+    context.className = "design-context-grid";
+    context.append(problem, result);
+    tradeoff.className = "design-tradeoff";
+    tradeoffTitle.textContent = "설계 판단과 다음 단계";
+    tradeoffCopy.textContent = feature.tradeoff;
+    tradeoff.append(tradeoffTitle, tradeoffCopy);
+    article.append(
+      header,
+      makeKeywordList(feature.keywords),
+      context,
+      makeDecisionList(feature.decisions),
+      makeUmlDiagram(feature.diagram),
+      tradeoff,
+    );
+    return article;
+  }));
+
+  technicalDocumentList.replaceChildren(...documentData.technicalDocs.map((documentItem, index) => {
+    const article = document.createElement("article");
+    const header = document.createElement("header");
+    const number = document.createElement("span");
+    const headingGroup = document.createElement("div");
+    const label = document.createElement("p");
+    const title = document.createElement("h4");
+    const summary = document.createElement("p");
+    const architectureTitle = document.createElement("h5");
+    const featureTitle = document.createElement("h5");
+    const featureList = document.createElement("div");
+    const noteTitle = document.createElement("h5");
+    article.className = "technical-document";
+    article.id = `design-doc-${documentItem.id}`;
+    number.textContent = `02-${index + 1}`;
+    label.className = "eyebrow";
+    label.textContent = documentItem.label;
+    title.textContent = documentItem.title;
+    summary.textContent = documentItem.summary;
+    headingGroup.append(label, title, summary);
+    header.append(number, headingGroup);
+    architectureTitle.textContent = documentItem.id === "database" ? "테이블 관계와 영속화 경계" : "분야 전체 구조";
+    featureTitle.textContent = "기능별 구현";
+    noteTitle.textContent = "공통 설계 판단";
+    featureList.className = "technical-feature-list";
+    featureList.append(...(documentItem.features || []).map((feature, featureIndex) => {
+      const section = document.createElement("section");
+      const featureHeader = document.createElement("header");
+      const featureNumber = document.createElement("span");
+      const featureHeading = document.createElement("div");
+      const heading = document.createElement("h5");
+      const copy = document.createElement("p");
+      section.className = "technical-feature";
+      section.id = `design-doc-${documentItem.id}-${featureIndex + 1}`;
+      featureNumber.className = "technical-feature-number";
+      featureNumber.textContent = `02-${index + 1}.${featureIndex + 1}`;
+      heading.textContent = feature.title;
+      copy.textContent = feature.summary;
+      featureHeading.append(heading, copy);
+      featureHeader.append(featureNumber, featureHeading);
+      section.append(featureHeader, makeDecisionList(feature.details));
+      return section;
+    }));
+    article.append(
+      header,
+      makeKeywordList(documentItem.keywords),
+      architectureTitle,
+      makeUmlDiagram(documentItem.diagram),
+      featureTitle,
+      featureList,
+      noteTitle,
+      makeDecisionList(documentItem.notes, "technical-note-list"),
+    );
+    return article;
+  }));
+};
+
 const buildProjectDetail = (project) => {
   const principles = project.principles || [];
   const coreFeatures = project.coreFeatures || [];
@@ -915,12 +1811,17 @@ const buildProjectDetail = (project) => {
   });
 };
 
+let activeProject = null;
+
 const openProject = (projectId) => {
   const project = projects[projectId];
   if (!project) return;
   const isCollection = Boolean(project.otherProjects?.length);
+  activeProject = project;
 
   modal.classList.toggle("is-collection", isCollection);
+  modal.classList.toggle("has-design-document", Boolean(project.designDocument));
+  designOpenButton.hidden = !project.designDocument;
 
   modalFields.type.textContent = project.type;
   modalFields.title.textContent = project.title;
@@ -951,14 +1852,6 @@ const openProject = (projectId) => {
     }),
   );
   modalFields.story.hidden = isCollection || !(project.feature || project.challenge || project.solution);
-  modalFields.notion.href = project.notion || "#";
-  if (project.notion) {
-    modalFields.notion.target = "_blank";
-    modalFields.notion.rel = "noreferrer";
-  } else {
-    modalFields.notion.removeAttribute("target");
-    modalFields.notion.removeAttribute("rel");
-  }
   modalFields.tags.replaceChildren(
     ...(project.tags || []).map((tag) => {
       const item = document.createElement("li");
@@ -1005,6 +1898,102 @@ modalFields.outline.addEventListener("click", (event) => {
 
 overviewJumpButton.addEventListener("click", () => {
   modalFields.detail.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+});
+
+let designHighlightTimer;
+let designScrollFrame;
+
+const setDesignTocActive = (targetId) => {
+  const buttons = [...designToc.querySelectorAll("[data-design-target]")];
+  buttons.forEach((button) => {
+    button.classList.remove("is-active", "is-parent-active");
+    button.removeAttribute("aria-current");
+  });
+
+  const activeButton = buttons.find((button) => button.dataset.designTarget === targetId);
+  if (!activeButton) return;
+  activeButton.classList.add("is-active");
+  activeButton.setAttribute("aria-current", "location");
+
+  const parentTargets = [];
+  if (targetId.startsWith("design-feature-")) parentTargets.push("design-core-features");
+  const deepDomainMatch = targetId.match(/^design-doc-(client|server|database)-\d+$/);
+  if (deepDomainMatch) parentTargets.push(`design-doc-${deepDomainMatch[1]}`);
+  if (targetId.startsWith("design-doc-")) parentTargets.push("design-technical-docs");
+  parentTargets.forEach((parentTarget) => {
+    buttons.find((button) => button.dataset.designTarget === parentTarget)?.classList.add("is-parent-active");
+  });
+
+  const tocPanel = designToc.closest(".design-toc");
+  if (!tocPanel || !activeButton.offsetParent || tocPanel.scrollHeight <= tocPanel.clientHeight) return;
+  const panelRect = tocPanel.getBoundingClientRect();
+  const buttonRect = activeButton.getBoundingClientRect();
+  if (buttonRect.top < panelRect.top + 8) tocPanel.scrollTop -= panelRect.top + 8 - buttonRect.top;
+  else if (buttonRect.bottom > panelRect.bottom - 8) tocPanel.scrollTop += buttonRect.bottom - panelRect.bottom + 8;
+};
+
+const updateDesignTocActive = () => {
+  designScrollFrame = undefined;
+  if (!designModal.open) return;
+  const modalRect = designModal.getBoundingClientRect();
+  const headerBottom = designModal.querySelector(".design-modal-header").getBoundingClientRect().bottom;
+  const activationLine = headerBottom + Math.max(0, modalRect.bottom - headerBottom) * 0.1;
+  const buttons = [...designToc.querySelectorAll("[data-design-target]")];
+  let activeTarget = buttons[0]?.dataset.designTarget;
+  buttons.forEach((button) => {
+    const target = designModal.querySelector(`#${button.dataset.designTarget}`);
+    if (target && target.getBoundingClientRect().top <= activationLine) activeTarget = button.dataset.designTarget;
+  });
+  if (activeTarget) setDesignTocActive(activeTarget);
+};
+
+const scheduleDesignTocUpdate = () => {
+  if (designScrollFrame) return;
+  designScrollFrame = window.requestAnimationFrame(updateDesignTocActive);
+};
+
+designOpenButton.addEventListener("click", () => {
+  if (!activeProject?.designDocument) return;
+  buildDesignDocument(activeProject.designDocument);
+  designModal.showModal();
+  designModal.scrollTop = 0;
+  designModalClose.focus();
+  window.requestAnimationFrame(() => {
+    observeMermaidDiagrams();
+    updateDesignTocActive();
+  });
+});
+
+designToc.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-design-target]");
+  if (!button) return;
+  const target = designModal.querySelector(`#${button.dataset.designTarget}`);
+  if (!target) return;
+  setDesignTocActive(button.dataset.designTarget);
+  const targetDistance = Math.abs(target.getBoundingClientRect().top - designModal.getBoundingClientRect().top);
+  const scrollBehavior = reduceMotion.matches || targetDistance > designModal.clientHeight * 1.5 ? "auto" : "smooth";
+  target.scrollIntoView({ behavior: scrollBehavior, block: "start" });
+  window.clearTimeout(designHighlightTimer);
+  designModal.querySelectorAll(".is-design-highlight").forEach((item) => item.classList.remove("is-design-highlight"));
+  target.classList.add("is-design-highlight");
+  designHighlightTimer = window.setTimeout(() => target.classList.remove("is-design-highlight"), 1500);
+});
+
+const closeDesignDocument = () => {
+  mermaidDiagramObserver?.disconnect();
+  if (designScrollFrame) window.cancelAnimationFrame(designScrollFrame);
+  designScrollFrame = undefined;
+  if (designModal.open) designModal.close();
+};
+
+designModalClose.addEventListener("click", closeDesignDocument);
+designModal.addEventListener("scroll", scheduleDesignTocUpdate, { passive: true });
+designModal.addEventListener("click", (event) => {
+  if (event.target === designModal) closeDesignDocument();
+});
+designModal.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeDesignDocument();
 });
 
 const closeFeatureMedia = () => {
@@ -1145,4 +2134,8 @@ closeButton.addEventListener("click", () => modal.close());
 modal.addEventListener("click", (event) => {
   if (event.target === modal) modal.close();
 });
-modal.addEventListener("close", () => document.body.classList.remove("modal-open"));
+modal.addEventListener("close", () => {
+  closeDesignDocument();
+  activeProject = null;
+  document.body.classList.remove("modal-open");
+});

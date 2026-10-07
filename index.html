@@ -10,7 +10,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2313192b'/%3E%3Cpath fill='%23ff9635' d='M8 8h16v4H8zM8 12h4v12H8zM20 12h4v12h-4zM12 20h8v4h-8z'/%3E%3Cpath fill='%23ffe18c' d='M12 12h8v4h-8z'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006-01" />
+    <link rel="stylesheet" href="styles.css?v=20261007-07" />
   </head>
   <body>
     <div class="scanline" aria-hidden="true"></div>
@@ -361,8 +361,48 @@
         </section>
         <footer class="modal-footer">
           <ul class="tag-list" id="modal-tags" aria-label="프로젝트 사용 기술"></ul>
-          <a class="button primary" id="modal-notion" href="#">Notion 상세 문서</a>
         </footer>
+      </div>
+      <button class="modal-open-design" id="modal-open-design" type="button" hidden>상세 설계 페이지</button>
+    </dialog>
+    <dialog class="design-modal" id="design-modal" aria-labelledby="design-modal-title">
+      <div class="design-modal-shell">
+        <header class="design-modal-header">
+          <div>
+            <p class="project-type">EVERWIND 상세 기술 설계</p>
+            <h2 id="design-modal-title">상세 설계 페이지</h2>
+          </div>
+          <button class="design-modal-close" type="button" aria-label="상세 설계 페이지 닫기">×</button>
+        </header>
+        <div class="design-modal-layout">
+          <nav class="design-toc" aria-label="상세 설계 페이지 목차">
+            <p class="eyebrow">문서 목차</p>
+            <ol id="design-toc-list"></ol>
+          </nav>
+          <main class="design-document">
+            <section class="design-intro" id="design-intro" aria-labelledby="design-document-title">
+              <p class="eyebrow" id="design-document-kicker"></p>
+              <h3 id="design-document-title"></h3>
+              <p id="design-document-summary"></p>
+              <div class="system-flow" id="design-system-flow" aria-label="전체 시스템 데이터 흐름"></div>
+              <ul class="design-keywords" id="design-document-keywords" aria-label="핵심 설계 키워드"></ul>
+            </section>
+            <section class="design-section" id="design-core-features" aria-labelledby="design-core-title">
+              <div class="design-section-heading">
+                <span>01</span>
+                <div><p class="eyebrow">핵심 기능의 구현 구조</p><h3 id="design-core-title">핵심 기능 설계</h3></div>
+              </div>
+              <div class="design-feature-list" id="design-feature-list"></div>
+            </section>
+            <section class="design-section" id="design-technical-docs" aria-labelledby="design-technical-title">
+              <div class="design-section-heading">
+                <span>02</span>
+                <div><p class="eyebrow">분야별 구현 구조</p><h3 id="design-technical-title">분야 &amp; 기능별 상세 기술 문서</h3></div>
+              </div>
+              <div class="technical-document-list" id="technical-document-list"></div>
+            </section>
+          </main>
+        </div>
       </div>
     </dialog>
     <dialog class="video-modal" id="video-modal" aria-labelledby="video-modal-title">
@@ -385,6 +425,6 @@
         </div>
       </div>
     </dialog>
-    <script src="script.js?v=20261006-01"></script>
+    <script src="script.js?v=20261007-07"></script>
   </body>
 </html>
