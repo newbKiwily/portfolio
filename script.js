@@ -634,7 +634,7 @@ const everwindDesignDocument = {
       decisions: [
         ["사건 발행", "처치·획득·채집·제작·상호작용을 공통 PlayEvents로 발행했습니다."],
         ["조건 해석", "QuestRequirement가 목표 정의를, QuestProgressData가 플레이어별 현재 수치를 담당합니다."],
-        ["다중 소비", "QuestManager와 TutorialGuide가 동일한 사건을 각자의 규칙으로 소비합니다."],
+        ["다중 소비", "QuestManager와 현재 활성화된 튜토리얼 단계가 같은 사건을 각자의 규칙으로 소비합니다."],
       ],
       result: "전투와 제작 코드는 퀘스트 존재를 알지 않고, 기존 사건 범위의 새 콘텐츠는 생산 시스템 수정 없이 정의 데이터로 추가됩니다.",
       tradeoff: "결합도는 낮아졌지만 실행 흐름과 구독 해제를 추적하기 어려워집니다. 타입 안전 이벤트와 구독 수명주기 검증이 필요합니다.",
@@ -643,7 +643,7 @@ const everwindDesignDocument = {
         groups: [
           { title: "Producer", nodes: ["Enemy", "FieldItem", "CraftUI"] },
           { title: "Event Hub", nodes: ["PlayEvents"] },
-          { title: "Consumer", nodes: ["QuestManager", "TutorialGuide", "QuestUI"] },
+          { title: "Consumer", nodes: ["QuestManager", "TutorialGuide", "CraftStep", "QuestUI"] },
           { title: "Progress", nodes: ["Quest", "QuestRequirement", "QuestProgressData"] },
         ],
         relations: [
@@ -651,7 +651,8 @@ const everwindDesignDocument = {
           ["FieldItem", "event", "PlayEvents", "획득"],
           ["CraftUI", "event", "PlayEvents", "제작"],
           ["PlayEvents", "event", "QuestManager", "진행 갱신"],
-          ["PlayEvents", "event", "TutorialGuide", "단계 전환"],
+          ["PlayEvents", "event", "CraftStep", "제작 완료 구독"],
+          ["CraftStep", "dependency", "TutorialGuide", "단계 전환 요청"],
           ["QuestManager", "aggregation", "QuestProgressData", "플레이어 상태"],
         ],
       },
@@ -662,7 +663,7 @@ const everwindDesignDocument = {
       keywords: ["스레드 경계", "작업 큐", "DataCenter", "초기화 순서"],
       problem: "소켓 응답은 씬과 GameObject가 준비되기 전에 도착할 수 있고, 수신 스레드에서 Unity API를 직접 호출하면 엔진의 스레드 제약을 위반합니다.",
       decisions: [
-        ["수신 스레드", "바이트 수신·패킷 분리·역직렬화·순수 데이터 보관까지만 수행합니다."],
+        ["수신 스레드", "바이트 수신·패킷 분리·해석 후 메인 스레드 작업을 등록합니다."],
         ["메인 스레드", "GameObject 생성, Transform, UI, 애니메이션 변경은 Dispatcher 작업 큐에서 실행합니다."],
         ["지연 조립", "DataCenter에 상태를 보관하고 SceneLoader와 WorldLoader가 준비된 뒤 순서대로 소비합니다."],
       ],
@@ -677,9 +678,9 @@ const everwindDesignDocument = {
         ],
         relations: [
           ["NetworkClient", "dependency", "PacketMethod", "역직렬화"],
-          ["PacketMethod", "data", "DataCenter", "상태 보관"],
+          ["PacketMethod", "data", "DataCenter", "메인 스레드 작업에서 보관"],
           ["PacketMethod", "event", "UnityMainThreadDispatcher", "작업 등록"],
-          ["UnityMainThreadDispatcher", "dependency", "SceneLoader", "씬 전환"],
+          ["PacketMethod", "dependency", "SceneLoader", "등록한 작업에서 씬 전환"],
           ["WorldLoader", "dependency", "DataCenter", "준비 후 소비"],
           ["WorldLoader", "dependency", "OtherPlayerManager", "원격 객체 구성"],
         ],
@@ -706,7 +707,7 @@ const everwindDesignDocument = {
         ],
         relations: [
           ["NetworkClient", "data", "IOCPServer", "TCP"],
-          ["IOCPServer", "composition", "SessionManager", "접속 관리"],
+          ["IOCPServer", "dependency", "SessionManager", "접속 관리"],
           ["SessionManager", "composition", "MapDataManager", "월드 경계"],
           ["MapDataManager", "aggregation", "MapData", "맵 목록"],
           ["MapData", "aggregation", "Session", "같은 맵"],
@@ -730,16 +731,17 @@ const everwindDesignDocument = {
         title: "IOCP 세션 수명 UML",
         groups: [
           { title: "Server", nodes: ["IOCPServer", "SessionManager", "PacketMethod"] },
-          { title: "Connection", nodes: ["Session", "IOContext", "ReceiveBuffer", "SendQueue"] },
-          { title: "Protocol", nodes: ["PacketHeader", "Packet"] },
+          { title: "Connection", nodes: ["Session", "IOContext"] },
+          { title: "Protocol", nodes: ["PacketHeader"] },
         ],
         relations: [
           ["IOCPServer", "aggregation", "SessionManager", "접속 등록"],
           ["SessionManager", "aggregation", "Session", "공유 수명"],
-          ["Session", "composition", "IOContext", "비동기 작업"],
-          ["Session", "composition", "SendQueue", "순서 보존"],
-          ["ReceiveBuffer", "dependency", "PacketHeader", "길이 검증"],
-          ["Session", "dependency", "PacketMethod", "완전한 패킷"],
+          ["Session", "dependency", "IOContext", "큐 데이터로 비동기 작업 생성"],
+          ["IOContext", "aggregation", "Session", "owner가 공유 수명 유지"],
+          ["Session", "dependency", "PacketHeader", "누적 vector 길이 검증"],
+          ["Session", "dependency", "IOCPServer", "완전한 패킷"],
+          ["IOCPServer", "dependency", "PacketMethod", "요청 라우팅"],
         ],
       },
     },
@@ -759,17 +761,18 @@ const everwindDesignDocument = {
         title: "런타임 상태 영속화 UML",
         direction: "TB",
         groups: [
-          { title: "Client", nodes: ["DataCenter", "Inventory", "QuestManager", "PlayerStatManager"] },
+          { title: "Client", nodes: ["DataCenter", "QuestManager", "PlayerStatManager"] },
           { title: "Server", nodes: ["Session", "PacketMethod", "Queries", "DBManager"] },
-          { title: "Database", nodes: ["UserAccount", "UserInfo", "InventoryRow", "UserQuest", "QuestProgress"] },
+          { title: "DB Tables", nodes: ["UserAccount", "UserInfo", "Inventory", "UserQuest", "UserQuestProgress"] },
         ],
         relations: [
-          ["DataCenter", "data", "Inventory", "런타임 조립"],
+          ["QuestManager", "dependency", "DataCenter", "퀘스트 진행 복원"],
+          ["PlayerStatManager", "dependency", "DataCenter", "스탯 복원"],
           ["PacketMethod", "dependency", "Queries", "조회·저장"],
           ["Queries", "dependency", "DBManager", "Prepared Statement"],
-          ["UserAccount", "composition", "UserInfo", "1:1"],
-          ["UserAccount", "aggregation", "InventoryRow", "1:N"],
-          ["UserQuest", "composition", "QuestProgress", "조건별 진행"],
+          ["PacketMethod", "dependency", "Session", "조회 결과로 세션 구성"],
+          ...["UserAccount", "UserInfo", "Inventory", "UserQuest", "UserQuestProgress"]
+            .map((table) => ["Queries", "data", table, "조회·저장 대상"]),
         ],
       },
     },
@@ -803,6 +806,24 @@ const everwindDesignDocument = {
             ["구현 방식", "SingletonManager가 DataCenter·NetworkClient·SceneLoader를 먼저 준비하고 WorldLoader가 맵·로컬 플레이어·원격 객체·몬스터를 조립합니다."],
             ["변경 지점", "새 씬 의존 객체는 WorldLoader 단계에 연결하고, 여러 씬에서 유지되는 상태는 DataCenter 경계 안에 둡니다."],
           ],
+          diagram: {
+            title: "초기화 순서와 월드 생성",
+            zoomable: true,
+            groups: [
+              { title: "Startup", nodes: ["SingletonManager", "SingletonBasest", "SceneLoader"] },
+              { title: "World", nodes: ["WorldLoader", "DataCenter", "Player", "OtherPlayerManager", "EnemySpawner"] },
+            ],
+            relations: [
+              ["SingletonManager", "aggregation", "SingletonBasest", "우선순위별 초기화"],
+              ["SceneLoader", "dependency", "SingletonManager", "씬 로드 후 인게임 초기화"],
+              ["SceneLoader", "dependency", "DataCenter", "맵·스폰·대기 데이터"],
+              ["SceneLoader", "dependency", "WorldLoader", "월드 조립 요청"],
+              ["WorldLoader", "dependency", "DataCenter", "맵·몬스터 정의 조회"],
+              ["WorldLoader", "aggregation", "Player", "로컬 플레이어 생성"],
+              ["WorldLoader", "dependency", "OtherPlayerManager", "원격 플레이어 등록"],
+              ["WorldLoader", "dependency", "EnemySpawner", "몬스터 등록"],
+            ],
+          },
         },
         {
           title: "플레이어 상태와 전투",
@@ -812,6 +833,25 @@ const everwindDesignDocument = {
             ["구현 방식", "PlayerStateContexter가 IState의 진입·갱신·종료를 관리하고 CombatManager가 타깃·스킬·쿨다운을 판단합니다."],
             ["변경 지점", "새 행동은 상태 클래스와 전환 조건에, 새 표현은 AnimationSet과 Override 데이터에 추가합니다."],
           ],
+          diagram: {
+            title: "상태 전환과 전투·표현의 경계",
+            direction: "TB",
+            zoomable: true,
+            groups: [
+              { title: "Player Components", nodes: ["Player", "PlayerStateContexter", "CombatManager", "AnimationContexter"] },
+              { title: "State Contract", nodes: ["IState", "IdleState", "AttackState"] },
+              { title: "Skill Execution", nodes: ["Skill"] },
+            ],
+            relations: [
+              ["Player", "aggregation", "PlayerStateContexter", "행동 전환"],
+              ["Player", "aggregation", "CombatManager", "타깃·쿨다운"],
+              ["PlayerStateContexter", "aggregation", "IState", "진입·갱신·종료"],
+              ["IdleState", "implementation", "IState"],
+              ["AttackState", "implementation", "IState"],
+              ["PlayerStateContexter", "dependency", "AnimationContexter", "상태 표현"],
+              ["CombatManager", "aggregation", "Skill", "현재 시전 스킬"],
+            ],
+          },
         },
         {
           title: "스킬·아이템·장비·제작",
@@ -819,26 +859,84 @@ const everwindDesignDocument = {
           details: [
             ["설계 의도", "새 콘텐츠가 공통 실행 흐름을 재사용하면서 유형별 차이만 구현하도록 만듭니다."],
             ["구현 방식", "ScriptableObject가 아이템·레시피 정의를 보관하고, 추상 스킬과 IUsableItem 계약이 실행 수명주기를 통일합니다."],
-            ["변경 지점", "새 아이템·스킬은 정의 에셋과 파생 동작을 추가하며 슬롯·장비·제작 UI는 상태 변경 이벤트를 구독합니다."],
+            ["변경 지점", "새 아이템·스킬은 정의 에셋과 파생 동작을 추가합니다. 인벤토리는 공통 사용 계약으로 실행하고, 장비·제작 UI는 장착 처리와 재료 검증·차감을 담당합니다."],
           ],
+          diagram: {
+            title: "아이템 사용 계약과 장비·제작 연결",
+            direction: "TB",
+            zoomable: true,
+            groups: [
+              { title: "Item Definitions", nodes: ["InventoryItem", "ConsumeItem", "EquipmentItem", "IUsableItem"] },
+              { title: "Runtime UI", nodes: ["Inventory", "EquipmentUI", "CraftUI"] },
+              { title: "Recipe Definition", nodes: ["CraftItemRecipe"] },
+            ],
+            relations: [
+              ["ConsumeItem", "inheritance", "InventoryItem"],
+              ["EquipmentItem", "inheritance", "InventoryItem"],
+              ["ConsumeItem", "implementation", "IUsableItem"],
+              ["EquipmentItem", "implementation", "IUsableItem"],
+              ["Inventory", "dependency", "IUsableItem", "사용 요청"],
+              ["EquipmentItem", "dependency", "EquipmentUI", "장착 요청"],
+              ["CraftUI", "aggregation", "CraftItemRecipe", "재료·결과 정의"],
+              ["CraftUI", "dependency", "Inventory", "수량 검증·차감·결과 지급"],
+            ],
+          },
         },
         {
           title: "퀘스트·튜토리얼 이벤트",
           summary: "전투·채집·제작 시스템은 사건만 발행하고 퀘스트와 튜토리얼이 각자의 규칙으로 해석합니다.",
           details: [
             ["설계 의도", "진행 콘텐츠가 생산 시스템을 직접 조회하지 않게 해 양쪽의 변경을 분리합니다."],
-            ["구현 방식", "PlayEvents가 처치·획득·제작·상호작용을 전달하고 QuestManager와 TutorialGuide가 필요한 사건만 소비합니다."],
+            ["구현 방식", "PlayEvents가 처치·획득·제작·상호작용을 전달합니다. QuestManager는 목표 진행을 갱신하고, TutorialGuide가 선택한 개별 단계는 해당 사건을 구독해 다음 단계로 전환합니다."],
             ["변경 지점", "기존 사건을 사용하는 목표는 정의 데이터로 추가하고, 새로운 목표 유형만 이벤트 계약과 처리기를 확장합니다."],
           ],
+          diagram: {
+            title: "플레이 사건과 퀘스트·튜토리얼 소비 구조",
+            zoomable: true,
+            groups: [
+              { title: "Event Producers", nodes: ["FieldItem", "CraftUI"] },
+              { title: "Events", nodes: ["PlayEvents"] },
+              { title: "Quest", nodes: ["QuestManager", "Quest", "UIEvents"] },
+              { title: "Tutorial", nodes: ["TutorialGuide", "ITutorialStep", "CraftStep"] },
+            ],
+            relations: [
+              ["FieldItem", "event", "PlayEvents", "채집 완료"],
+              ["CraftUI", "event", "PlayEvents", "제작 완료"],
+              ["PlayEvents", "event", "QuestManager", "조건별 진행 갱신"],
+              ["QuestManager", "aggregation", "Quest", "목표·보상 정의"],
+              ["QuestManager", "event", "UIEvents", "진행 변경 알림"],
+              ["TutorialGuide", "aggregation", "ITutorialStep", "현재 단계"],
+              ["CraftStep", "implementation", "ITutorialStep"],
+              ["PlayEvents", "event", "CraftStep", "제작 완료 구독"],
+              ["CraftStep", "dependency", "TutorialGuide", "다음 단계 요청"],
+            ],
+          },
         },
         {
           title: "네트워크 수신과 Unity 반영",
           summary: "소켓 스레드의 데이터 처리와 Unity 메인 스레드의 GameObject·UI 갱신을 작업 큐로 분리했습니다.",
           details: [
             ["설계 의도", "Unity API의 스레드 제약을 지키면서 네트워크 도착 시점과 객체 생성 시점을 독립시킵니다."],
-            ["구현 방식", "수신 스레드는 패킷 분리·역직렬화·DataCenter 보관까지만 수행하고 Dispatcher가 메인 스레드 작업을 실행합니다."],
+            ["구현 방식", "수신 스레드는 헤더·본문을 읽고 패킷을 해석한 뒤 Dispatcher에 작업을 등록합니다. 로드 데이터 보관과 원격 객체 갱신은 등록된 메인 스레드 작업에서 수행합니다."],
             ["변경 지점", "새 수신 기능은 순수 데이터 변환과 Unity 반영 작업을 나누어 등록합니다."],
           ],
+          diagram: {
+            title: "소켓 수신에서 메인 스레드 반영까지",
+            zoomable: true,
+            groups: [
+              { title: "Receive Thread", nodes: ["NetworkClient", "PacketMethod"] },
+              { title: "Main Thread Queue", nodes: ["UnityMainThreadDispatcher"] },
+              { title: "Main Thread Targets", nodes: ["DataCenter", "WorldLoader", "OtherPlayerManager", "EnemySpawner"] },
+            ],
+            relations: [
+              ["NetworkClient", "dependency", "PacketMethod", "PacketType별 처리"],
+              ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Action 등록"],
+              ["PacketMethod", "data", "DataCenter", "큐 안에서 로드 데이터 보관"],
+              ["PacketMethod", "dependency", "WorldLoader", "큐 안에서 월드 갱신"],
+              ["PacketMethod", "dependency", "OtherPlayerManager", "큐 안에서 원격 상태 반영"],
+              ["PacketMethod", "dependency", "EnemySpawner", "큐 안에서 몬스터 조회"],
+            ],
+          },
         },
         {
           title: "UI 이벤트와 HUD·미니맵·전투 피드백",
@@ -1076,6 +1174,22 @@ const everwindDesignDocument = {
             ["구현 방식", "SessionManager가 세션을 공유 소유하고 IOContext가 작업과 세션 수명을 묶으며 완료 루틴이 연결 상태를 재확인합니다."],
             ["동시성", "atomic은 단일 상태 전이, mutex는 세션·맵 컨테이너, condition_variable은 작업 대기에 사용합니다."],
           ],
+          diagram: {
+            title: "완료 통지와 세션 공유 수명",
+            zoomable: true,
+            groups: [
+              { title: "Server", nodes: ["IOCPServer", "SessionManager"] },
+              { title: "Async Lifetime", nodes: ["Session", "IOContext"] },
+            ],
+            relations: [
+              ["IOCPServer", "dependency", "SessionManager", "접속 등록·제거"],
+              ["SessionManager", "aggregation", "Session", "shared_ptr 보관"],
+              ["Session", "dependency", "IOContext", "Recv·Send 작업 생성"],
+              ["IOContext", "aggregation", "Session", "owner가 수명 유지"],
+              ["IOCPServer", "dependency", "IOContext", "완료 통지에서 owner 조회"],
+              ["IOCPServer", "dependency", "Session", "송수신 완료 처리"],
+            ],
+          },
         },
         {
           title: "TCP 패킷 프레이밍과 송신 큐",
@@ -1085,6 +1199,21 @@ const everwindDesignDocument = {
             ["구현 방식", "누적 버퍼의 헤더·길이를 검증해 완성 패킷만 라우팅하고 잔여 바이트를 다음 수신으로 넘깁니다."],
             ["송신 규칙", "세션별 큐에서 한 번에 하나의 비동기 송신만 진행하고 완료 후 다음 버퍼를 이어 보냅니다."],
           ],
+          diagram: {
+            title: "TCP 누적 수신과 큐 기반 송신",
+            zoomable: true,
+            groups: [
+              { title: "Connection", nodes: ["Session", "IOContext", "PacketHeader"] },
+              { title: "Dispatch", nodes: ["IOCPServer", "PacketMethod"] },
+            ],
+            relations: [
+              ["Session", "dependency", "PacketHeader", "누적 vector에서 길이 검증"],
+              ["Session", "dependency", "IOCPServer", "완전한 패킷 전달"],
+              ["IOCPServer", "dependency", "PacketMethod", "요청 라우팅"],
+              ["Session", "dependency", "IOContext", "송신 queue에서 한 건 생성"],
+              ["IOCPServer", "dependency", "Session", "완료 후 다음 송신"],
+            ],
+          },
         },
         {
           title: "맵 단위 세션과 멀티플레이 전파",
@@ -1094,6 +1223,22 @@ const everwindDesignDocument = {
             ["구현 방식", "MapDataManager가 맵별 Session과 Enemy를 보유하고 PacketMethod가 세션의 현재 맵을 기준으로 대상을 선택합니다."],
             ["확장 방향", "월드 규모가 커지면 맵 단위 경계를 공간 분할과 AOI로 세분화합니다."],
           ],
+          diagram: {
+            title: "맵 소속과 브로드캐스트 범위",
+            zoomable: true,
+            groups: [
+              { title: "Routing", nodes: ["PacketMethod", "SessionManager"] },
+              { title: "Map Scope", nodes: ["MapDataManager", "MapData", "Session"] },
+            ],
+            relations: [
+              ["SessionManager", "composition", "MapDataManager", "unique_ptr"],
+              ["MapDataManager", "aggregation", "MapData", "MapId별 등록"],
+              ["MapData", "aggregation", "Session", "weak_ptr로 맵 소속 보관"],
+              ["PacketMethod", "dependency", "Session", "현재 MapId 확인"],
+              ["PacketMethod", "dependency", "MapDataManager", "맵 이동·전파 요청"],
+              ["MapData", "dependency", "Session", "같은 맵에 송신"],
+            ],
+          },
         },
         {
           title: "몬스터 월드와 타이머",
@@ -1103,6 +1248,21 @@ const everwindDesignDocument = {
             ["구현 방식", "TimerManager가 우선순위 큐와 condition_variable로 단발·반복 작업을 실행하고 맵별 최대 수를 기준으로 몬스터를 보충합니다."],
             ["권위 경계", "현재 일부 몬스터 갱신은 클라이언트 소유이며 운영 구조에서는 AI와 판정을 서버로 이전해야 합니다."],
           ],
+          diagram: {
+            title: "반복 타이머와 맵별 몬스터 보충",
+            zoomable: true,
+            groups: [
+              { title: "Schedule", nodes: ["TimerManager", "Timer"] },
+              { title: "World", nodes: ["MapDataManager", "MapData", "Enemy", "PacketMethod"] },
+            ],
+            relations: [
+              ["TimerManager", "aggregation", "Timer", "우선순위 큐"],
+              ["Timer", "dependency", "MapDataManager", "main에서 등록한 반복 콜백"],
+              ["MapDataManager", "aggregation", "MapData", "모든 맵 순회"],
+              ["MapData", "aggregation", "Enemy", "최대 수까지 생성"],
+              ["MapDataManager", "dependency", "PacketMethod", "생성 패킷 구성"],
+            ],
+          },
         },
         {
           title: "패킷 라우팅과 DB 접근 경계",
@@ -1112,20 +1272,38 @@ const everwindDesignDocument = {
             ["구현 방식", "PacketMethod가 사용자·맵 상태를 확인해 처리기를 선택하고 Queries가 Prepared Statement 기반 조회·저장을 담당합니다."],
             ["확장 방향", "DB 작업 큐와 커넥션 풀을 추가해 네트워크 워커가 쿼리 완료를 기다리지 않게 합니다."],
           ],
+          diagram: {
+            title: "요청 라우팅과 현재의 동기 DB 접근",
+            zoomable: true,
+            groups: [
+              { title: "Transport", nodes: ["Session", "PacketHeader", "IOCPServer"] },
+              { title: "Application", nodes: ["PacketMethod"] },
+              { title: "Persistence", nodes: ["Queries", "DBManager"] },
+            ],
+            relations: [
+              ["Session", "dependency", "PacketHeader", "메시지 경계 확인"],
+              ["Session", "dependency", "IOCPServer", "완성 패킷 전달"],
+              ["IOCPServer", "dependency", "PacketMethod", "PacketId별 처리"],
+              ["PacketMethod", "aggregation", "Queries", "조회·저장 호출"],
+              ["Queries", "dependency", "DBManager", "연결·mutex·Prepared Statement"],
+            ],
+          },
         },
       ],
       diagram: {
         title: "서버 계층 UML",
         direction: "TB",
         groups: [
-          { title: "I/O", nodes: ["IOCPServer", "IOContext", "Worker"] },
-          { title: "Session", nodes: ["SessionManager", "Session", "SendQueue"] },
+          { title: "I/O", nodes: ["IOCPServer", "IOContext", "PacketHeader"] },
+          { title: "Session", nodes: ["SessionManager", "Session"] },
           { title: "World", nodes: ["MapDataManager", "MapData", "Enemy", "TimerManager"] },
           { title: "Application", nodes: ["PacketMethod", "Queries"] },
         ],
         relations: [
           ["IOCPServer", "aggregation", "SessionManager", "연결 관리"],
-          ["Session", "composition", "IOContext", "비동기 수명"],
+          ["Session", "dependency", "IOContext", "비동기 작업 생성"],
+          ["IOContext", "aggregation", "Session", "owner 공유 수명"],
+          ["Session", "dependency", "PacketHeader", "수신 메시지 경계"],
           ["SessionManager", "composition", "MapDataManager", "월드 경계"],
           ["MapData", "aggregation", "Session", "브로드캐스트 범위"],
           ["MapData", "aggregation", "Enemy", "게임 상태"],
@@ -1162,6 +1340,21 @@ const everwindDesignDocument = {
             ["복원 방식", "로그인 성공 후 UserInfo와 MapInfo를 조회해 세션 상태를 만들고 클라이언트 DataCenter로 전달합니다."],
             ["보안 과제", "고정 솔트와 평문 TCP는 운영 수준이 아니므로 사용자별 솔트와 TLS 적용이 필요합니다."],
           ],
+          diagram: {
+            title: "로그인 조회 대상과 세션 복원",
+            zoomable: true,
+            groups: [
+              { title: "Server Code", nodes: ["PacketMethod", "Queries", "Session"] },
+              { title: "DB Tables", nodes: ["UserAccount", "UserInfo", "MapInfo"] },
+            ],
+            relations: [
+              ["PacketMethod", "dependency", "Queries", "로그인 조회"],
+              ["Queries", "data", "UserAccount", "인증 데이터"],
+              ["Queries", "data", "UserInfo", "캐릭터 상태"],
+              ["Queries", "data", "MapInfo", "저장 위치가 NULL이면 스폰 좌표"],
+              ["PacketMethod", "dependency", "Session", "UserId·MapId·위치 설정"],
+            ],
+          },
         },
         {
           title: "인벤토리·장비 상태",
@@ -1171,6 +1364,22 @@ const everwindDesignDocument = {
             ["복원 방식", "DB의 ItemID와 클라이언트 ScriptableObject 정의를 결합해 런타임 아이템과 슬롯을 재구성합니다."],
             ["설계 판단", "정의 데이터의 중복 저장을 피했지만 클라이언트와 DB가 동일한 정의 ID 계약을 유지해야 합니다."],
           ],
+          diagram: {
+            title: "인벤토리 행 조회와 장착 상태 저장",
+            zoomable: true,
+            groups: [
+              { title: "Server Code", nodes: ["PacketMethod", "Queries", "DBManager"] },
+              { title: "Packet Struct", nodes: ["PKT_INVENTORY_ITEM"] },
+              { title: "DB Table", nodes: ["Inventory"] },
+            ],
+            relations: [
+              ["PacketMethod", "dependency", "Queries", "로그인 조회·저장 요청"],
+              ["PacketMethod", "dependency", "PKT_INVENTORY_ITEM", "ItemID·수량·슬롯·장착 상태"],
+              ["Queries", "dependency", "PKT_INVENTORY_ITEM", "저장 값 읽기"],
+              ["Queries", "data", "Inventory", "UserID별 SELECT·REPLACE"],
+              ["Queries", "dependency", "DBManager", "연결과 쿼리 잠금"],
+            ],
+          },
         },
         {
           title: "퀘스트·조건별 진행 상태",
@@ -1180,24 +1389,74 @@ const everwindDesignDocument = {
             ["복원 방식", "퀘스트 정의 ID에 조건별 진행 행을 결합해 QuestProgressData를 다시 구성합니다."],
             ["트랜잭션", "보상 수령은 완료 상태·보상 플래그·인벤토리 지급을 하나의 트랜잭션으로 묶는 것이 다음 단계입니다."],
           ],
+          diagram: {
+            title: "퀘스트 상태와 조건별 진행 행",
+            zoomable: true,
+            groups: [
+              { title: "Server Code", nodes: ["PacketMethod", "Queries"] },
+              { title: "Packet Struct", nodes: ["PKT_QUEST_DATA"] },
+              { title: "DB Tables", nodes: ["UserQuest", "UserQuestProgress"] },
+            ],
+            relations: [
+              ["PacketMethod", "dependency", "Queries", "조회·초기화·저장"],
+              ["Queries", "dependency", "PKT_QUEST_DATA", "완료·보상·조건별 수량 읽기"],
+              ["Queries", "data", "UserQuest", "완료·보상 상태 REPLACE"],
+              ["Queries", "data", "UserQuestProgress", "기존 행 DELETE 후 INSERT"],
+              ["UserQuest", "data", "UserQuestProgress", "UserID·QuestId로 조회 JOIN"],
+            ],
+          },
         },
         {
           title: "맵·몬스터 스폰 기준",
           summary: "플레이어의 현재 위치와 월드의 스폰 정의를 MapInfo를 중심으로 연결했습니다.",
           details: [
             ["테이블 경계", "MapInfo는 플레이어·몬스터 스폰 좌표와 최대 개체 수를, Monster는 맵에서 생성할 몬스터 종류를 가리킵니다."],
-            ["서버 연결", "서버가 맵 진입 시 스폰 기준을 읽어 MapData를 구성하고 세션의 현재 맵을 갱신합니다."],
+            ["서버 연결", "서버 시작 시 전체 맵의 스폰 기준을 조회해 MapData를 등록합니다. 맵 진입·이동 시에는 등록된 맵을 조회하고 세션의 현재 맵과 위치를 갱신합니다."],
             ["설계 판단", "정적 월드 정의가 커지면 전용 콘텐츠 데이터와 런타임 스폰 상태를 추가로 분리해야 합니다."],
           ],
+          diagram: {
+            title: "맵 정의 조회와 서버 월드 등록",
+            zoomable: true,
+            groups: [
+              { title: "DB Tables", nodes: ["MapInfo", "Monster"] },
+              { title: "Load Data", nodes: ["Queries", "MapInitialInfo"] },
+              { title: "Runtime World", nodes: ["MapData", "MapDataManager"] },
+            ],
+            relations: [
+              ["Queries", "data", "MapInfo", "스폰 좌표·최대 수"],
+              ["Queries", "data", "Monster", "MapId로 종류 조회"],
+              ["Queries", "dependency", "MapInitialInfo", "맵별 조회 결과 구성"],
+              ["MapInitialInfo", "data", "MapData", "main에서 생성자에 전달"],
+              ["MapDataManager", "aggregation", "MapData", "main에서 MapId별 등록"],
+            ],
+          },
         },
         {
           title: "저장 시점과 일관성",
           summary: "맵 이동·연결 종료를 기본 체크포인트로 사용하고 여러 테이블의 변경 경계를 명시했습니다.",
           details: [
-            ["현재 구현", "맵·위치·스탯·인벤토리·퀘스트 진행 상태를 런타임 모델에서 DB 행으로 변환해 저장합니다."],
+            ["현재 구현", "맵 변경 요청과 서버 연결 종료 시 맵·위치를 저장합니다. 클라이언트는 정상 종료 요청 때 인벤토리·스탯·퀘스트 저장 패킷을 보내며, 서버가 각 요청에 대해 DB 행을 갱신합니다."],
             ["문제 인식", "종료 시점 중심 저장은 비정상 종료에 취약하고 여러 테이블이 일부만 반영될 수 있습니다."],
             ["개선 방향", "중요 이벤트 체크포인트, 주기 저장, 트랜잭션, 비동기 DB 작업 큐를 순서대로 추가합니다."],
           ],
+          diagram: {
+            title: "저장 요청 경로와 테이블별 반영",
+            zoomable: true,
+            groups: [
+              { title: "Server Entry Points", nodes: ["Session", "PacketMethod"] },
+              { title: "Persistence", nodes: ["Queries", "DBManager"] },
+              { title: "DB Tables", nodes: ["UserInfo", "Inventory", "UserQuest", "UserQuestProgress"] },
+            ],
+            relations: [
+              ["Session", "dependency", "Queries", "Close에서 위치 저장"],
+              ["PacketMethod", "dependency", "Queries", "맵 이동·상태 저장 요청"],
+              ["Queries", "dependency", "DBManager", "동기 쿼리 실행"],
+              ["Queries", "data", "UserInfo", "위치·맵·스탯·튜토리얼"],
+              ["Queries", "data", "Inventory", "아이템 행"],
+              ["Queries", "data", "UserQuest", "퀘스트 상태"],
+              ["Queries", "data", "UserQuestProgress", "조건별 수량"],
+            ],
+          },
         },
       ],
       diagram: {
@@ -1814,17 +2073,40 @@ const makeUmlDiagram = (diagram) => {
 };
 
 let umlZoomIndex = 0;
-const updateUmlZoomScale = () => {
+let umlZoomRenderedScale = 100;
+let umlZoomPan = { x: 0, y: 0 };
+let umlZoomDrag;
+
+const renderUmlZoomView = () => {
   const diagram = umlZoomCanvas.querySelector("svg");
   if (!diagram) return;
   const scale = Number(umlZoomScale.value) / 100;
   const { width, height } = diagram.viewBox.baseVal;
   diagram.style.setProperty("--uml-width", `${width * scale}px`);
   diagram.style.setProperty("--uml-height", `${height * scale}px`);
+  umlZoomCanvas.style.transform = `translate(${umlZoomPan.x}px, ${umlZoomPan.y}px)`;
+  umlZoomRenderedScale = Number(umlZoomScale.value);
   umlZoomValue.value = `${umlZoomScale.value}%`;
 };
 
+const updateUmlZoomScale = (anchor = { x: umlZoomViewport.clientWidth / 2, y: umlZoomViewport.clientHeight / 2 }) => {
+  const ratio = Number(umlZoomScale.value) / umlZoomRenderedScale;
+  // Keep the diagram point under the cursor fixed while changing scale.
+  umlZoomPan.x = anchor.x - (anchor.x - umlZoomPan.x) * ratio;
+  umlZoomPan.y = anchor.y - (anchor.y - umlZoomPan.y) * ratio;
+  renderUmlZoomView();
+};
+
+const stopUmlZoomDrag = () => {
+  if (umlZoomDrag && umlZoomViewport.hasPointerCapture(umlZoomDrag.id)) {
+    umlZoomViewport.releasePointerCapture(umlZoomDrag.id);
+  }
+  umlZoomDrag = undefined;
+  umlZoomViewport.classList.remove("is-dragging");
+};
+
 const closeUmlZoom = () => {
+  stopUmlZoomDrag();
   if (umlZoomModal.open) umlZoomModal.close();
 };
 
@@ -1834,8 +2116,9 @@ const fitUmlZoom = () => {
   const { width, height } = diagram.viewBox.baseVal;
   const scale = Math.min((umlZoomViewport.clientWidth - 32) / width, (umlZoomViewport.clientHeight - 32) / height);
   umlZoomScale.value = String(Math.max(1, Math.min(200, Math.floor(scale * 100))));
-  updateUmlZoomScale();
-  umlZoomViewport.scrollTo(0, 0);
+  const fittedScale = Number(umlZoomScale.value) / 100;
+  umlZoomPan = { x: (umlZoomViewport.clientWidth - width * fittedScale) / 2, y: (umlZoomViewport.clientHeight - height * fittedScale) / 2 };
+  renderUmlZoomView();
 };
 
 document.addEventListener("click", (event) => {
@@ -1865,13 +2148,53 @@ document.addEventListener("click", (event) => {
   umlZoomModal.querySelector("#uml-zoom-title").textContent = source.getAttribute("aria-label");
   umlZoomCanvas.replaceChildren(diagram);
   umlZoomScale.value = "100";
-  updateUmlZoomScale();
+  umlZoomPan = { x: 0, y: 0 };
+  renderUmlZoomView();
   umlZoomModal.showModal();
   fitUmlZoom();
   umlZoomClose.focus();
 });
 
-umlZoomScale.addEventListener("input", updateUmlZoomScale);
+umlZoomScale.addEventListener("input", () => updateUmlZoomScale());
+umlZoomViewport.addEventListener("wheel", (event) => {
+  if (!umlZoomCanvas.querySelector("svg")) return;
+  event.preventDefault();
+  const bounds = umlZoomViewport.getBoundingClientRect();
+  const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? umlZoomViewport.clientHeight : 1;
+  const delta = Math.max(-240, Math.min(240, event.deltaY * unit));
+  const current = Number(umlZoomScale.value);
+  let next = Math.round(current * Math.exp(-delta * .0025));
+  if (next === current && delta) next += delta < 0 ? 1 : -1;
+  umlZoomScale.value = String(Math.max(Number(umlZoomScale.min), Math.min(Number(umlZoomScale.max), next)));
+  updateUmlZoomScale({ x: event.clientX - bounds.left, y: event.clientY - bounds.top });
+}, { passive: false });
+umlZoomViewport.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || umlZoomDrag || !umlZoomCanvas.querySelector("svg")) return;
+  event.preventDefault();
+  umlZoomViewport.focus({ preventScroll: true });
+  umlZoomDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX: umlZoomPan.x, panY: umlZoomPan.y };
+  umlZoomViewport.setPointerCapture(event.pointerId);
+  umlZoomViewport.classList.add("is-dragging");
+});
+umlZoomViewport.addEventListener("pointermove", (event) => {
+  if (umlZoomDrag?.id !== event.pointerId) return;
+  umlZoomPan = { x: umlZoomDrag.panX + event.clientX - umlZoomDrag.x, y: umlZoomDrag.panY + event.clientY - umlZoomDrag.y };
+  renderUmlZoomView();
+});
+umlZoomViewport.addEventListener("pointerup", (event) => {
+  if (umlZoomDrag?.id === event.pointerId) stopUmlZoomDrag();
+});
+umlZoomViewport.addEventListener("pointercancel", stopUmlZoomDrag);
+umlZoomViewport.addEventListener("lostpointercapture", stopUmlZoomDrag);
+umlZoomViewport.addEventListener("dragstart", (event) => event.preventDefault());
+umlZoomViewport.addEventListener("keydown", (event) => {
+  const movement = { ArrowLeft: [40, 0], ArrowRight: [-40, 0], ArrowUp: [0, 40], ArrowDown: [0, -40] }[event.key];
+  if (!movement) return;
+  event.preventDefault();
+  umlZoomPan.x += movement[0];
+  umlZoomPan.y += movement[1];
+  renderUmlZoomView();
+});
 umlZoomModal.querySelector("#uml-zoom-fit").addEventListener("click", fitUmlZoom);
 umlZoomClose.addEventListener("click", closeUmlZoom);
 umlZoomModal.addEventListener("click", (event) => {
