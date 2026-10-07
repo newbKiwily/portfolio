@@ -10,7 +10,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2313192b'/%3E%3Cpath fill='%23ff9635' d='M8 8h16v4H8zM8 12h4v12H8zM20 12h4v12h-4zM12 20h8v4h-8z'/%3E%3Cpath fill='%23ffe18c' d='M12 12h8v4h-8z'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261007-08" />
+    <link rel="stylesheet" href="styles.css?v=20261008-02" />
   </head>
   <body>
     <div class="scanline" aria-hidden="true"></div>
@@ -387,22 +387,42 @@
               <div class="system-flow" id="design-system-flow" aria-label="전체 시스템 데이터 흐름"></div>
               <ul class="design-keywords" id="design-document-keywords" aria-label="핵심 설계 키워드"></ul>
             </section>
-            <section class="design-section" id="design-core-features" aria-labelledby="design-core-title">
-              <div class="design-section-heading">
-                <span>01</span>
-                <div><p class="eyebrow">핵심 기능의 구현 구조</p><h3 id="design-core-title">핵심 기능 설계</h3></div>
-              </div>
-              <div class="design-feature-list" id="design-feature-list"></div>
-            </section>
             <section class="design-section" id="design-technical-docs" aria-labelledby="design-technical-title">
               <div class="design-section-heading">
-                <span>02</span>
+                <span>01</span>
                 <div><p class="eyebrow">분야별 구현 구조</p><h3 id="design-technical-title">분야 &amp; 기능별 상세 기술 문서</h3></div>
               </div>
               <div class="technical-document-list" id="technical-document-list"></div>
             </section>
           </main>
         </div>
+      </div>
+    </dialog>
+    <dialog class="design-modal feature-design-modal" id="feature-design-modal" aria-labelledby="feature-design-title">
+      <div class="design-modal-shell">
+        <header class="design-modal-header">
+          <div>
+            <p class="project-type">EVERWIND / CORE FEATURE</p>
+            <h2 id="feature-design-title">상세 구현 설명</h2>
+          </div>
+          <button class="design-modal-close" type="button" aria-label="상세 구현 설명 닫기">×</button>
+        </header>
+        <div id="feature-design-content"></div>
+      </div>
+    </dialog>
+    <dialog class="uml-zoom-modal" id="uml-zoom-modal" aria-labelledby="uml-zoom-title">
+      <header class="uml-zoom-header">
+        <h2 id="uml-zoom-title">UML 확대 보기</h2>
+        <button class="design-modal-close" type="button" aria-label="UML 확대 창 닫기">×</button>
+      </header>
+      <div class="uml-zoom-toolbar">
+        <label for="uml-zoom-scale">배율</label>
+        <input id="uml-zoom-scale" type="range" min="1" max="200" step="1" value="100" />
+        <output id="uml-zoom-value" for="uml-zoom-scale">100%</output>
+        <button id="uml-zoom-fit" type="button">전체 보기</button>
+      </div>
+      <div class="uml-zoom-viewport" tabindex="0" aria-label="확대 UML 스크롤 영역">
+        <div class="mermaid-canvas" id="uml-zoom-canvas"></div>
       </div>
     </dialog>
     <dialog class="video-modal" id="video-modal" aria-labelledby="video-modal-title">
@@ -425,6 +445,6 @@
         </div>
       </div>
     </dialog>
-    <script src="script.js?v=20261007-08"></script>
+    <script src="script.js?v=20261008-02"></script>
   </body>
 </html>

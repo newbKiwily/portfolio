@@ -565,7 +565,7 @@ const projects = {
 const everwindDesignDocument = {
   kicker: "EVERWIND / 상세 설계 기록",
   title: "확장되는 RPG를 지탱하는 책임과 데이터의 경계",
-  summary: "기능을 많이 붙이는 것보다, 콘텐츠가 늘어날 때 무엇이 바뀌고 무엇은 유지되어야 하는지를 먼저 설계했습니다. 아래 문서는 핵심 기능의 구현 근거와 Unity 클라이언트, C++ IOCP 서버, MariaDB까지 이어지는 전체 흐름을 책임 관계 중심으로 설명합니다.",
+  summary: "기능을 많이 붙이는 것보다, 콘텐츠가 늘어날 때 무엇이 바뀌고 무엇은 유지되어야 하는지를 먼저 설계했습니다. 아래 문서는 Unity 클라이언트, C++ IOCP 서버, MariaDB의 기능별 구현과 전체 흐름을 책임 관계 중심으로 설명합니다.",
   keywords: ["확장성", "상태 패턴", "이벤트 기반", "스레드 경계", "맵 컨텍스트", "비동기 수명주기", "영속화"],
   systemFlow: ["Unity Client", "TCP Binary Protocol", "C++ IOCP Server", "Queries", "MariaDB"],
   coreFeatures: [
@@ -757,6 +757,7 @@ const everwindDesignDocument = {
       tradeoff: "종료 시점 중심 저장은 비정상 종료에 취약합니다. 중요 이벤트 체크포인트, 트랜잭션, DB 작업 큐와 커넥션 풀이 다음 개선 순서입니다.",
       diagram: {
         title: "런타임 상태 영속화 UML",
+        direction: "TB",
         groups: [
           { title: "Client", nodes: ["DataCenter", "Inventory", "QuestManager", "PlayerStatManager"] },
           { title: "Server", nodes: ["Session", "PacketMethod", "Queries", "DBManager"] },
@@ -839,22 +840,211 @@ const everwindDesignDocument = {
             ["변경 지점", "새 수신 기능은 순수 데이터 변환과 Unity 반영 작업을 나누어 등록합니다."],
           ],
         },
+        {
+          title: "UI 이벤트와 HUD·미니맵·전투 피드백",
+          summary: "게임 상태를 판단하는 역할과 화면에 표현하는 역할을 나누고, UI 이벤트와 플레이어 재바인딩으로 상태 변경을 화면에 반영했습니다.",
+          emphasis: ["UI 이벤트", "재바인딩", "구독 수명", "쿨다운", "미니맵", "오브젝트 풀", "맵 전환"],
+          details: [
+            ["설계 의도", "전투·월드 시스템이 개별 화면의 이미지나 버튼을 직접 수정하는 대신 UI 이벤트로 필요한 값과 표현 요청을 전달하도록 했습니다. 다만 체력 표시는 플레이어의 피해 이벤트를 직접 구독하는 구조를 함께 사용합니다."],
+            ["구독 수명", "HUD와 스킬 버튼, 적 체력 UI는 활성화 시 이벤트를 구독하고 비활성화 시 해제합니다. 로컬 플레이어 생성 시 이전 피해 이벤트 연결을 끊고 새 플레이어에 재바인딩하며, 초기 쿨다운 상태도 다시 전달합니다."],
+            ["체력·쿨다운", "체력은 현재 값과 최대 값의 비율을 게이지에 반영합니다. 스킬 버튼은 자신의 스킬 인덱스에 해당하는 쿨다운 비율과 사용 가능 여부만 받아 채움 이미지와 버튼 활성 상태를 바꾸고, 클릭 시 실행 판단은 전투 시스템에 요청합니다."],
+            ["미니맵", "맵별 이미지·위치·회전·크기 보정값을 적용하고, 시작 시 저장된 맵 정보를 조회해 초기 화면을 맞춥니다. 이후 미니맵 변경 이벤트로 맵 이미지를 교체하고 카메라는 LateUpdate에서 플레이어의 수평 위치를 따라갑니다."],
+            ["전투 피드백", "피격·성공·저체력 상태에 따라 초상화를 교체하고, 적 체력바와 피해 숫자는 오브젝트 풀에서 재사용합니다. 피해 숫자는 위로 이동하며 투명해진 뒤 풀로 돌아가고, 적 체력바는 사망 시 비활성화됩니다."],
+            ["맵 전환·한계", "맵 전환 정리 함수는 체력바의 이전 타깃을 해제하고 활성 피해 숫자를 풀로 돌려보냅니다. 체력바는 부족하면 추가 생성하지만 피해 숫자는 고정 풀을 모두 사용하면 표시를 생략하므로, 동시 타격이 많은 상황의 풀 크기는 별도 조정 지점입니다."],
+          ],
+          diagram: {
+            title: "UI 이벤트와 HUD 갱신 구조",
+            groups: [
+              { title: "Game State", nodes: ["Player", "CombatManager"] },
+              { title: "Event Contract", nodes: ["UIEvents"] },
+              { title: "Presentation", nodes: ["DisplayUIManager", "SkillButton", "EnemyHpUIManager"] },
+            ],
+            relations: [
+              ["Player", "event", "DisplayUIManager", "피해 이벤트"],
+              ["CombatManager", "event", "UIEvents", "쿨다운 상태"],
+              ["UIEvents", "event", "DisplayUIManager", "플레이어·초상화·미니맵"],
+              ["UIEvents", "event", "SkillButton", "쿨다운 변경"],
+              ["UIEvents", "event", "EnemyHpUIManager", "적 목록·피해 숫자"],
+              ["SkillButton", "dependency", "CombatManager", "스킬 실행 요청"],
+            ],
+          },
+        },
+        {
+          title: "팝업·인벤토리·장비·제작 UI",
+          summary: "팝업의 열기·닫기와 화면별 동작을 구분하고, 공통 슬롯의 툴팁·클릭 처리를 재사용해 아이템 UI를 확장했습니다.",
+          emphasis: ["팝업 상태", "공통 슬롯", "툴팁", "레시피", "재검증", "UI와 상태 모델"],
+          details: [
+            ["팝업 관리", "팝업 관리자가 인벤토리·제작·장비·퀘스트·사망 UI를 초기화하고 현재 열린 창을 관리합니다. 인벤토리·제작 창은 팝업 상태를 확인해 중복 열기를 막고, 닫을 때 툴팁과 캐릭터 프리뷰 카메라도 정리합니다."],
+            ["공통 슬롯", "기본 슬롯은 아이템 참조와 포인터 진입·이탈에 따른 툴팁을 담당합니다. 버튼 슬롯이 공통 클릭 연결을 추가하고, 인벤토리·장비·제작·퀘스트 슬롯이 각자의 클릭 동작을 구현합니다. 재료 슬롯은 툴팁만 필요한 기본 슬롯을 사용합니다."],
+            ["인벤토리·장비", "중첩 가능한 아이템은 기존 슬롯의 수량을 올리고, 사용할 때 공통 사용 계약을 통해 실행한 뒤 수량과 목록을 갱신합니다. 장비 슬롯은 장비 유형에 맞춰 아이콘과 공격·방어 스탯을 반영하고, 해제한 아이템은 인벤토리로 되돌립니다."],
+            ["제작 흐름", "레시피로 제작 목록을 만들고, 선택한 결과 아이템과 재료·필요 수량을 표시합니다. 보유 수량으로 제작 버튼을 활성화하며 클릭 시 재검증한 뒤 재료를 차감하고 결과 아이템을 추가합니다. 완료 후 성공 초상화와 제작 완료 이벤트를 전달합니다."],
+            ["목록 배치", "인벤토리와 제작 목록은 슬롯 수, 열 수, 셀 크기와 간격으로 콘텐츠 높이를 계산합니다. 포인터가 목록 영역 안에 있을 때만 휠 입력을 세로 스크롤에 반영해 아이템 수가 늘어나도 목록을 탐색할 수 있게 했습니다."],
+            ["설계 판단", "공통 슬롯으로 표시·입력 중복을 줄였지만, 현재 인벤토리·장비 UI는 수량과 스탯 변경까지 맡습니다. UI와 상태 모델의 완전한 분리는 아직 되어 있지 않으며, 향후 아이템 상태를 별도 모델로 옮겨 저장·테스트가 화면 수명에 의존하지 않도록 개선할 수 있습니다."],
+          ],
+          diagram: {
+            title: "슬롯 UI의 공통 계약과 확장 구조",
+            direction: "TB",
+            groups: [
+              { title: "Shared UI", nodes: ["Slot", "ButtonSlot"] },
+              { title: "Item Views", nodes: ["InventorySlot", "EquipmentSlot", "CraftSlot", "IngredientSlot"] },
+              { title: "Quest View", nodes: ["QuestContentUI"] },
+            ],
+            relations: [
+              ["ButtonSlot", "inheritance", "Slot", "클릭 처리 추가"],
+              ["InventorySlot", "inheritance", "ButtonSlot", "아이템 사용"],
+              ["EquipmentSlot", "inheritance", "ButtonSlot", "장비 해제"],
+              ["CraftSlot", "inheritance", "ButtonSlot", "레시피 선택"],
+              ["IngredientSlot", "inheritance", "Slot", "재료·툴팁"],
+              ["QuestContentUI", "inheritance", "ButtonSlot", "보상 요청"],
+            ],
+          },
+        },
+        {
+          title: "퀘스트 목록·팝업 입력·사망 UI",
+          summary: "퀘스트 진행 상태를 읽기 쉬운 목록으로 보여주고, UI 조작과 카메라 조작이 같은 입력을 중복 소비하지 않도록 구분했습니다.",
+          emphasis: ["진행 상태", "보상 요청", "스크롤 영역", "카메라 줌", "Escape", "부활 요청", "전체 재생성"],
+          details: [
+            ["퀘스트 표시", "진행 변경 이벤트와 창을 다시 여는 시점에 활성 퀘스트 목록을 갱신하고, 보상을 받은 항목은 제외합니다. 각 항목은 이름·설명·조건별 현재/목표 수량·보상·진행 상태를 표시하며 조건 충족 여부는 색상으로 구분합니다."],
+            ["보상 요청", "항목 클릭은 완료 상태이며 아직 보상을 받지 않은 경우에만 퀘스트 관리자에 보상을 요청합니다. 화면이 완료 조건을 새로 판단하지 않고 이미 계산된 진행 상태를 읽어 표시와 요청 가능 여부에 사용합니다."],
+            ["스크롤·카메라", "포인터가 퀘스트 스크롤 영역 안에 있는지 공유하고, 그 영역에서는 휠을 목록 스크롤에 사용합니다. 카메라 쪽은 이 상태를 확인해 카메라 줌을 건너뛰므로 퀘스트를 읽는 동안 화면 확대·축소가 함께 일어나는 것을 막습니다."],
+            ["Escape 처리", "열린 팝업 상태를 공유해 Escape 입력의 종료·UI 닫기 경로를 구분합니다. 이는 팝업이 열리면 이동·전투 입력 전체를 차단하는 방식이 아니라, 현재 UI 상태에 맞는 닫기 동작을 선택하는 처리입니다."],
+            ["사망·부활", "사망 화면은 페이드 인과 15초 카운트다운을 표시하고 대기 중에는 부활 버튼을 비활성화합니다. 시간이 지난 뒤 버튼을 활성화하며 클릭 시 창을 닫고 부활 요청 이벤트를 발행합니다."],
+            ["현재 한계", "퀘스트 목록은 진행 변경 때 기존 항목을 제거하고 전체 재생성합니다. 현재 규모에서는 단순한 갱신 경로를 얻지만, 목록이 커지면 퀘스트 ID별 항목 재사용과 변경된 텍스트만 갱신하는 방식이 개선 지점입니다."],
+          ],
+          diagram: {
+            title: "퀘스트 표시와 UI 입력 경계",
+            groups: [
+              { title: "UI State", nodes: ["QuestUI", "PopUpUIManager"] },
+              { title: "Shared Contract", nodes: ["UIEvents"] },
+              { title: "Input Consumers", nodes: ["CameraMoving", "InputManager"] },
+            ],
+            relations: [
+              ["UIEvents", "event", "QuestUI", "진행 변경"],
+              ["QuestUI", "data", "UIEvents", "포인터·스크롤 영역"],
+              ["PopUpUIManager", "data", "UIEvents", "팝업 열림 상태"],
+              ["CameraMoving", "dependency", "UIEvents", "줌 입력 구분"],
+              ["InputManager", "dependency", "UIEvents", "Escape 경로 구분"],
+            ],
+          },
+        },
       ],
       diagram: {
         title: "클라이언트 책임 지도",
+        direction: "LR",
+        zoomable: true,
+        routing: "elk",
         groups: [
-          { title: "Bootstrap", nodes: ["SingletonManager", "SceneLoader", "WorldLoader", "DataCenter"] },
-          { title: "Player", nodes: ["Player", "PlayerStateContexter", "CombatManager", "AnimationContexter"] },
-          { title: "Content", nodes: ["ItemMediator", "QuestManager", "TutorialGuide", "CraftUI"] },
-          { title: "Network", nodes: ["NetworkClient", "PacketMethod", "UnityMainThreadDispatcher"] },
+          { title: "Lifecycle", nodes: ["SingletonBasest", "SingletonBase", "SingletonManager", "SceneLoader", "WorldLoader"] },
+          { title: "Network", nodes: ["NetworkClient", "PacketMethod", "DataCenter", "UnityMainThreadDispatcher", "OtherPlayerManager", "OtherPlayer", "OtherPlayerNetworkSync"] },
+          { title: "Player Input", nodes: ["Player", "PlayerStatManager", "InputManager", "CameraMoving", "IDamageable"] },
+          { title: "Player States", nodes: ["PlayerStateContexter", "IState", "IdleState", "MoveState", "CombatRunState", "CombatIdleState", "InteractState", "AttackState", "DamagedState", "DeadState"] },
+          { title: "Animation Effects", nodes: ["AnimationContexter", "AnimationSet", "OneShotEnd", "EffectManager"] },
+          { title: "Combat Skills", nodes: ["CombatManager", "Skill", "AreaSkill", "NormalSkill", "SmashSkill", "Windmill", "AreaTargetDetector"] },
+          { title: "Enemy World", nodes: ["EnemySpawner", "Enemy", "EnemyNetworkSync", "Spider", "Skeleton"] },
+          { title: "Item Definitions", nodes: ["ItemMediator", "InventoryItem", "IUsableItem", "ConsumeItem", "EquipmentItem", "HPPotion", "PlaceItem", "CraftItemRecipe"] },
+          { title: "Gathering", nodes: ["FieldItem", "IObtainable", "Branch", "Rock", "Grass"] },
+          { title: "Quest Events", nodes: ["QuestManager", "Quest", "PlayEvents", "UIEvents"] },
+          { title: "Tutorial", nodes: ["TutorialGuide", "ITutorialStep", "CameraStep", "MoveStep", "CombatStep", "InteractStep", "CraftStep", "EquipStep"] },
+          { title: "UI Panels", nodes: ["PopUpUIManager", "Inventory", "EquipmentUI", "CraftUI", "QuestUI", "DeadUI", "ItemTooltip", "LoginUI", "TextRenderManager", "MapData"] },
+          { title: "HUD", nodes: ["DisplayUIManager", "SkillButtonManager", "SkillButton", "EnemyHpUIManager", "EnemyHpUI"] },
+          { title: "UI Slots", nodes: ["Slot", "ButtonSlot", "InventorySlot", "EquipmentSlot", "CraftSlot", "IngredientSlot", "QuestContentUI"] },
         ],
         relations: [
-          ["SingletonManager", "aggregation", "DataCenter", "공유 상태"],
+          ["SingletonBase", "inheritance", "SingletonBasest"],
+          ...["SingletonManager", "SceneLoader", "WorldLoader", "DataCenter", "NetworkClient", "OtherPlayerManager", "InputManager", "EffectManager", "EnemySpawner", "ItemMediator", "QuestManager", "PopUpUIManager", "TextRenderManager"]
+            .map((node) => [node, "inheritance", "SingletonBase"]),
+          ["SingletonManager", "aggregation", "SingletonBasest", "등록·초기화 순서"],
+          ["SceneLoader", "dependency", "DataCenter", "맵 정보"],
+          ["WorldLoader", "aggregation", "Player", "생성·초기화"],
+          ["WorldLoader", "dependency", "DataCenter", "지연 데이터 조립"],
+          ["WorldLoader", "dependency", "OtherPlayerManager", "원격 플레이어 생성"],
+          ["WorldLoader", "dependency", "EnemySpawner", "몬스터 등록"],
+          ["WorldLoader", "dependency", "CameraMoving", "카메라 타깃"],
+          ["NetworkClient", "dependency", "PacketMethod", "패킷 분리·처리"],
+          ["PacketMethod", "data", "DataCenter", "수신 상태 보관"],
+          ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "메인 스레드 작업"],
+          ["PacketMethod", "dependency", "WorldLoader", "입장·맵 전환"],
+          ["PacketMethod", "dependency", "OtherPlayerManager", "원격 상태 반영"],
+          ["PacketMethod", "dependency", "EnemySpawner", "몬스터 상태 반영"],
+          ["OtherPlayerManager", "aggregation", "OtherPlayer"],
+          ["OtherPlayer", "composition", "OtherPlayerNetworkSync"],
+          ["OtherPlayerNetworkSync", "dependency", "AnimationContexter"],
+          ["OtherPlayerNetworkSync", "dependency", "EffectManager"],
           ["Player", "composition", "PlayerStateContexter", "행동"],
           ["Player", "composition", "CombatManager", "전투"],
-          ["QuestManager", "event", "ItemMediator", "보상"],
-          ["PacketMethod", "data", "DataCenter", "지연 데이터"],
-          ["PacketMethod", "event", "UnityMainThreadDispatcher", "Unity 반영"],
+          ["Player", "composition", "PlayerStatManager", "스탯"],
+          ["Player", "dependency", "InputManager"],
+          ["Player", "dependency", "NetworkClient", "이동·행동 송신"],
+          ["Player", "implementation", "IDamageable"],
+          ["PlayerStatManager", "data", "DataCenter"],
+          ["PlayerStateContexter", "aggregation", "IState", "상태 전환"],
+          ...["IdleState", "MoveState", "CombatRunState", "CombatIdleState", "InteractState", "AttackState", "DamagedState", "DeadState"]
+            .map((node) => [node, "implementation", "IState"]),
+          ["PlayerStateContexter", "dependency", "AnimationContexter"],
+          ["AnimationContexter", "aggregation", "AnimationSet", "표현 데이터"],
+          ["CombatManager", "aggregation", "Skill", "스킬 실행"],
+          ...["NormalSkill", "SmashSkill", "AreaSkill"].map((node) => [node, "inheritance", "Skill"]),
+          ["Windmill", "inheritance", "AreaSkill"],
+          ["Windmill", "dependency", "AreaTargetDetector"],
+          ["Skill", "dependency", "IDamageable", "피해 적용"],
+          ["Windmill", "dependency", "EffectManager"],
+          ["EnemySpawner", "aggregation", "Enemy"],
+          ["Enemy", "implementation", "IDamageable"],
+          ...["Spider", "Skeleton"].map((node) => [node, "inheritance", "Enemy"]),
+          ["EnemyNetworkSync", "dependency", "NetworkClient", "제어권·동기화"],
+          ["EnemyNetworkSync", "dependency", "OtherPlayerManager"],
+          ["ItemMediator", "aggregation", "InventoryItem", "정의 조회"],
+          ["ItemMediator", "dependency", "Inventory", "아이템 획득"],
+          ...["ConsumeItem", "EquipmentItem"].map((node) => [node, "inheritance", "InventoryItem"]),
+          ...["ConsumeItem", "EquipmentItem"].map((node) => [node, "implementation", "IUsableItem"]),
+          ...["HPPotion", "PlaceItem"].map((node) => [node, "inheritance", "ConsumeItem"]),
+          ["EquipmentItem", "dependency", "EquipmentUI", "장착 요청"],
+          ["FieldItem", "implementation", "IObtainable"],
+          ...["Branch", "Rock", "Grass"].map((node) => [node, "inheritance", "FieldItem"]),
+          ["Branch", "dependency", "ItemMediator"],
+          ["PlayEvents", "event", "QuestManager", "처치·채집·제작"],
+          ...["CameraStep", "MoveStep", "CombatStep", "InteractStep", "CraftStep", "EquipStep"]
+            .map((node) => ["PlayEvents", "event", node, "단계별 진행"]),
+          ["QuestManager", "aggregation", "Quest", "조건·보상 정의"],
+          ["QuestManager", "dependency", "ItemMediator", "보상 지급"],
+          ["QuestManager", "event", "UIEvents", "진행 변경"],
+          ["TutorialGuide", "aggregation", "ITutorialStep"],
+          ...["CameraStep", "MoveStep", "CombatStep", "InteractStep", "CraftStep", "EquipStep"]
+            .map((node) => [node, "implementation", "ITutorialStep"]),
+          ["TutorialGuide", "dependency", "TextRenderManager", "안내 문구"],
+          ["TutorialGuide", "dependency", "InputManager", "단계별 입력 제한"],
+          ...["Inventory", "EquipmentUI", "CraftUI", "QuestUI", "DeadUI", "ItemTooltip"]
+            .map((node) => ["PopUpUIManager", "aggregation", node]),
+          ["PopUpUIManager", "data", "UIEvents", "팝업 상태"],
+          ["PopUpUIManager", "dependency", "CameraMoving", "프리뷰 카메라"],
+          ["Inventory", "aggregation", "InventorySlot"],
+          ["Inventory", "dependency", "IUsableItem", "아이템 사용"],
+          ["EquipmentUI", "aggregation", "EquipmentSlot"],
+          ["EquipmentUI", "dependency", "PlayerStatManager", "장비 스탯"],
+          ["CraftUI", "aggregation", "CraftItemRecipe"],
+          ["CraftUI", "aggregation", "CraftSlot"],
+          ["CraftUI", "aggregation", "IngredientSlot"],
+          ["CraftUI", "dependency", "Inventory", "재료 검증·차감"],
+          ["QuestUI", "aggregation", "QuestContentUI"],
+          ["QuestContentUI", "dependency", "QuestManager", "보상 요청"],
+          ["ButtonSlot", "inheritance", "Slot"],
+          ...["InventorySlot", "EquipmentSlot", "CraftSlot", "QuestContentUI"]
+            .map((node) => [node, "inheritance", "ButtonSlot"]),
+          ["IngredientSlot", "inheritance", "Slot"],
+          ["Slot", "dependency", "ItemTooltip", "공통 툴팁"],
+          ["LoginUI", "dependency", "NetworkClient", "로그인·가입"],
+          ...["DisplayUIManager", "SkillButton", "EnemyHpUIManager", "QuestUI", "PopUpUIManager"]
+            .map((node) => ["UIEvents", "event", node]),
+          ["Player", "event", "DisplayUIManager", "체력 변경"],
+          ["CombatManager", "event", "UIEvents", "쿨다운"],
+          ["DisplayUIManager", "aggregation", "SkillButtonManager"],
+          ["SkillButtonManager", "aggregation", "SkillButton"],
+          ["SkillButton", "dependency", "CombatManager", "실행 요청"],
+          ["EnemyHpUIManager", "aggregation", "EnemyHpUI", "체력바 재사용"],
+          ["EnemyHpUI", "dependency", "Enemy"],
+          ["DataCenter", "aggregation", "MapData", "미니맵 보정 데이터"],
+          ["CameraMoving", "dependency", "UIEvents", "스크롤·줌 구분"],
+          ["InputManager", "dependency", "UIEvents", "팝업 닫기 구분"],
         ],
       },
     },
@@ -926,6 +1116,7 @@ const everwindDesignDocument = {
       ],
       diagram: {
         title: "서버 계층 UML",
+        direction: "TB",
         groups: [
           { title: "I/O", nodes: ["IOCPServer", "IOContext", "Worker"] },
           { title: "Session", nodes: ["SessionManager", "Session", "SendQueue"] },
@@ -1112,8 +1303,17 @@ const designOpenButton = modal.querySelector("#modal-open-design");
 const designModal = document.querySelector("#design-modal");
 const designModalClose = designModal.querySelector(".design-modal-close");
 const designToc = designModal.querySelector("#design-toc-list");
-const designFeatureList = designModal.querySelector("#design-feature-list");
+const featureDesignModal = document.querySelector("#feature-design-modal");
+const featureDesignClose = featureDesignModal.querySelector(".design-modal-close");
+const featureDesignTitle = featureDesignModal.querySelector("#feature-design-title");
+const featureDesignContent = featureDesignModal.querySelector("#feature-design-content");
 const technicalDocumentList = designModal.querySelector("#technical-document-list");
+const umlZoomModal = document.querySelector("#uml-zoom-modal");
+const umlZoomCanvas = umlZoomModal.querySelector("#uml-zoom-canvas");
+const umlZoomViewport = umlZoomModal.querySelector(".uml-zoom-viewport");
+const umlZoomScale = umlZoomModal.querySelector("#uml-zoom-scale");
+const umlZoomValue = umlZoomModal.querySelector("#uml-zoom-value");
+const umlZoomClose = umlZoomModal.querySelector(".design-modal-close");
 const designFields = {
   kicker: designModal.querySelector("#design-document-kicker"),
   title: designModal.querySelector("#design-document-title"),
@@ -1324,7 +1524,9 @@ const appendEmphasizedText = (target, copy, emphasis = []) => {
 };
 
 const MERMAID_MODULE_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.esm.min.mjs";
+const MERMAID_ELK_URL = "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";
 let mermaidModulePromise;
+let mermaidElkPromise;
 let mermaidRenderQueue = Promise.resolve();
 let mermaidRenderIndex = 0;
 let mermaidDiagramObserver;
@@ -1355,11 +1557,18 @@ const loadMermaid = () => {
         noteBkgColor: "#191f2e",
         noteTextColor: "#ffe18c",
         fontFamily: "Arial, 'Noto Sans KR', sans-serif",
+        fontSize: "16px",
+        clusterBkg: "#0b1020",
+        clusterBorder: "#67d3ff",
       },
-      class: { useMaxWidth: false },
+      class: { useMaxWidth: false, nodeSpacing: 24, rankSpacing: 35, diagramPadding: 16 },
+      flowchart: { nodeSpacing: 24, rankSpacing: 35, curve: "linear" },
       er: { useMaxWidth: false },
     });
     return mermaid;
+  }).catch((error) => {
+    mermaidModulePromise = undefined;
+    throw error;
   });
   return mermaidModulePromise;
 };
@@ -1378,10 +1587,11 @@ const makeMermaidSource = (diagram) => {
   const groups = externalNodes.length
     ? [...diagram.groups, { title: "Shared Contract", nodes: externalNodes }]
     : diagram.groups;
-  const lines = ["classDiagram", "direction LR"];
+  const lines = ["classDiagram", `direction ${diagram.direction || "LR"}`];
 
   groups.forEach((group, index) => {
-    const namespace = makeMermaidIdentifier(group.title, `Group${index + 1}`);
+    const identifier = makeMermaidIdentifier(group.title, `Group${index + 1}`);
+    const namespace = knownNodes.has(identifier) ? `${identifier}Layer${index + 1}` : identifier;
     lines.push(`namespace ${namespace} {`);
     group.nodes.forEach((node) => lines.push(`  class ${node}`));
     lines.push("}");
@@ -1396,32 +1606,126 @@ const makeMermaidSource = (diagram) => {
     else if (["dependency", "event", "data"].includes(type)) lines.push(`${from} ..> ${to}${label}`);
     else lines.push(`${from} --> ${to}${label}`);
   });
+  if (diagram.routing === "elk") {
+    lines.unshift("---", "config:", "  layout: elk", "  elk:", "    mergeEdges: false", "    nodePlacementStrategy: NETWORK_SIMPLEX", "    considerModelOrder: NONE", "    cycleBreakingStrategy: GREEDY", "---");
+  }
   return lines.join("\n");
 };
 
+const roundMermaidEdges = (diagram) => {
+  diagram.querySelectorAll('path[data-edge="true"][data-points]').forEach((path) => {
+    const points = JSON.parse(atob(path.dataset.points));
+    if (points.length < 2) return;
+    points[0] = path.getPointAtLength(0);
+    points[points.length - 1] = path.getPointAtLength(path.getTotalLength());
+    // Round only the routed corners; staying inside each segment preserves node clearance.
+    const commands = [`M${points[0].x},${points[0].y}`];
+    for (let index = 1; index < points.length - 1; index += 1) {
+      const before = points[index - 1];
+      const point = points[index];
+      const after = points[index + 1];
+      const incoming = Math.hypot(point.x - before.x, point.y - before.y);
+      const outgoing = Math.hypot(after.x - point.x, after.y - point.y);
+      if (!incoming || !outgoing) continue;
+      const radius = Math.min(12, incoming / 3, outgoing / 3);
+      const start = { x: point.x + (before.x - point.x) * radius / incoming, y: point.y + (before.y - point.y) * radius / incoming };
+      const end = { x: point.x + (after.x - point.x) * radius / outgoing, y: point.y + (after.y - point.y) * radius / outgoing };
+      commands.push(`L${start.x},${start.y} Q${point.x},${point.y} ${end.x},${end.y}`);
+    }
+    const end = points[points.length - 1];
+    commands.push(`L${end.x},${end.y}`);
+    path.setAttribute("d", commands.join(" "));
+  });
+};
+
+const straightenMermaidEdges = (diagram) => {
+  diagram.querySelectorAll('path[data-edge="true"][data-points]').forEach((path) => {
+    const points = JSON.parse(atob(path.dataset.points));
+    if (points.length < 2) return;
+    // Preserve Mermaid's marker offsets and routing waypoints, without Bezier smoothing.
+    points[0] = path.getPointAtLength(0);
+    points[points.length - 1] = path.getPointAtLength(path.getTotalLength());
+    path.setAttribute("d", points.map((point, index) => `${index ? "L" : "M"}${point.x},${point.y}`).join(" "));
+  });
+};
+
 const renderMermaidCanvas = async (canvas) => {
+  if (!canvas.isConnected || !canvas.closest("dialog")?.open) return;
   if (canvas.dataset.rendered === "true" || canvas.dataset.rendering === "true") return;
   canvas.dataset.rendering = "true";
+  canvas.classList.remove("is-render-error");
   canvas.classList.add("is-loading");
   canvas.setAttribute("aria-busy", "true");
 
   try {
     const mermaid = await loadMermaid();
+    if (canvas.dataset.routing === "elk") {
+      mermaidElkPromise ||= import(MERMAID_ELK_URL).then(({ default: layouts }) => {
+        mermaid.registerLayoutLoaders(layouts);
+      }).catch((error) => {
+        mermaidElkPromise = undefined;
+        throw error;
+      });
+      await mermaidElkPromise;
+    }
+    await document.fonts.ready;
     const { svg, bindFunctions } = await mermaid.render(
       `everwind-mermaid-${++mermaidRenderIndex}`,
       canvas.dataset.mermaidSource,
+      canvas,
     );
     canvas.innerHTML = svg;
+    // Place namespace labels above the outline and include them in the fitted SVG bounds.
+    canvas.querySelectorAll(".cluster").forEach((cluster) => {
+      const rect = cluster.querySelector(":scope > rect");
+      const label = cluster.querySelector(":scope > .cluster-label");
+      if (!rect) return;
+      rect.style.setProperty("stroke", "#67d3ff", "important");
+      rect.style.setProperty("stroke-width", "1.5px", "important");
+      if (!label) return;
+      // Reuse part of the old internal title space so adjacent namespace labels do not overlap.
+      const titleInset = 16;
+      rect.setAttribute("y", Number(rect.getAttribute("y")) + titleInset);
+      rect.setAttribute("height", Number(rect.getAttribute("height")) - titleInset);
+      const labelBounds = label.getBBox();
+      const x = Number(rect.getAttribute("x")) + (Number(rect.getAttribute("width")) - labelBounds.width) / 2;
+      const y = Number(rect.getAttribute("y")) - labelBounds.height - 8;
+      label.setAttribute("transform", `translate(${x}, ${y})`);
+    });
+    const diagram = canvas.querySelector("svg");
+    if (canvas.dataset.routing === "elk") roundMermaidEdges(diagram);
+    else straightenMermaidEdges(diagram);
+    const bounds = diagram.getBBox();
+    const padding = 16;
+    diagram.setAttribute("viewBox", `${bounds.x - padding} ${bounds.y - padding} ${bounds.width + padding * 2} ${bounds.height + padding * 2}`);
+    diagram.setAttribute("width", bounds.width + padding * 2);
+    diagram.setAttribute("height", bounds.height + padding * 2);
+    diagram.setAttribute("role", "img");
+    diagram.setAttribute("aria-label", canvas.closest("figure").querySelector("figcaption").firstChild.textContent);
+    diagram.setAttribute("preserveAspectRatio", "xMidYMid meet");
     bindFunctions?.(canvas);
     canvas.dataset.rendered = "true";
+    const zoomTrigger = canvas.closest("figure").querySelector(".uml-zoom-trigger");
+    if (zoomTrigger) zoomTrigger.disabled = false;
     canvas.classList.remove("is-loading");
     canvas.removeAttribute("aria-busy");
   } catch (error) {
     canvas.classList.remove("is-loading");
     canvas.classList.add("is-render-error");
     canvas.removeAttribute("aria-busy");
-    canvas.textContent = "다이어그램을 불러오지 못했습니다. 네트워크 연결 후 다시 열어 주세요.";
+    const message = document.createElement("p");
+    const retry = document.createElement("button");
+    message.textContent = "다이어그램을 불러오지 못했습니다.";
+    retry.type = "button";
+    retry.className = "mermaid-retry";
+    retry.textContent = "다시 불러오기";
+    retry.addEventListener("click", () => queueMermaidRender(canvas));
+    canvas.replaceChildren(message, retry);
     console.error("Mermaid diagram render failed", error);
+  } finally {
+    delete canvas.dataset.rendering;
+    canvas.classList.remove("is-loading");
+    canvas.removeAttribute("aria-busy");
   }
 };
 
@@ -1489,12 +1793,95 @@ const makeUmlDiagram = (diagram) => {
   caption.append(hint);
   canvas.className = "mermaid-canvas";
   canvas.dataset.mermaidSource = makeMermaidSource(diagram);
+  if (diagram.routing) canvas.dataset.routing = diagram.routing;
   loading.className = "mermaid-loading";
   loading.textContent = "다이어그램 준비 중";
   canvas.append(loading);
   figure.append(caption, canvas);
+  if (diagram.zoomable) {
+    const footer = document.createElement("div");
+    const trigger = document.createElement("button");
+    footer.className = "uml-diagram-actions";
+    trigger.className = "uml-zoom-trigger";
+    trigger.type = "button";
+    trigger.disabled = true;
+    trigger.textContent = "확대하기";
+    trigger.setAttribute("aria-haspopup", "dialog");
+    footer.append(trigger);
+    figure.append(footer);
+  }
   return figure;
 };
+
+let umlZoomIndex = 0;
+const updateUmlZoomScale = () => {
+  const diagram = umlZoomCanvas.querySelector("svg");
+  if (!diagram) return;
+  const scale = Number(umlZoomScale.value) / 100;
+  const { width, height } = diagram.viewBox.baseVal;
+  diagram.style.setProperty("--uml-width", `${width * scale}px`);
+  diagram.style.setProperty("--uml-height", `${height * scale}px`);
+  umlZoomValue.value = `${umlZoomScale.value}%`;
+};
+
+const closeUmlZoom = () => {
+  if (umlZoomModal.open) umlZoomModal.close();
+};
+
+const fitUmlZoom = () => {
+  const diagram = umlZoomCanvas.querySelector("svg");
+  if (!diagram) return;
+  const { width, height } = diagram.viewBox.baseVal;
+  const scale = Math.min((umlZoomViewport.clientWidth - 32) / width, (umlZoomViewport.clientHeight - 32) / height);
+  umlZoomScale.value = String(Math.max(1, Math.min(200, Math.floor(scale * 100))));
+  updateUmlZoomScale();
+  umlZoomViewport.scrollTo(0, 0);
+};
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest(".uml-zoom-trigger");
+  if (!trigger) return;
+  const source = trigger.closest("figure").querySelector(".mermaid-canvas > svg");
+  if (!source) return;
+  const diagram = source.cloneNode(true);
+  // A second inline SVG needs distinct IDs for its styles, nodes and arrow markers.
+  const elements = [diagram, ...diagram.querySelectorAll("[id]")];
+  const prefix = `uml-zoom-${++umlZoomIndex}-`;
+  const ids = new Map(elements.filter((node) => node.id).map((node) => [node.id, prefix + node.id]));
+  const orderedIds = [...ids].sort(([left], [right]) => right.length - left.length);
+  diagram.querySelectorAll("style").forEach((style) => {
+    orderedIds.forEach(([id, replacement]) => {
+      style.textContent = style.textContent.replaceAll(`#${id}`, `#${replacement}`);
+    });
+  });
+  [diagram, ...diagram.querySelectorAll("*")].forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      let value = attribute.value.replace(/url\(#([^)]+)\)/g, (match, id) => ids.has(id) ? `url(#${ids.get(id)})` : match);
+      if (attribute.name === "id") value = ids.get(value) || value;
+      else if (value.startsWith("#") && ids.has(value.slice(1))) value = `#${ids.get(value.slice(1))}`;
+      node.setAttribute(attribute.name, value);
+    });
+  });
+  umlZoomModal.querySelector("#uml-zoom-title").textContent = source.getAttribute("aria-label");
+  umlZoomCanvas.replaceChildren(diagram);
+  umlZoomScale.value = "100";
+  updateUmlZoomScale();
+  umlZoomModal.showModal();
+  fitUmlZoom();
+  umlZoomClose.focus();
+});
+
+umlZoomScale.addEventListener("input", updateUmlZoomScale);
+umlZoomModal.querySelector("#uml-zoom-fit").addEventListener("click", fitUmlZoom);
+umlZoomClose.addEventListener("click", closeUmlZoom);
+umlZoomModal.addEventListener("click", (event) => {
+  if (event.target === umlZoomModal) closeUmlZoom();
+});
+umlZoomModal.addEventListener("close", () => umlZoomCanvas.replaceChildren());
+umlZoomModal.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeUmlZoom();
+});
 
 const makeDesignTocButton = (number, label, targetId, level = "root") => {
   const item = document.createElement("li");
@@ -1513,17 +1900,66 @@ const makeDesignTocButton = (number, label, targetId, level = "root") => {
   return item;
 };
 
-const makeDecisionList = (items = [], className = "design-decision-list") => {
+const makeDecisionList = (items = [], className = "design-decision-list", emphasis = []) => {
   const list = document.createElement("dl");
   list.className = className;
   list.append(...items.flatMap(([label, copy]) => {
     const term = document.createElement("dt");
     const description = document.createElement("dd");
     term.textContent = label;
-    description.textContent = copy;
+    appendEmphasizedText(description, copy, emphasis);
     return [term, description];
   }));
   return list;
+};
+
+const makeFeatureImplementation = (feature, index) => {
+  const article = document.createElement("article");
+  const header = document.createElement("header");
+  const number = document.createElement("span");
+  const headingGroup = document.createElement("div");
+  const title = document.createElement("h4");
+  const intent = document.createElement("p");
+  const context = document.createElement("div");
+  const problem = document.createElement("section");
+  const problemLabel = document.createElement("p");
+  const problemCopy = document.createElement("p");
+  const result = document.createElement("section");
+  const resultLabel = document.createElement("p");
+  const resultCopy = document.createElement("p");
+  const tradeoff = document.createElement("aside");
+  const tradeoffTitle = document.createElement("strong");
+  const tradeoffCopy = document.createElement("p");
+  article.className = "design-feature-card";
+  article.id = `design-feature-${index + 1}`;
+  number.textContent = String(index + 1).padStart(2, "0");
+  title.textContent = feature.title;
+  intent.textContent = feature.intent;
+  headingGroup.append(title, intent);
+  header.append(number, headingGroup);
+  problemLabel.className = "eyebrow";
+  problemLabel.textContent = "해결하려는 문제";
+  problemCopy.textContent = feature.problem;
+  problem.append(problemLabel, problemCopy);
+  resultLabel.className = "eyebrow";
+  resultLabel.textContent = "구현 결과";
+  resultCopy.textContent = feature.result;
+  result.append(resultLabel, resultCopy);
+  context.className = "design-context-grid";
+  context.append(problem, result);
+  tradeoff.className = "design-tradeoff";
+  tradeoffTitle.textContent = "설계 판단과 다음 단계";
+  tradeoffCopy.textContent = feature.tradeoff;
+  tradeoff.append(tradeoffTitle, tradeoffCopy);
+  article.append(
+    header,
+    makeKeywordList(feature.keywords),
+    context,
+    makeDecisionList(feature.decisions),
+    makeUmlDiagram(feature.diagram),
+    tradeoff,
+  );
+  return article;
 };
 
 const buildDesignDocument = (documentData) => {
@@ -1534,78 +1970,22 @@ const buildDesignDocument = (documentData) => {
   designFields.systemFlow.replaceChildren(...makeSystemFlow(documentData.systemFlow).children);
   designToc.replaceChildren(
     makeDesignTocButton("00", "문서 개요", "design-intro"),
-    makeDesignTocButton("01", "핵심 기능 설계", "design-core-features"),
-    ...documentData.coreFeatures.map((feature, index) => makeDesignTocButton(
-      `01-${index + 1}`,
-      feature.title,
-      `design-feature-${index + 1}`,
-      "feature",
-    )),
-    makeDesignTocButton("02", "분야 & 기능별 상세 기술 문서", "design-technical-docs"),
+    makeDesignTocButton("01", "분야 & 기능별 상세 기술 문서", "design-technical-docs"),
     ...documentData.technicalDocs.flatMap((documentItem, index) => [
       makeDesignTocButton(
-        `02-${index + 1}`,
+        `01-${index + 1}`,
         documentItem.label,
         `design-doc-${documentItem.id}`,
         "domain",
       ),
       ...(documentItem.features || []).map((feature, featureIndex) => makeDesignTocButton(
-        `02-${index + 1}.${featureIndex + 1}`,
+        `01-${index + 1}.${featureIndex + 1}`,
         feature.title,
         `design-doc-${documentItem.id}-${featureIndex + 1}`,
         "deep",
       )),
     ]),
   );
-
-  designFeatureList.replaceChildren(...documentData.coreFeatures.map((feature, index) => {
-    const article = document.createElement("article");
-    const header = document.createElement("header");
-    const number = document.createElement("span");
-    const headingGroup = document.createElement("div");
-    const title = document.createElement("h4");
-    const intent = document.createElement("p");
-    const context = document.createElement("div");
-    const problem = document.createElement("section");
-    const problemLabel = document.createElement("p");
-    const problemCopy = document.createElement("p");
-    const result = document.createElement("section");
-    const resultLabel = document.createElement("p");
-    const resultCopy = document.createElement("p");
-    const tradeoff = document.createElement("aside");
-    const tradeoffTitle = document.createElement("strong");
-    const tradeoffCopy = document.createElement("p");
-    article.className = "design-feature-card";
-    article.id = `design-feature-${index + 1}`;
-    number.textContent = String(index + 1).padStart(2, "0");
-    title.textContent = feature.title;
-    intent.textContent = feature.intent;
-    headingGroup.append(title, intent);
-    header.append(number, headingGroup);
-    problemLabel.className = "eyebrow";
-    problemLabel.textContent = "해결하려는 문제";
-    problemCopy.textContent = feature.problem;
-    problem.append(problemLabel, problemCopy);
-    resultLabel.className = "eyebrow";
-    resultLabel.textContent = "구현 결과";
-    resultCopy.textContent = feature.result;
-    result.append(resultLabel, resultCopy);
-    context.className = "design-context-grid";
-    context.append(problem, result);
-    tradeoff.className = "design-tradeoff";
-    tradeoffTitle.textContent = "설계 판단과 다음 단계";
-    tradeoffCopy.textContent = feature.tradeoff;
-    tradeoff.append(tradeoffTitle, tradeoffCopy);
-    article.append(
-      header,
-      makeKeywordList(feature.keywords),
-      context,
-      makeDecisionList(feature.decisions),
-      makeUmlDiagram(feature.diagram),
-      tradeoff,
-    );
-    return article;
-  }));
 
   technicalDocumentList.replaceChildren(...documentData.technicalDocs.map((documentItem, index) => {
     const article = document.createElement("article");
@@ -1621,7 +2001,7 @@ const buildDesignDocument = (documentData) => {
     const noteTitle = document.createElement("h5");
     article.className = "technical-document";
     article.id = `design-doc-${documentItem.id}`;
-    number.textContent = `02-${index + 1}`;
+    number.textContent = `01-${index + 1}`;
     label.className = "eyebrow";
     label.textContent = documentItem.label;
     title.textContent = documentItem.title;
@@ -1642,12 +2022,13 @@ const buildDesignDocument = (documentData) => {
       section.className = "technical-feature";
       section.id = `design-doc-${documentItem.id}-${featureIndex + 1}`;
       featureNumber.className = "technical-feature-number";
-      featureNumber.textContent = `02-${index + 1}.${featureIndex + 1}`;
+      featureNumber.textContent = `01-${index + 1}.${featureIndex + 1}`;
       heading.textContent = feature.title;
-      copy.textContent = feature.summary;
+      appendEmphasizedText(copy, feature.summary, feature.emphasis);
       featureHeading.append(heading, copy);
       featureHeader.append(featureNumber, featureHeading);
-      section.append(featureHeader, makeDecisionList(feature.details));
+      section.append(featureHeader, makeDecisionList(feature.details, "design-decision-list", feature.emphasis));
+      if (feature.diagram) section.append(makeUmlDiagram(feature.diagram));
       return section;
     }));
     article.append(
@@ -1760,7 +2141,21 @@ const buildProjectDetail = (project) => {
       eyebrow.className = "eyebrow";
       eyebrow.textContent = label;
       appendEmphasizedText(text, copy, feature.emphasis);
-      block.append(eyebrow);
+      const implementationIndex = project.designDocument?.coreFeatures.findIndex((item) => item.title === feature.title) ?? -1;
+      if (label === "HOW" && implementationIndex >= 0) {
+        const howHeader = document.createElement("div");
+        const implementationTrigger = document.createElement("button");
+        howHeader.className = "feature-how-header";
+        implementationTrigger.type = "button";
+        implementationTrigger.className = "feature-implementation-trigger";
+        implementationTrigger.dataset.implementationIndex = implementationIndex;
+        implementationTrigger.textContent = "상세 구현 설명";
+        implementationTrigger.setAttribute("aria-haspopup", "dialog");
+        howHeader.append(eyebrow, implementationTrigger);
+        block.append(howHeader);
+      } else {
+        block.append(eyebrow);
+      }
       if (media) {
         const resultTrigger = document.createElement("button");
         const mediaType = media.type || "video";
@@ -1916,7 +2311,6 @@ const setDesignTocActive = (targetId) => {
   activeButton.setAttribute("aria-current", "location");
 
   const parentTargets = [];
-  if (targetId.startsWith("design-feature-")) parentTargets.push("design-core-features");
   const deepDomainMatch = targetId.match(/^design-doc-(client|server|database)-\d+$/);
   if (deepDomainMatch) parentTargets.push(`design-doc-${deepDomainMatch[1]}`);
   if (targetId.startsWith("design-doc-")) parentTargets.push("design-technical-docs");
@@ -1980,6 +2374,7 @@ designToc.addEventListener("click", (event) => {
 });
 
 const closeDesignDocument = () => {
+  closeUmlZoom();
   mermaidDiagramObserver?.disconnect();
   if (designScrollFrame) window.cancelAnimationFrame(designScrollFrame);
   designScrollFrame = undefined;
@@ -1994,6 +2389,32 @@ designModal.addEventListener("click", (event) => {
 designModal.addEventListener("cancel", (event) => {
   event.preventDefault();
   closeDesignDocument();
+});
+
+modalFields.features.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-implementation-index]");
+  if (!trigger || !activeProject?.designDocument) return;
+  const index = Number(trigger.dataset.implementationIndex);
+  const feature = activeProject.designDocument.coreFeatures[index];
+  if (!feature) return;
+  featureDesignTitle.textContent = "상세 구현 설명";
+  featureDesignContent.replaceChildren(makeFeatureImplementation(feature, index));
+  featureDesignModal.showModal();
+  featureDesignModal.scrollTop = 0;
+  featureDesignClose.focus();
+  queueMermaidRender(featureDesignContent.querySelector(".mermaid-canvas"));
+});
+
+const closeFeatureImplementation = () => {
+  if (featureDesignModal.open) featureDesignModal.close();
+};
+featureDesignClose.addEventListener("click", closeFeatureImplementation);
+featureDesignModal.addEventListener("click", (event) => {
+  if (event.target === featureDesignModal) closeFeatureImplementation();
+});
+featureDesignModal.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeFeatureImplementation();
 });
 
 const closeFeatureMedia = () => {
@@ -2136,6 +2557,7 @@ modal.addEventListener("click", (event) => {
 });
 modal.addEventListener("close", () => {
   closeDesignDocument();
+  closeFeatureImplementation();
   activeProject = null;
   document.body.classList.remove("modal-open");
 });
