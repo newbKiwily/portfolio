@@ -2623,8 +2623,11 @@ const makeImplementationSection = (feature, number, id) => {
   featureNumber.className = "technical-feature-number";
   featureNumber.textContent = number;
   heading.textContent = feature.title;
-  appendEmphasizedText(copy, feature.summary, feature.emphasis);
-  headingGroup.append(heading, copy);
+  headingGroup.append(heading);
+  if (feature.summary) {
+    appendEmphasizedText(copy, feature.summary, feature.emphasis);
+    headingGroup.append(copy);
+  }
   header.append(featureNumber, headingGroup);
   section.append(header, makeDecisionList(feature.details, "design-decision-list", feature.emphasis));
   if (feature.media) section.append(makeResultMediaButton(feature.media));
@@ -2649,6 +2652,7 @@ const makeFeatureImplementation = (feature, index) => {
   const tradeoff = document.createElement("aside");
   const tradeoffTitle = document.createElement("strong");
   const tradeoffCopy = document.createElement("p");
+  const implementationBlocks = document.createElement("div");
   article.className = "design-feature-card";
   article.id = `design-feature-${index + 1}`;
   number.textContent = String(index + 1).padStart(2, "0");
@@ -2670,17 +2674,24 @@ const makeFeatureImplementation = (feature, index) => {
   tradeoffTitle.textContent = "설계 판단과 다음 단계";
   tradeoffCopy.textContent = feature.tradeoff;
   tradeoff.append(tradeoffTitle, tradeoffCopy);
-  article.append(
-    header,
-    makeKeywordList(feature.keywords),
-    context,
-    makeDecisionList(feature.decisions),
-    makeUmlDiagram(feature.diagram),
-    ...(feature.implementationSections || []).map((section, sectionIndex) => makeImplementationSection(
+  implementationBlocks.className = "implementation-block-list";
+  implementationBlocks.append(
+    ...[{
+      title: feature.diagram?.title || "구현 구조",
+      details: feature.decisions,
+      diagram: feature.diagram,
+      emphasis: feature.keywords,
+    }, ...(feature.implementationSections || [])].map((section, sectionIndex) => makeImplementationSection(
       section,
       `${String(index + 1).padStart(2, "0")}.${sectionIndex + 1}`,
       `design-feature-${index + 1}-detail-${sectionIndex + 1}`,
     )),
+  );
+  article.append(
+    header,
+    makeKeywordList(feature.keywords),
+    context,
+    implementationBlocks,
     tradeoff,
   );
   return article;

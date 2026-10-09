@@ -19,6 +19,7 @@
   --radius: 8px;
   --intro-world-span: max(100vw, calc(80svh * 2.492));
   --world-transition: #091427;
+  --sword-cursor: url("assets/cursor-pixel-sword.svg") 2 2;
 }
 
 * { box-sizing: border-box; }
@@ -29,13 +30,13 @@ body {
   overflow-x: clip;
   background: #06101e;
   color: var(--text);
-  cursor: url("assets/cursor-pixel.png") 1 1, auto;
+  cursor: var(--sword-cursor), auto;
   font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.65;
 }
 body.modal-open { overflow: hidden; }
-a, button { cursor: url("assets/cursor-pixel.png") 1 1, pointer; }
+a, button { cursor: var(--sword-cursor), pointer; }
 button, input, textarea, select { font: inherit; }
 img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
@@ -565,8 +566,8 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .uml-zoom-toolbar input { flex: 1; min-width: 3rem; max-width: 20rem; accent-color: var(--cyan); }
 .uml-zoom-toolbar output { min-width: 3rem; color: var(--cyan); text-align: right; }
 .uml-zoom-toolbar button { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 4px; padding: .35rem .5rem; background: var(--panel); color: var(--text); }
-.uml-zoom-viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; overscroll-behavior: contain; touch-action: none; user-select: none; cursor: grab; }
-.uml-zoom-viewport.is-dragging { cursor: grabbing; }
+.uml-zoom-viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; overscroll-behavior: contain; touch-action: none; user-select: none; cursor: var(--sword-cursor), grab; }
+.uml-zoom-viewport.is-dragging { cursor: var(--sword-cursor), grabbing; }
 .uml-zoom-viewport .mermaid-canvas { display: block; width: max-content; min-height: 0; margin: 0; transform-origin: 0 0; }
 .uml-zoom-viewport .mermaid-canvas svg { width: var(--uml-width); height: var(--uml-height); max-width: none !important; max-height: none; margin: 0; }
 .uml-diagram.is-er-diagram .mermaid-canvas svg { max-height: 34rem; }
@@ -574,6 +575,9 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .feature-design-modal .design-modal-shell { padding: 2rem; }
 .feature-design-modal .design-modal-header { top: 0; margin: -2rem -2rem 1.5rem; padding: 1.1rem 2rem; }
 .feature-design-modal .design-feature-card { border: 0; padding: 0; background: transparent; box-shadow: none; }
+.implementation-block-list { display: grid; gap: 1.3rem; margin-top: 1.5rem; }
+.feature-design-modal .implementation-block-list > .technical-feature { min-width: 0; border: 3px solid var(--cyan); border-radius: 5px; padding: 1rem; background: var(--panel); }
+.feature-design-modal .implementation-block-list .uml-diagram { margin-top: 1.1rem; }
 .feature-design-modal .mermaid-canvas svg { max-height: 32rem; }
 .mermaid-canvas.is-loading .mermaid-loading::after { display: inline-block; width: 1.4rem; color: var(--orange); content: "..."; animation: mermaid-loading 1.2s steps(4,end) infinite; }
 .mermaid-canvas.is-render-error { min-height: 7rem; padding: 1rem; color: #ff8c9b; text-align: center; }
@@ -612,7 +616,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .feature-media-grid[data-count="1"] { grid-template-columns: minmax(0,720px); justify-content: center; }
 .feature-media-grid[data-count="2"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .feature-media-item { min-width: 0; margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
-.feature-media-zoom-trigger { position: relative; display: block; width: 100%; border: 0; padding: 0; background: #000; cursor: zoom-in; }
+.feature-media-zoom-trigger { position: relative; display: block; width: 100%; border: 0; padding: 0; background: #000; cursor: var(--sword-cursor), zoom-in; }
 .feature-media-zoom-trigger::after { position: absolute; right: .55rem; bottom: .55rem; border: 1px solid rgba(255,183,92,.55); border-radius: 3px; padding: .3rem .45rem; background: rgba(5,8,17,.86); color: var(--yellow); content: "확대 보기"; font-size: .6rem; font-weight: 900; }
 .feature-media-zoom-trigger:hover::after { border-color: var(--orange); color: #fff3c4; }
 .video-modal .feature-media-item video,
