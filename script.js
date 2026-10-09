@@ -116,6 +116,10 @@ const projects = {
         emphasis: ["정의 데이터", "실행 상태", "공통 생성·실행·종료 흐름", "콘텐츠별 차이"],
         why: "온라인 RPG는 스킬·아이템·퀘스트가 계속 늘어나는 장르입니다. 유형별 조건문을 한곳에 쌓거나 변하지 않는 정의와 수량·쿨다운 같은 실행 상태를 섞으면, 콘텐츠 하나를 추가할 때 기존 로직과 저장 데이터까지 함께 수정해야 합니다.",
         how: "콘텐츠의 이름·효과·조건처럼 변하지 않는 정의 데이터와 플레이 중 변화하는 상태를 분리했습니다. 공통 생성·실행·종료 흐름은 동일한 계약으로 처리하고, 콘텐츠별 차이는 개별 동작과 데이터로 확장했습니다. 덕분에 사용하는 쪽은 구체적인 유형을 몰라도 같은 방식으로 콘텐츠를 실행할 수 있습니다.",
+        video: {
+          src: "assets/videos/everwind-content-crafting-equipment.mp4",
+          title: "콘텐츠 확장 · 제작과 장비 결과 영상",
+        },
       },
       {
         title: "상태 머신 기반 전투 흐름",
@@ -182,39 +186,53 @@ const projects = {
     ],
     troubleshooting: [
       {
-        title: "분할 수신된 TCP 패킷과 메인 스레드 충돌",
-        summary: "분할·병합되는 TCP 데이터와 Unity 스레드 제약을 안정적으로 분리했습니다.",
-        emphasis: ["길이와 ID", "헤더", "수신 데이터를 누적", "메인 스레드 작업 큐"],
-        problem: "동시 접속과 전투 패킷이 늘어나자 하나의 패킷이 여러 번에 나뉘거나 여러 패킷이 한 번에 도착했습니다. 한 번의 수신을 하나의 메시지로 간주했을 때 길이와 ID 해석이 어긋났고, 수신 스레드에서 UI와 게임 오브젝트를 바로 갱신하면서 간헐적인 누락과 예외도 발생했습니다.",
-        solution: "길이와 ID를 포함한 헤더를 기준으로 수신 데이터를 누적하고, 완전한 패킷이 만들어졌을 때만 순서대로 분리했습니다. 네트워크 단계는 해석과 데이터 보관까지만 담당하고, Unity 오브젝트 변경은 메인 스레드 작업 큐로 전달했습니다. 이동처럼 빈도가 높은 패킷은 로그에서 제외해 실제 오류 흐름을 빠르게 추적할 수 있게 했습니다.",
+        title: "싱글톤 매니저의 초기화 순서와 씬 수명 분리",
+        summary: "인스턴스 등록과 실제 초기화를 나누고, 서비스·인게임 초기화 순서를 우선순위로 관리했습니다.",
+        emphasis: ["인스턴스 등록", "우선순위", "초기화 단계", "씬 수명", "중복 인스턴스"],
+        problem: "매니저의 생성 순서만으로는 초기화 완료를 보장할 수 없었습니다. 로그인 서비스와 인게임 객체의 씬 수명이 달라, 준비되지 않은 참조를 사용하는 위험이 있었습니다.",
+        solution: "인스턴스 등록과 초기화를 분리하고 우선순위로 실행 순서를 정했습니다. 서비스는 먼저, 인게임 매니저는 월드 조립 후 준비하며 중복 인스턴스와 파괴된 참조를 정리했습니다.",
+      },
+      {
+        title: "싱글톤 공통 베이스로 서로 다른 매니저 묶기",
+        summary: "타입별 인스턴스 접근은 유지하면서 비제네릭 공통 계약으로 매니저들을 함께 관리했습니다.",
+        emphasis: ["제네릭", "공통 베이스", "공통 계약", "타입별 접근", "초기화 정책"],
+        problem: "서로 다른 제네릭 싱글톤을 하나의 목록으로 초기화하기 어려웠습니다. 매니저를 개별적으로 나열하면 종류가 늘 때마다 초기화 정책까지 수정해야 했습니다.",
+        solution: "비제네릭 공통 베이스에 초기화 계약을 두었습니다. 관리자는 공통 계약으로 등록·초기화하고, 제네릭 베이스는 타입별 접근과 인스턴스 수명을 담당하도록 나눴습니다.",
       },
       {
         title: "맵 전환 후 이전 월드 상태가 남는 문제",
         summary: "맵 이동 시 서버 세션·월드 오브젝트·전투 UI를 하나의 흐름으로 초기화했습니다.",
         emphasis: ["상태 전환 절차", "서버 세션", "캐릭터 컨트롤러", "월드 오브젝트·전투 버퍼·타겟 UI"],
-        problem: "맵을 옮긴 뒤에도 이전 지역의 몬스터와 다른 플레이어가 남거나, 타겟·HP UI와 공격 상태가 유지되는 현상이 나타났습니다. 서버 세션이 두 맵의 전송 대상에 동시에 포함되는 경우가 있었고, 활성화된 캐릭터 컨트롤러가 순간이동 좌표를 보정해 의도한 스폰 지점에서 벗어나기도 했습니다.",
-        solution: "맵 전환을 단순한 화면 교체가 아닌 상태 전환 절차로 정의했습니다. 서버에서는 이전 맵 세션 제거, 새 위치와 맵 정보 갱신, 새 맵 세션 등록 순서를 보장했고, 클라이언트에서는 기존 월드 오브젝트·전투 버퍼·타겟 UI를 함께 정리했습니다. 위치 적용 중에는 캐릭터 컨트롤러를 잠시 비활성화하고, 전환 완료 후 새 맵의 플레이어와 몬스터 목록을 다시 구성했습니다.",
+        problem: "맵 이동 후 이전 월드 오브젝트·전투 버퍼·타겟 UI가 남았습니다. 서버 세션의 맵 소속과 캐릭터 컨트롤러의 위치 보정도 새 월드 구성과 충돌했습니다.",
+        solution: "맵 이동을 상태 전환 절차로 묶었습니다. 이전 맵 소속과 화면 상태를 정리한 뒤 새 월드를 조립하고, 좌표 적용 중에는 캐릭터 컨트롤러를 잠시 비활성화했습니다.",
       },
       {
         title: "몬스터 리필 시 중복 생성과 지형 이탈",
         summary: "서버 기준 리필과 증분 전송으로 중복 생성과 지형 이탈 스폰을 줄였습니다.",
         emphasis: ["서버", "인스턴스 ID", "새로 추가된 몬스터", "지면을 탐색"],
-        problem: "몬스터가 처치된 뒤 각 클라이언트가 제각각 리젠을 판단하면 사용자마다 몬스터 수와 위치가 달라졌습니다. 서버가 리필할 때 전체 목록을 다시 보내는 방식은 이미 존재하는 몬스터를 중복 생성했고, 무작위 좌표를 그대로 사용하면 경사진 지형에서 공중이나 지면 아래에 스폰되는 경우도 발생했습니다.",
-        solution: "리젠 시점과 인스턴스 ID는 서버가 단독으로 결정하도록 권한을 모았습니다. 서버 타이머가 맵별 최대 수량과 현재 수량의 차이만큼 생성하고, 새로 추가된 몬스터만 해당 맵에 전달했습니다. 클라이언트는 같은 인스턴스 ID를 다시 받으면 무시하고, 스폰 지점에서 지면을 탐색해 높이를 보정한 뒤 오브젝트를 배치했습니다.",
+        problem: "클라이언트별 리젠 판단과 전체 목록 재전송으로 몬스터가 중복 생성됐습니다. 무작위 좌표는 경사진 지형의 높이와 맞지 않았습니다.",
+        solution: "서버가 부족한 수량만 보충하고 새로 추가된 몬스터만 전송했습니다. 클라이언트는 인스턴스 ID로 중복을 거르고, 지면을 탐색해 스폰 높이를 보정했습니다.",
       },
       {
         title: "몬스터 제어권과 사망 요청 충돌",
         summary: "몬스터 제어권과 사망 요청을 검증해 클라이언트 간 상태 충돌을 막았습니다.",
         emphasis: ["제어권", "소유자", "보간", "사망 중복 방지", "회전 보정값"],
-        problem: "여러 클라이언트가 같은 몬스터의 이동과 공격을 동시에 계산하면서 위치가 흔들리거나 서로 다른 대상을 추적했습니다. HP가 0이 되는 순간에는 여러 사망 요청이 겹쳐 중복 제거와 보상 위험이 생겼고, 모델마다 정면 축이 달라 서버 위치는 같아도 바라보는 방향이 어긋나는 문제도 확인했습니다.",
-        solution: "피격자를 기준으로 한 명의 클라이언트에 몬스터 제어권을 부여하고, 나머지는 서버가 전달한 위치를 보간해 표현하도록 역할을 나눴습니다. 서버는 이동·공격·사망 요청이 현재 소유자에게서 왔는지 검증했으며, 클라이언트와 서버 양쪽에 사망 중복 방지를 적용했습니다. 모델별 정면 축 차이는 회전 보정값으로 흡수해 동기화 규칙과 표현 차이를 분리했습니다.",
+        problem: "여러 클라이언트가 같은 몬스터를 제어해 위치와 공격 대상이 엇갈렸습니다. 중복 사망 요청과 모델별 정면 축 차이도 상태 불일치를 만들었습니다.",
+        solution: "한 소유자에게 제어권을 주고 나머지는 보간으로 표현했습니다. 서버의 소유자 검증과 사망 중복 방지로 요청을 제한하고, 모델 차이는 회전 보정값으로 처리했습니다.",
+      },
+      {
+        title: "Animator 상태 증가와 클립 교체의 분리",
+        summary: "공통 상태 전이는 유지하고 Animator Override로 상황별 클립만 교체했습니다.",
+        emphasis: ["공통 상태 전이", "Animator Override", "키 클립", "애니메이션 세트", "재생 속도", "개체별"],
+        problem: "공격·피격마다 Animator 상태를 늘리면 공통 상태 전이까지 반복됐습니다. 같은 행동에서도 클립과 재생 속도는 달라야 했습니다.",
+        solution: "개체별 Animator Override로 키 클립만 교체했습니다. 애니메이션 세트가 상황별 표현을 제공하고, 공통 상태 전이와 공격별 재생 속도는 유지했습니다.",
       },
       {
         title: "맵 전환 후 미니맵 좌표가 어긋나는 문제",
         summary: "맵별 보정 데이터와 이벤트 흐름으로 미니맵을 월드 좌표에 맞췄습니다.",
         emphasis: ["맵 데이터", "변경 이벤트", "보정값 전체", "한 번 더 동기화"],
-        problem: "맵별 미니맵 이미지만 교체했을 때 플레이어 표식과 실제 월드 위치가 맞지 않았습니다. 이미지마다 기준 위치·회전·크기가 달랐고, 맵 전환 직후에는 이전 미니맵이 남거나 UI가 월드보다 늦게 준비되어 변경 이벤트를 놓치는 경우도 있었습니다.",
-        solution: "미니맵을 단순 이미지가 아니라 이미지·위치·회전·크기 보정값이 묶인 맵 데이터로 관리했습니다. 월드가 바뀌면 로더가 변경 이벤트를 발행하고 UI는 해당 보정값 전체를 적용하도록 분리했습니다. UI가 늦게 초기화되는 상황에는 현재 맵 데이터를 한 번 더 동기화해 초기 로딩과 맵 전환 모두 같은 결과가 나오게 했습니다.",
+        problem: "이미지만 교체한 미니맵은 월드 좌표와 맞지 않았습니다. UI가 늦게 준비되면 변경 이벤트를 놓쳐 이전 맵 표시가 남았습니다.",
+        solution: "맵 데이터에 이미지와 보정값 전체를 묶고 변경 이벤트로 적용했습니다. UI 시작 시 현재 맵을 한 번 더 동기화해 초기 로딩과 맵 이동을 같은 흐름으로 맞췄습니다.",
       },
     ],
     feature: "",
@@ -1553,7 +1571,333 @@ const everwindDesignDocument = {
   ],
 };
 
-projects["project-1"].designDocument = everwindDesignDocument;
+const everwindProject = projects["project-1"];
+const clientDocument = everwindDesignDocument.technicalDocs.find((item) => item.id === "client");
+const serverDocument = everwindDesignDocument.technicalDocs.find((item) => item.id === "server");
+
+// Move only the requested topics; keep their verified descriptions and diagrams.
+const assemblyTitle = "Unity 메인 스레드와 지연 데이터 조립";
+const assemblyFeature = everwindProject.coreFeatures.find((item) => item.title === assemblyTitle);
+const assemblyDesign = everwindDesignDocument.coreFeatures.find((item) => item.title === assemblyTitle);
+const receiveFeature = clientDocument.features.find((item) => item.title === "네트워크 수신과 Unity 반영");
+receiveFeature.title = assemblyTitle;
+receiveFeature.summary = assemblyDesign.intent;
+receiveFeature.details = [
+  ["해결하려는 문제", assemblyDesign.problem],
+  ...assemblyDesign.decisions,
+  ["구현 결과", assemblyDesign.result],
+  ["설계 판단과 다음 단계", assemblyDesign.tradeoff],
+];
+receiveFeature.media = assemblyFeature.video;
+everwindProject.coreFeatures = everwindProject.coreFeatures.filter((item) => item.title !== assemblyTitle);
+everwindDesignDocument.coreFeatures = everwindDesignDocument.coreFeatures.filter((item) => item.title !== assemblyTitle);
+
+const contentDesign = everwindDesignDocument.coreFeatures.find((item) => item.title === "데이터 중심 RPG 콘텐츠 확장");
+contentDesign.implementationSections = clientDocument.features.filter((item) => ["스킬·아이템·장비·제작", "팝업·인벤토리·장비·제작 UI"].includes(item.title));
+clientDocument.features = clientDocument.features.filter((item) => !contentDesign.implementationSections.includes(item));
+contentDesign.decisions.push(
+  ["호출 측의 경계", "스킬 실행은 Skill, 아이템 사용은 IUsableItem, 튜토리얼 단계는 ITutorialStep으로 요청합니다. 호출 측은 공통 계약을 사용하고, 구체적인 행동은 파생 클래스가 담당합니다."],
+  ["확장과 현실적 한계", "새 타입의 등록과 프리팹·데이터 연결은 필요합니다. 튜토리얼 단계표와 스킬별 애니메이션 분기도 남아 있으므로, 모든 콘텐츠를 코드 변경 없이 추가하는 구조는 아닙니다."],
+);
+contentDesign.implementationSections.push(
+  {
+    title: "스킬 계약과 단일·범위 공격의 다형성",
+    summary: "전투 관리자는 공통 스킬 타입으로 실행을 요청하고, 타격 방식은 파생 스킬이 결정합니다.",
+    emphasis: ["공통 스킬 타입", "파생 스킬", "범위 공격", "변경 범위"],
+    details: [
+      ["공통 경로", "추상 Skill이 실행 계약과 기본 타깃·피해 처리 경로를 제공합니다. CombatManager는 현재 선택된 Skill에 실행을 요청하므로 구체적인 스킬 클래스마다 호출 코드를 복제하지 않습니다."],
+      ["파생 책임", "NormalSkill·SmashSkill은 Skill을 상속하고, Windmill은 범위 공격용 중간 베이스 AreaSkill을 상속합니다. 각 파생 스킬은 공격 시작, 타격 시점과 대상 선택의 차이를 구현합니다."],
+      ["변경 범위", "새 공격은 파생 스킬과 필요한 프리팹·애니메이션 연결을 추가합니다. 공통 피해 계산은 재사용하지만 스킬 선택·연결 지점과 애니메이션 분기는 함께 확인해야 합니다."],
+    ],
+    diagram: {
+      title: "공통 스킬 계약과 공격 유형 확장",
+      direction: "TB",
+      zoomable: true,
+      groups: [
+        { title: "Caller", nodes: ["CombatManager"] },
+        { title: "Common Contract", nodes: ["Skill", "AreaSkill"] },
+        { title: "Concrete Skills", nodes: ["NormalSkill", "SmashSkill", "Windmill"] },
+      ],
+      relations: [
+        ["CombatManager", "aggregation", "Skill", "선택된 스킬 실행"],
+        ["AreaSkill", "inheritance", "Skill"],
+        ["NormalSkill", "inheritance", "Skill"],
+        ["SmashSkill", "inheritance", "Skill"],
+        ["Windmill", "inheritance", "AreaSkill"],
+      ],
+    },
+  },
+  {
+    title: "튜토리얼 단계 계약과 등록 기반 확장",
+    summary: "단계의 진입·갱신·종료는 공통 계약으로 실행하고, 목표 판정과 이벤트 구독은 개별 단계에 둡니다.",
+    emphasis: ["공통 계약", "개별 단계", "단계표", "구독 해제"],
+    details: [
+      ["공통 수명주기", "TutorialGuide는 현재 단계를 ITutorialStep으로 보관합니다. 전환할 때 이전 단계의 종료를 호출하고 새 단계를 진입시키며, 매 프레임 현재 단계만 갱신합니다."],
+      ["개별 규칙", "CameraStep·MoveStep·CombatStep·InteractStep·CraftStep·EquipStep이 같은 계약을 구현합니다. 입력이나 플레이 사건을 관찰하는 방식은 각 단계가 맡고, 종료 시 필요한 구독 해제를 수행합니다."],
+      ["확장 지점", "새 단계는 구현 클래스와 TutorialStep 열거형·단계표 등록을 추가합니다. 공통 전환 흐름은 재사용하지만 새 단계가 자동 탐색되는 구조는 아니며, 저장된 단계 값과의 호환성도 확인해야 합니다."],
+    ],
+    diagram: {
+      title: "튜토리얼 공통 계약과 단계별 구현",
+      direction: "TB",
+      zoomable: true,
+      groups: [
+        { title: "Guide", nodes: ["TutorialGuide", "ITutorialStep"] },
+        { title: "Concrete Steps", nodes: ["CameraStep", "MoveStep", "CombatStep", "InteractStep", "CraftStep", "EquipStep"] },
+      ],
+      relations: [
+        ["TutorialGuide", "aggregation", "ITutorialStep", "단계표와 현재 단계"],
+        ...["CameraStep", "MoveStep", "CombatStep", "InteractStep", "CraftStep", "EquipStep"].map((step) => [step, "implementation", "ITutorialStep"]),
+      ],
+    },
+  },
+);
+
+const timerImplementation = serverDocument.features.find((item) => item.title === "몬스터 월드와 타이머");
+serverDocument.features = serverDocument.features.filter((item) => item !== timerImplementation);
+const timerTitle = "서버 타이머와 맵별 몬스터 보충";
+everwindProject.coreFeatures.push({
+  title: timerTitle,
+  summary: "시간 기반 작업을 I/O 처리와 분리하고, 주기적으로 부족한 몬스터만 보충합니다.",
+  emphasis: ["타이머 전용 스레드", "실행 시각", "우선순위 큐", "10초", "부족한 수량", "신규 인스턴스"],
+  why: "몬스터 리필처럼 일정 시간이 지나야 실행할 작업을 네트워크 요청이 올 때만 처리하면, 플레이어 입력 여부에 따라 월드 갱신 시점이 달라집니다. I/O 완료를 처리하는 워커에서 시간을 기다리게 하는 것도 다른 접속의 처리를 지연시킬 수 있어, 시간 작업을 별도로 관리할 필요가 있었습니다.",
+  how: "타이머 전용 스레드와 실행 시각 기준 우선순위 큐를 두고, 작업이 없거나 실행 시각 전이면 조건 변수로 대기합니다. 콜백은 큐 잠금을 해제한 뒤 실행하며 반복 작업은 다음 시각을 갱신해 다시 등록합니다. 현재 서버는 10초마다 모든 맵을 확인해 최대 수량 대비 부족한 수량만 생성하고, 신규 인스턴스 패킷만 같은 맵 사용자에게 전달합니다.",
+  video: {
+    src: "assets/videos/everwind-server-timer-refill.mp4",
+    title: "서버 타이머 · 몬스터 처치 후 스폰 로그와 월드 보충",
+  },
+});
+everwindDesignDocument.coreFeatures.push({
+  title: timerTitle,
+  intent: "접속 이벤트와 무관하게 월드의 주기 작업을 실행하고, 타이머와 게임 규칙의 책임을 나눈다.",
+  keywords: ["전용 스레드", "우선순위 큐", "조건 변수", "반복 콜백", "증분 스폰"],
+  problem: everwindProject.coreFeatures.at(-1).why,
+  decisions: [
+    ["시간 기준", "steady_clock의 실행 시각으로 작업을 정렬하고, 단발 작업과 반복 작업을 같은 큐로 관리합니다."],
+    ["대기와 실행", "빈 큐에서는 조건 변수로 대기하고 가장 이른 실행 시각까지 wait_until합니다. 새 작업 등록 시 알림을 보내며, 콜백 실행 중에는 큐 잠금을 유지하지 않습니다."],
+    ["반복 정책", "반복 작업은 실행 후 기존 예정 시각에 간격을 더해 다시 등록합니다. 긴 콜백이 후속 작업을 늦출 수 있으므로 정밀한 실시간 틱을 보장하는 구조는 아닙니다."],
+    ["게임 규칙", "서버 시작 시 10초 간격 몬스터 리필을 등록합니다. 타이머는 호출 시점만 결정하고, 맵 관리자는 부족한 개체 생성과 해당 맵에 신규 스폰 패킷을 전파하는 일을 맡습니다."],
+  ],
+  result: "클라이언트 입력이 없어도 서버가 맵별 몬스터 수를 보충하며, 전체 목록을 반복 전송하지 않고 새로 생성된 개체만 전달합니다.",
+  tradeoff: "콜백은 하나의 타이머 스레드에서 순차 실행됩니다. 종료 함수는 스레드를 깨워 합류하지만, 현재 main의 종료 경로에서 타이머 정리를 명시적으로 연결하는 보완이 필요합니다. 몬스터 이동·공격의 서버 권위 이전도 별도 과제입니다.",
+  diagram: timerImplementation.diagram,
+});
+
+const coreFeatureOrder = [
+  "데이터 중심 RPG 콘텐츠 확장",
+  "IOCP 비동기 세션과 패킷 수명주기",
+  "맵 단위 멀티플레이 동기화",
+  "재접속 가능한 게임 상태 영속화",
+  "상태 머신 기반 전투 흐름",
+  "이벤트 기반 퀘스트·튜토리얼",
+  timerTitle,
+];
+everwindProject.coreFeatures = coreFeatureOrder.map((title) => {
+  const feature = everwindProject.coreFeatures.find((item) => item.title === title);
+  feature.keywords = everwindDesignDocument.coreFeatures.find((item) => item.title === title).keywords;
+  return feature;
+});
+everwindDesignDocument.coreFeatures = coreFeatureOrder.map((title) => everwindDesignDocument.coreFeatures.find((item) => item.title === title));
+everwindProject.troubleshooting = [0, 1, 2, 4, 3, 5, 6].map((index) => everwindProject.troubleshooting[index]);
+const startupImplementation = clientDocument.features.find((item) => item.title === "코어 초기화와 월드 조립");
+clientDocument.features = clientDocument.features.filter((item) => item !== startupImplementation);
+const mapTransitionImplementation = serverDocument.features.find((item) => item.title === "맵 단위 세션과 멀티플레이 전파");
+serverDocument.features = serverDocument.features.filter((item) => item !== mapTransitionImplementation);
+const hudImplementation = clientDocument.features.find((item) => item.title === "UI 이벤트와 HUD·미니맵·전투 피드백");
+const mapCleanupDetail = hudImplementation.details.find(([label]) => label === "맵 전환·한계");
+const minimapDetail = hudImplementation.details.find(([label]) => label === "미니맵");
+hudImplementation.title = "UI 이벤트와 HUD·전투 피드백";
+hudImplementation.emphasis = hudImplementation.emphasis.filter((keyword) => !["미니맵", "맵 전환"].includes(keyword));
+hudImplementation.details = hudImplementation.details.filter(([label]) => !["미니맵", "맵 전환·한계"].includes(label));
+clientDocument.notes = clientDocument.notes.filter(([label]) => label !== "초기화");
+const combatImplementation = clientDocument.features.find((item) => item.title === "플레이어 상태와 전투");
+combatImplementation.details = combatImplementation.details.filter(([label]) => label !== "변경 지점");
+const questImplementation = clientDocument.features.find((item) => item.title === "퀘스트·튜토리얼 이벤트");
+questImplementation.details = questImplementation.details.filter(([label]) => label !== "변경 지점");
+
+everwindDesignDocument.troubleshooting = [
+  {
+    keywords: ["등록/초기화 분리", "우선순위", "서비스/인게임", "씬 수명"],
+    decisions: [
+      ["등록 시점", "SingletonBase의 Awake는 인스턴스를 확정하고 SingletonManager에 등록합니다. 실제 초기화는 별도 Init 계약으로 두어, 등록된 객체가 반드시 준비된 객체라는 가정을 없앴습니다."],
+      ["두 초기화 단계", "우선순위가 음수인 매니저는 서비스 목록에, 나머지는 인게임 목록에 넣습니다. 각 목록은 Priority 순으로 정렬해 Init을 호출하고, 서비스 목록은 매니저의 Start에서 먼저 실행합니다."],
+      ["월드 이후 준비", "SceneLoader는 씬 로딩을 기다린 뒤 WorldLoader에 맵·플레이어·원격 객체·몬스터 조립을 요청합니다. 그 뒤 인게임 매니저의 초기화를 호출해 월드 참조가 필요한 시스템의 준비 시점을 맞춥니다."],
+      ["수명 정리", "IsPersistent인 인스턴스만 DontDestroyOnLoad로 유지하고 중복 인스턴스는 제거합니다. 기존 인스턴스가 파괴될 때 등록 목록과 정적 참조를 해제해 새 씬에서 이전 참조를 사용하지 않게 합니다."],
+      ["추가 시스템", startupImplementation.details[2][1]],
+    ],
+    tradeoff: "우선순위는 실행 순서를 명시하지만 의존 관계를 자동 검증하지는 않습니다. 새 매니저는 등록 시점과 Priority를 확인해야 하며, 향후 의존성 주입과 명시적 부트스트랩으로 개선할 수 있습니다.",
+    diagram: startupImplementation.diagram,
+  },
+  {
+    keywords: ["비제네릭 베이스", "공통 계약", "타입별 인스턴스", "타입 키 조회"],
+    decisions: [
+      ["공통 베이스", "SingletonBasest가 Priority·IsPersistent·Init 계약을 제공합니다. SingletonManager는 이 비제네릭 타입의 목록으로 서로 다른 종류의 매니저를 동일하게 관리합니다."],
+      ["타입별 구현", "SingletonBase<T>는 공통 베이스를 상속하면서 T별 정적 인스턴스 접근, 기존 객체 검색·생성, 중복 제거와 파괴 시 해제를 맡습니다. 개별 매니저는 이 제네릭 베이스를 상속합니다."],
+      ["등록과 조회", "등록 딕셔너리는 실제 Type을 키로 사용하고 공통 베이스를 값으로 보관합니다. 조회 시 요청한 매니저 타입으로 돌려주므로, 초기화는 공통 계약으로 처리하면서 사용 측의 타입별 접근은 유지합니다."],
+    ],
+    tradeoff: "접근점이 전역으로 열려 있어 호출 측의 의존성이 드러나지 않는 한계는 남습니다. 공통 베이스를 도입한 것과 결합도를 완전히 제거한 것은 구분했습니다.",
+    diagram: {
+      title: "싱글톤 공통 계약과 타입별 접근",
+      direction: "TB", zoomable: true,
+      groups: [
+        { title: "Common Base", nodes: ["SingletonBasest", "SingletonBase"] },
+        { title: "Concrete Managers", nodes: ["SingletonManager", "DataCenter", "NetworkClient", "SceneLoader"] },
+      ],
+      relations: [
+        ["SingletonBase", "inheritance", "SingletonBasest", "제네릭 인스턴스 관리"],
+        ...["SingletonManager", "DataCenter", "NetworkClient", "SceneLoader"].map((name) => [name, "inheritance", "SingletonBase"]),
+        ["SingletonManager", "aggregation", "SingletonBasest", "공통 목록과 타입별 등록"],
+      ],
+    },
+  },
+  {
+    keywords: ["월드 정리", "전투 리셋", "맵 소속", "좌표 적용"],
+    decisions: [
+      ["서버 소속", "맵 변경 요청에서 이전 맵의 세션을 제거하고 세션의 맵·위치를 바꾼 뒤 새 맵에 등록합니다. 입장 응답에 새 맵의 플레이어와 몬스터 정보를 구성합니다."],
+      ["클라이언트 정리", "WorldLoader는 플레이어의 전투 상태와 이동을 리셋하고, 적 체력 UI를 정리합니다. 이전 맵을 제거하고 원격 플레이어·몬스터 등록 목록도 비운 뒤 새 목록을 조립합니다."],
+      ["좌표 반영", "새 맵과 원격 객체를 구성한 후 로컬 플레이어를 스폰 좌표로 이동합니다. CharacterController를 잠시 끄고 위치를 반영한 뒤 다시 켜, 이동 컴포넌트가 이전 위치를 기준으로 좌표를 보정하지 않게 합니다."],
+      ["표현 자원", mapCleanupDetail[1]],
+    ],
+    tradeoff: "맵 전환의 정리 순서는 명시했지만, 로딩 실패 시 이전 월드로 복귀하는 절차와 연속 전환 요청의 검증은 별도 보완 과제입니다.",
+    implementationSections: [mapTransitionImplementation],
+    diagram: {
+      title: "맵 전환 시 월드·전투·UI 정리 책임",
+      direction: "TB", zoomable: true,
+      groups: [
+        { title: "Transition", nodes: ["PacketMethod", "WorldLoader"] },
+        { title: "Cleanup Targets", nodes: ["Player", "CombatManager", "EnemyHpUIManager", "OtherPlayerManager", "EnemySpawner"] },
+      ],
+      relations: [
+        ["PacketMethod", "dependency", "WorldLoader", "메인 스레드에서 월드 변경"],
+        ["WorldLoader", "aggregation", "Player", "기존 로컬 플레이어 이동"],
+        ["Player", "aggregation", "CombatManager", "전투 상태 접근"],
+        ["WorldLoader", "dependency", "CombatManager", "타깃·공격 버퍼 리셋"],
+        ["WorldLoader", "dependency", "EnemyHpUIManager", "표시 자원 정리"],
+        ["WorldLoader", "dependency", "OtherPlayerManager", "이전 원격 객체 제거"],
+        ["WorldLoader", "dependency", "EnemySpawner", "이전 몬스터 제거"],
+      ],
+    },
+  },
+  {
+    keywords: ["Owner 검증", "원격 보간", "사망 요청 1회", "회전 보정"],
+    decisions: [
+      ["제어권 결정", "서버는 공격자를 몬스터의 Owner로 기록해 피해 응답에 전달합니다. 클라이언트의 EnemyNetworkSync는 로컬 사용자 ID와 Owner ID를 비교해 이동·공격 계산 여부를 결정합니다."],
+      ["표현 분리", "소유자가 아닌 클라이언트는 받은 위치를 Lerp로, 바라보는 방향을 Slerp로 보간합니다. 몬스터 모델의 정면 축 차이는 Enemy가 제공하는 회전 보정값으로 적용합니다."],
+      ["요청 검증", "서버의 이동·공격 처리기는 요청 세션이 현재 Owner인지 확인합니다. 사망 요청은 Owner가 지정되어 있으면 해당 사용자만 허용하고, 서버 맵에서 몬스터를 제거한 뒤 사망 확인 패킷을 전파합니다."],
+      ["중복 방지", "클라이언트는 HP와 사망·요청 전송 플래그를 확인해 사망 요청을 한 번만 보냅니다. 서버에서 이미 제거된 인스턴스는 후속 요청에서 조회되지 않아 다시 제거하거나 확인 응답을 생성하지 않습니다."],
+    ],
+    tradeoff: "이는 클라이언트 소유권을 서버가 검증하는 프로토타입 구조입니다. AI·판정이 완전히 서버 권위로 실행되는 구조나 동시 요청의 완전한 원자성을 보장했다고 설명하지 않았습니다.",
+    diagram: {
+      title: "서버의 몬스터 소유자 검증과 제거",
+      direction: "TB", zoomable: true,
+      groups: [
+        { title: "Request", nodes: ["PacketMethod", "Session"] },
+        { title: "Server World", nodes: ["MapDataManager", "MapData", "Enemy"] },
+      ],
+      relations: [
+        ["PacketMethod", "dependency", "Session", "요청자의 사용자·맵 ID"],
+        ["PacketMethod", "dependency", "MapDataManager", "현재 맵 조회"],
+        ["MapDataManager", "aggregation", "MapData"],
+        ["MapData", "aggregation", "Enemy", "인스턴스 목록"],
+        ["PacketMethod", "dependency", "Enemy", "Owner 확인"],
+        ["PacketMethod", "dependency", "MapData", "제거 후 같은 맵에 전파"],
+      ],
+    },
+  },
+  {
+    keywords: ["증분 스폰", "인스턴스 ID", "지면 Raycast", "높이 보정"],
+    decisions: [
+      ["서버 보충", "맵은 최대 수량에서 현재 수량을 뺀 만큼만 생성하고 새로 만든 목록을 반환합니다. 맵 관리자는 그 목록의 인스턴스 ID·종류·좌표만 스폰 패킷으로 전달합니다. 주기 실행 구조는 Core Feature의 서버 타이머에서 설명합니다."],
+      ["준비 전 보관", "로컬 플레이어가 아직 없으면 수신한 몬스터 정보를 DataCenter의 대기 큐에 보관합니다. 준비된 월드를 대상으로만 오브젝트를 생성해 로딩 중 참조 누락을 피합니다."],
+      ["중복 필터", "WorldLoader는 EnemySpawner에 같은 인스턴스 ID가 등록되어 있는지 먼저 확인합니다. 이미 존재하거나 정의 테이블에 없는 몬스터 종류면 생성하지 않습니다."],
+      ["지형 보정", "서버 좌표보다 위에서 Ground 레이어를 향해 아래로 Raycast합니다. 충돌 지점을 찾으면 y좌표만 지면 높이로 바꾸고 프리팹을 생성한 뒤 인스턴스 ID로 등록합니다."],
+    ],
+    tradeoff: "지면을 찾지 못하면 현재 코드는 원래 높이를 사용합니다. Ground 레이어 설정과 스폰 반경 검증이 필요하며, 서버 자체가 지형 충돌을 판정하는 구조는 아닙니다.",
+    diagram: {
+      title: "수신된 몬스터의 중복 검사와 높이 보정",
+      direction: "TB", zoomable: true,
+      groups: [
+        { title: "Spawn Entry", nodes: ["PacketMethod", "WorldLoader"] },
+        { title: "Definition And Registry", nodes: ["DataCenter", "EnemySpawner"] },
+        { title: "Unity World", nodes: ["Physics", "Enemy"] },
+      ],
+      relations: [
+        ["PacketMethod", "dependency", "WorldLoader", "스폰 정보 반영"],
+        ["WorldLoader", "dependency", "DataCenter", "대기 큐·몬스터 정의"],
+        ["WorldLoader", "dependency", "EnemySpawner", "인스턴스 ID 중복 검사"],
+        ["WorldLoader", "dependency", "Physics", "Ground Raycast"],
+        ["WorldLoader", "dependency", "Enemy", "보정 좌표로 생성·초기화"],
+        ["EnemySpawner", "aggregation", "Enemy", "ID별 등록"],
+      ],
+    },
+  },
+  {
+    keywords: ["공통 전이", "개체별 Override", "키 클립", "표현 데이터"],
+    decisions: [
+      ["컨트롤러 구성", "AnimationContexter는 Animator의 기존 컨트롤러로 개체별 AnimatorOverrideController를 생성해 연결합니다. 공통 전이 구조는 유지하고 클립 교체만 해당 개체에 적용합니다."],
+      ["표현 데이터", "AnimationSet은 대기·이동·공격·피격·원샷의 원본 키 클립과 대체 클립을 보관합니다. 일반·전투 여부나 기술 종류에 맞는 클립을 골라 같은 키 위치에 덮어씁니다."],
+      ["실행 순서", "클립을 교체한 뒤 isMove Bool이나 toAttack·toDamaged Trigger를 설정합니다. 공격 종류에 따라 SkillSpeed도 함께 변경해 공통 공격 전이와 서로 다른 기술 속도를 연결합니다."],
+      ["적용 범위", "상호작용은 isInteract와 상태 직접 재생, 사망은 isDie 파라미터로 처리합니다. 모든 동작을 Override로 대체하지 않고 기존 상태 호출을 사용하는 부분을 구분했습니다."],
+    ],
+    tradeoff: "현재 공격·피격 클립 선택에는 인덱스 분기가 남아 있습니다. 새 기술은 애니메이션 세트의 클립과 선택 분기를 함께 연결해야 하며, 키 클립 누락 검증도 보완 지점입니다.",
+    diagram: {
+      title: "행동 판단과 Animator 클립 교체의 경계",
+      direction: "TB", zoomable: true,
+      groups: [
+        { title: "Behaviour", nodes: ["PlayerStateContexter", "AnimationContexter"] },
+        { title: "Clip Definition", nodes: ["AnimationSet"] },
+        { title: "Unity Animation", nodes: ["Animator", "AnimatorOverrideController"] },
+      ],
+      relations: [
+        ["PlayerStateContexter", "dependency", "AnimationContexter", "결정된 행동의 표현 요청"],
+        ["AnimationContexter", "aggregation", "AnimationSet", "키·대체 클립 참조"],
+        ["AnimationContexter", "dependency", "AnimatorOverrideController", "개체별 생성·클립 교체"],
+        ["AnimationContexter", "dependency", "Animator", "파라미터·재생 속도"],
+        ["Animator", "aggregation", "AnimatorOverrideController", "runtime controller"],
+      ],
+    },
+  },
+  {
+    keywords: ["맵별 보정값", "변경 이벤트", "초기 재동기화", "카메라 추적"],
+    decisions: [
+      ["묶음 정의", "MapData에 맵 프리팹과 미니맵 이미지·위치·회전·스케일을 함께 저장합니다. 맵마다 다른 이미지 기준을 월드 좌표에 맞추는 보정값으로 관리합니다."],
+      ["맵 변경", "WorldLoader는 맵 프리팹을 생성할 때 UIEvents로 이미지와 모든 보정값을 전달합니다. DisplayUIManager가 SpriteRenderer의 이미지와 로컬 위치·회전·스케일을 함께 적용합니다."],
+      ["초기 동기화", "HUD의 Start에서는 현재 로그인 맵 ID로 DataCenter의 맵 테이블을 조회하고 같은 적용 함수를 호출합니다. 이벤트보다 UI 준비가 늦더라도 현재 맵 표시를 다시 맞춥니다."],
+      ["플레이어 추적", minimapDetail[1]],
+    ],
+    tradeoff: "이미지별 보정값은 수동으로 설정하며, 현재 표시 대상은 맵 이미지와 플레이어 위치입니다. 자동 캘리브레이션이나 서버 기반 가시성 시스템까지 구현한 것은 아닙니다.",
+    diagram: {
+      title: "미니맵 보정 데이터와 변경·초기 동기화",
+      direction: "TB", zoomable: true,
+      groups: [
+        { title: "Map Definition", nodes: ["DataCenter", "MapData", "WorldLoader"] },
+        { title: "UI Boundary", nodes: ["UIEvents", "DisplayUIManager"] },
+        { title: "Presentation", nodes: ["SpriteRenderer", "Player"] },
+      ],
+      relations: [
+        ["DataCenter", "aggregation", "MapData", "맵 테이블"],
+        ["WorldLoader", "dependency", "DataCenter", "새 맵 정의 조회"],
+        ["WorldLoader", "event", "UIEvents", "이미지·보정값 발행"],
+        ["UIEvents", "event", "DisplayUIManager", "맵 변경 구독"],
+        ["DisplayUIManager", "dependency", "DataCenter", "Start에서 현재 맵 재조회"],
+        ["DisplayUIManager", "dependency", "SpriteRenderer", "이미지와 Transform 적용"],
+        ["DisplayUIManager", "dependency", "Player", "LateUpdate 카메라 추적"],
+      ],
+    },
+  },
+].map((implementation, index) => {
+  const item = everwindProject.troubleshooting[index];
+  return {
+    ...implementation,
+    title: item.title,
+    intent: item.summary,
+    problem: item.problem,
+    result: item.solution,
+    problemLabel: "문제 상황",
+    resultLabel: "해결 방안",
+  };
+});
+everwindDesignDocument.summary += " 콘텐츠 확장·서버 타이머와 트러블슈팅의 상세 구현은 각 항목의 ‘상세 구현 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
+everwindProject.designDocument = everwindDesignDocument;
 
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
@@ -1742,7 +2086,46 @@ const buildOtherProjects = (items = []) => {
   );
 };
 
-const makeOutlineButton = (label, targetId, summary = "") => {
+const makeFeatureKeywords = (keywords = []) => {
+  const list = document.createElement("span");
+  list.className = "feature-keywords";
+  list.setAttribute("role", "list");
+  list.setAttribute("aria-label", "구현 키워드");
+  list.append(...keywords.map((keyword) => {
+    const chip = document.createElement("span");
+    chip.setAttribute("role", "listitem");
+    chip.textContent = keyword;
+    return chip;
+  }));
+  return list;
+};
+
+const makeResultMediaButton = (media) => {
+  const button = document.createElement("button");
+  const mediaType = media.type || "video";
+  button.type = "button";
+  button.className = "feature-result-trigger";
+  button.dataset.mediaType = mediaType;
+  button.dataset.mediaSrc = media.src;
+  button.dataset.mediaTitle = media.title;
+  button.dataset.mediaAlt = media.alt || media.title || "";
+  button.textContent = mediaType === "image" ? "결과 사진 보기" : "결과 영상 보기";
+  button.setAttribute("aria-haspopup", "dialog");
+  return button;
+};
+
+const makeImplementationButton = (index, type = "coreFeatures") => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "feature-implementation-trigger";
+  button.dataset.implementationIndex = index;
+  button.dataset.implementationType = type;
+  button.textContent = "상세 구현 설명";
+  button.setAttribute("aria-haspopup", "dialog");
+  return button;
+};
+
+const makeOutlineButton = (label, targetId, summary = "", keywords = []) => {
   const button = document.createElement("button");
   const title = document.createElement("span");
   button.type = "button";
@@ -1756,6 +2139,7 @@ const makeOutlineButton = (label, targetId, summary = "") => {
     description.textContent = summary;
     button.append(description);
   }
+  if (keywords.length) button.append(makeFeatureKeywords(keywords));
   return button;
 };
 
@@ -1994,9 +2378,9 @@ const queueMermaidRender = (canvas) => {
     .catch(() => undefined);
 };
 
-const observeMermaidDiagrams = () => {
+const observeMermaidDiagrams = (root = designModal) => {
   mermaidDiagramObserver?.disconnect();
-  const canvases = [...designModal.querySelectorAll(".mermaid-canvas")];
+  const canvases = [...root.querySelectorAll(".mermaid-canvas")];
   if (!("IntersectionObserver" in window)) {
     canvases.forEach(queueMermaidRender);
     return;
@@ -2007,7 +2391,7 @@ const observeMermaidDiagrams = () => {
       mermaidDiagramObserver.unobserve(entry.target);
       queueMermaidRender(entry.target);
     });
-  }, { root: designModal, rootMargin: "420px 0px", threshold: 0.01 });
+  }, { root, rootMargin: "420px 0px", threshold: 0.01 });
   canvases.forEach((canvas) => mermaidDiagramObserver.observe(canvas));
 };
 
@@ -2236,6 +2620,27 @@ const makeDecisionList = (items = [], className = "design-decision-list", emphas
   return list;
 };
 
+const makeImplementationSection = (feature, number, id) => {
+  const section = document.createElement("section");
+  const header = document.createElement("header");
+  const featureNumber = document.createElement("span");
+  const headingGroup = document.createElement("div");
+  const heading = document.createElement("h5");
+  const copy = document.createElement("p");
+  section.className = "technical-feature";
+  section.id = id;
+  featureNumber.className = "technical-feature-number";
+  featureNumber.textContent = number;
+  heading.textContent = feature.title;
+  appendEmphasizedText(copy, feature.summary, feature.emphasis);
+  headingGroup.append(heading, copy);
+  header.append(featureNumber, headingGroup);
+  section.append(header, makeDecisionList(feature.details, "design-decision-list", feature.emphasis));
+  if (feature.media) section.append(makeResultMediaButton(feature.media));
+  if (feature.diagram) section.append(makeUmlDiagram(feature.diagram));
+  return section;
+};
+
 const makeFeatureImplementation = (feature, index) => {
   const article = document.createElement("article");
   const header = document.createElement("header");
@@ -2261,11 +2666,11 @@ const makeFeatureImplementation = (feature, index) => {
   headingGroup.append(title, intent);
   header.append(number, headingGroup);
   problemLabel.className = "eyebrow";
-  problemLabel.textContent = "해결하려는 문제";
+  problemLabel.textContent = feature.problemLabel || "해결하려는 문제";
   problemCopy.textContent = feature.problem;
   problem.append(problemLabel, problemCopy);
   resultLabel.className = "eyebrow";
-  resultLabel.textContent = "구현 결과";
+  resultLabel.textContent = feature.resultLabel || "구현 결과";
   resultCopy.textContent = feature.result;
   result.append(resultLabel, resultCopy);
   context.className = "design-context-grid";
@@ -2280,6 +2685,11 @@ const makeFeatureImplementation = (feature, index) => {
     context,
     makeDecisionList(feature.decisions),
     makeUmlDiagram(feature.diagram),
+    ...(feature.implementationSections || []).map((section, sectionIndex) => makeImplementationSection(
+      section,
+      `${String(index + 1).padStart(2, "0")}.${sectionIndex + 1}`,
+      `design-feature-${index + 1}-detail-${sectionIndex + 1}`,
+    )),
     tradeoff,
   );
   return article;
@@ -2335,25 +2745,11 @@ const buildDesignDocument = (documentData) => {
     featureTitle.textContent = "기능별 구현";
     noteTitle.textContent = "공통 설계 판단";
     featureList.className = "technical-feature-list";
-    featureList.append(...(documentItem.features || []).map((feature, featureIndex) => {
-      const section = document.createElement("section");
-      const featureHeader = document.createElement("header");
-      const featureNumber = document.createElement("span");
-      const featureHeading = document.createElement("div");
-      const heading = document.createElement("h5");
-      const copy = document.createElement("p");
-      section.className = "technical-feature";
-      section.id = `design-doc-${documentItem.id}-${featureIndex + 1}`;
-      featureNumber.className = "technical-feature-number";
-      featureNumber.textContent = `01-${index + 1}.${featureIndex + 1}`;
-      heading.textContent = feature.title;
-      appendEmphasizedText(copy, feature.summary, feature.emphasis);
-      featureHeading.append(heading, copy);
-      featureHeader.append(featureNumber, featureHeading);
-      section.append(featureHeader, makeDecisionList(feature.details, "design-decision-list", feature.emphasis));
-      if (feature.diagram) section.append(makeUmlDiagram(feature.diagram));
-      return section;
-    }));
+    featureList.append(...(documentItem.features || []).map((feature, featureIndex) => makeImplementationSection(
+      feature,
+      `01-${index + 1}.${featureIndex + 1}`,
+      `design-doc-${documentItem.id}-${featureIndex + 1}`,
+    )));
     article.append(
       header,
       makeKeywordList(documentItem.keywords),
@@ -2407,7 +2803,7 @@ const buildProjectDetail = (project) => {
     coreFeatures.forEach((feature, index) => {
       const targetId = `modal-feature-${index + 1}`;
       const nestedItem = document.createElement("li");
-      nestedItem.append(makeOutlineButton(`${String(index + 1).padStart(2, "0")}. ${feature.title}`, targetId, feature.summary));
+      nestedItem.append(makeOutlineButton(`${String(index + 1).padStart(2, "0")}. ${feature.title}`, targetId, feature.summary, feature.keywords));
       nestedList.append(nestedItem);
     });
     featureOutline.append(nestedList);
@@ -2467,35 +2863,20 @@ const buildProjectDetail = (project) => {
       const implementationIndex = project.designDocument?.coreFeatures.findIndex((item) => item.title === feature.title) ?? -1;
       if (label === "HOW" && implementationIndex >= 0) {
         const howHeader = document.createElement("div");
-        const implementationTrigger = document.createElement("button");
         howHeader.className = "feature-how-header";
-        implementationTrigger.type = "button";
-        implementationTrigger.className = "feature-implementation-trigger";
-        implementationTrigger.dataset.implementationIndex = implementationIndex;
-        implementationTrigger.textContent = "상세 구현 설명";
-        implementationTrigger.setAttribute("aria-haspopup", "dialog");
-        howHeader.append(eyebrow, implementationTrigger);
+        howHeader.append(eyebrow, makeImplementationButton(implementationIndex));
         block.append(howHeader);
       } else {
         block.append(eyebrow);
       }
-      if (media) {
-        const resultTrigger = document.createElement("button");
-        const mediaType = media.type || "video";
-        resultTrigger.type = "button";
-        resultTrigger.className = "feature-result-trigger";
-        resultTrigger.dataset.mediaType = mediaType;
-        resultTrigger.dataset.mediaSrc = media.src;
-        resultTrigger.dataset.mediaTitle = media.title;
-        resultTrigger.dataset.mediaAlt = media.alt || media.title || "";
-        resultTrigger.textContent = mediaType === "image" ? "결과 사진 보기" : "결과 영상 보기";
-        block.append(resultTrigger);
-      }
+      if (media) block.append(makeResultMediaButton(media));
       block.append(text);
       explanation.append(block);
     });
 
-    article.append(header, explanation);
+    article.append(header);
+    if (feature.keywords?.length) article.append(makeFeatureKeywords(feature.keywords));
+    article.append(explanation);
     modalFields.features.append(article);
   });
 
@@ -2520,7 +2901,15 @@ const buildProjectDetail = (project) => {
       eyebrow.className = "eyebrow";
       eyebrow.textContent = label;
       appendEmphasizedText(text, copy, item.emphasis);
-      block.append(eyebrow, text);
+      if (label === "해결 방안" && project.designDocument?.troubleshooting?.[index]) {
+        const solutionHeader = document.createElement("div");
+        solutionHeader.className = "feature-how-header";
+        solutionHeader.append(eyebrow, makeImplementationButton(index, "troubleshooting"));
+        block.append(solutionHeader, text);
+      } else {
+        block.append(eyebrow, text);
+      }
+      if (label === "해결 방안" && item.media) block.append(makeResultMediaButton(item.media));
       explanation.append(block);
     });
 
@@ -2714,19 +3103,22 @@ designModal.addEventListener("cancel", (event) => {
   closeDesignDocument();
 });
 
-modalFields.features.addEventListener("click", (event) => {
+const handleImplementationClick = (event) => {
   const trigger = event.target.closest("[data-implementation-index]");
   if (!trigger || !activeProject?.designDocument) return;
   const index = Number(trigger.dataset.implementationIndex);
-  const feature = activeProject.designDocument.coreFeatures[index];
+  const type = trigger.dataset.implementationType || "coreFeatures";
+  const feature = activeProject.designDocument[type]?.[index];
   if (!feature) return;
   featureDesignTitle.textContent = "상세 구현 설명";
   featureDesignContent.replaceChildren(makeFeatureImplementation(feature, index));
   featureDesignModal.showModal();
   featureDesignModal.scrollTop = 0;
   featureDesignClose.focus();
-  queueMermaidRender(featureDesignContent.querySelector(".mermaid-canvas"));
-});
+  observeMermaidDiagrams(featureDesignModal);
+};
+modalFields.features.addEventListener("click", handleImplementationClick);
+modalFields.troubleshooting.addEventListener("click", handleImplementationClick);
 
 const closeFeatureImplementation = () => {
   if (featureDesignModal.open) featureDesignModal.close();
@@ -2841,7 +3233,7 @@ imageZoomOverlay.addEventListener("click", (event) => {
   if (event.target === imageZoomOverlay) closeImageZoom();
 });
 
-modalFields.features.addEventListener("click", (event) => {
+const handleResultMediaClick = (event) => {
   const trigger = event.target.closest(".feature-result-trigger");
   if (!trigger) return;
   const mediaType = trigger.dataset.mediaType || "video";
@@ -2859,7 +3251,10 @@ modalFields.features.addEventListener("click", (event) => {
   videoModal.showModal();
   if (mediaType === "video") featureVideo.play().catch(() => {});
   videoModalClose.focus();
-});
+};
+modalFields.features.addEventListener("click", handleResultMediaClick);
+modalFields.troubleshooting.addEventListener("click", handleResultMediaClick);
+technicalDocumentList.addEventListener("click", handleResultMediaClick);
 
 videoModalClose.addEventListener("click", closeFeatureMedia);
 videoModal.addEventListener("click", (event) => {
