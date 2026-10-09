@@ -89,7 +89,7 @@ const projects = {
     title: "EverWind",
     period: "2025.09.01 - 2026.06.01 / 개인 프로젝트",
     overviewTitle: "콘텐츠 확장성을 고려한 온라인 액션 RPG 시스템 아키텍처",
-    overview: "전투·스킬·아이템·제작·퀘스트·튜토리얼을 확장 가능한 구조로 설계하고, Unity 클라이언트에서 C++ IOCP 서버와 MySQL 영속화까지 이어지는 전체 데이터 흐름을 구현한 멀티플레이 RPG 프로젝트입니다.",
+    overview: "Unity C# 클라이언트와 C++20 IOCP 서버를 연결한 개인 온라인 액션 RPG 프로토타입입니다. TCP 커스텀 패킷, 맵 단위 동기화, 서버 타이머 기반 몬스터 보충과 MariaDB 조회·저장 경로를 구현했습니다. 콘텐츠 종류별 확장 계약과 행동 상태를 분리해 클라이언트·서버·데이터베이스의 흐름을 연결했습니다.",
     motivationTitle: "클라이언트·서버·데이터베이스 지식을 하나의 MMORPG 흐름으로 연결",
     motivation: "학교에서 배운 클라이언트, 서버, 데이터베이스 지식을 바탕으로 각 영역을 하나의 시스템으로 융합하고, MMORPG 전반의 내부 시스템과 데이터 흐름을 직접 실습하기 위해 개발했습니다.",
     info: [
@@ -103,10 +103,10 @@ const projects = {
     coreFeatures: [
       {
         title: "데이터 중심 RPG 콘텐츠 확장",
-        summary: "정의 데이터와 실행 상태를 분리해 새로운 스킬·아이템·퀘스트를 독립적으로 추가합니다.",
-        emphasis: ["정의 데이터", "실행 상태", "공통 생성·실행·종료 흐름", "콘텐츠별 차이"],
+        summary: "아이템·레시피·퀘스트는 정의와 상태를 분리하고, 스킬은 추상 타입과 파생 클래스로 확장합니다.",
+        emphasis: ["ScriptableObject", "런타임 상태", "추상 스킬", "종류별 계약", "파생 클래스"],
         why: "온라인 RPG는 스킬·아이템·퀘스트가 계속 늘어나는 장르입니다. 유형별 조건문을 한곳에 쌓거나 변하지 않는 정의와 수량·쿨다운 같은 실행 상태를 섞으면, 콘텐츠 하나를 추가할 때 기존 로직과 저장 데이터까지 함께 수정해야 합니다.",
-        how: "콘텐츠의 이름·효과·조건처럼 변하지 않는 정의 데이터와 플레이 중 변화하는 상태를 분리했습니다. 공통 생성·실행·종료 흐름은 동일한 계약으로 처리하고, 콘텐츠별 차이는 개별 동작과 데이터로 확장했습니다. 덕분에 사용하는 쪽은 구체적인 유형을 몰라도 같은 방식으로 콘텐츠를 실행할 수 있습니다.",
+        how: "아이템·레시피·퀘스트는 ScriptableObject 정의와 수량·진행도 같은 런타임 상태를 분리했습니다. 스킬은 MonoBehaviour 기반 추상 스킬과 파생 클래스로 공격 방식을 확장하며, 수치와 쿨다운은 코드·초기화에서 설정합니다. 아이템 사용, 스킬 실행, 튜토리얼은 각각 종류별 계약을 사용해 해당 유형의 동작을 확장합니다.",
         video: {
           src: "assets/videos/everwind-content-crafting-equipment.mp4",
           title: "콘텐츠 확장 · 제작과 장비 결과 영상",
@@ -114,10 +114,10 @@ const projects = {
       },
       {
         title: "상태 머신 기반 전투 흐름",
-        summary: "이동부터 사망까지 행동을 상태로 분리해 전환 규칙과 전투 판정 시점을 명확히 관리합니다.",
-        emphasis: ["상태", "전환 규칙", "애니메이션의 유효 프레임"],
+        summary: "행동별 진입·갱신·종료를 상태 클래스로 나누고 타격 시점을 애니메이션과 연결합니다.",
+        emphasis: ["진입·갱신·종료", "현재 상태 교체", "애니메이션의 유효 프레임"],
         why: "이동·추적·공격·피격·사망을 하나의 갱신 흐름에서 처리하면 여러 조건이 동시에 참이 되면서 행동이 충돌할 수 있습니다. 특히 공격 가능 여부와 애니메이션 재생 시점이 섞이면 화면의 동작과 실제 판정이 어긋나고, 어떤 조건에서 잘못 전환됐는지 추적하기 어려워집니다.",
-        how: "각 행동을 진입·갱신·종료 단계가 있는 상태로 분리하고, 상태를 바꿀 수 있는 조건과 우선순위를 명시했습니다. 전투 판단은 로직에서 결정하되 실제 타격 판정은 애니메이션의 유효 프레임과 연결했습니다. 피격이나 사망처럼 현재 행동을 중단해야 하는 상황도 정해진 전환 규칙을 거치도록 구성했습니다.",
+        how: "각 행동을 진입·갱신·종료 단계가 있는 상태로 분리했습니다. 상태 관리자는 이전 상태 종료 → 현재 상태 교체 → 새 상태 진입을 담당하며, 전환 조건은 개별 상태와 전투 로직에서 판단합니다. 실제 타격 판정은 애니메이션의 유효 프레임과 연결했습니다.",
         video: {
           src: "assets/videos/02-combat-state-flow.mp4",
           title: "상태 머신 기반 전투 흐름 결과 영상",
@@ -136,10 +136,10 @@ const projects = {
       },
       {
         title: "Unity 메인 스레드와 지연 데이터 조립",
-        summary: "네트워크 수신과 화면 반영 시점을 분리해 씬 로딩 순서와 Unity 스레드 제약을 안전하게 처리합니다.",
+        summary: "수신 데이터를 임시 보관하고 다수의 Unity 반영을 메인 스레드로 넘겨 씬 로딩 후 월드를 구성합니다.",
         emphasis: ["네트워크 응답", "메인 스레드 작업 큐", "수신 시점과 표현 시점"],
         why: "네트워크 응답은 씬과 게임 오브젝트가 준비되기 전에 도착할 수 있으며, 수신 스레드에서는 Unity API를 안전하게 사용할 수 없습니다. 도착 즉시 캐릭터나 UI를 생성하면 로딩 순서에 따라 참조가 누락되거나 같은 데이터를 두 번 반영하는 문제가 생길 수 있습니다.",
-        how: "수신 단계에서는 패킷 해석과 순수 데이터 보관까지만 수행하고, 오브젝트 생성과 UI 갱신은 메인 스레드 작업 큐로 전달했습니다. 씬과 필수 객체의 준비 상태를 확인한 뒤 보관된 데이터를 정해진 순서로 조립합니다. 수신 시점과 표현 시점을 분리해 네트워크 속도와 로딩 순서가 달라도 같은 결과를 만들도록 했습니다.",
+        how: "수신 데이터는 DataCenter에 임시 보관하고, 다수의 오브젝트 생성과 UI 갱신은 메인 스레드 작업 큐로 전달했습니다. SceneLoader의 씬 로딩이 끝나면 당시 도착한 데이터를 WorldLoader에 전달해 플레이어와 월드 객체를 조립합니다.",
         video: {
           src: "assets/videos/04-login-world-assembly.mp4",
           title: "Unity 메인 스레드와 지연 데이터 조립 결과 영상",
@@ -148,9 +148,9 @@ const projects = {
       {
         title: "맵 단위 멀티플레이 동기화",
         summary: "사용자를 맵 컨텍스트로 구분하고 필요한 대상에게만 입장·이동·퇴장 상태를 전달합니다.",
-        emphasis: ["맵 컨텍스트", "갱신 책임", "입장 시 현재 월드 상태", "수명주기"],
+        emphasis: ["맵 컨텍스트", "갱신 책임", "클라이언트 권위형", "소유자", "서버 권위화"],
         why: "서로 다른 지역의 상태까지 모든 사용자에게 전송하면 불필요한 트래픽과 객체 관리 비용이 커집니다. 또한 로컬 객체와 원격 객체의 갱신 책임이 구분되지 않으면 하나의 상태를 여러 클라이언트가 동시에 변경해 위치나 행동이 충돌할 수 있습니다.",
-        how: "접속 세션을 맵 컨텍스트에 등록하고 같은 맵에 있는 사용자에게만 상태 변화를 전달했습니다. 입장 시 현재 월드 상태를 구성하고, 이후 이동과 행동을 갱신하며, 퇴장 시 원격 객체를 정리하는 수명주기를 분리했습니다. 어떤 상태를 누가 결정하고 전달하는지도 명시해 중복 갱신을 줄였습니다.",
+        how: "접속 세션을 맵 컨텍스트에 등록하고 같은 맵 사용자에게 입장·이동·퇴장을 전달했습니다. 몬스터의 이동·공격 계산은 소유 클라이언트가 담당하고 나머지는 수신 상태를 보간합니다. 서버는 일부 몬스터 이동·공격·사망 요청의 소유자를 검증해 같은 맵에 상태를 중계합니다.",
         video: {
           src: "assets/videos/05-map-multiplayer-boundary.mp4",
           title: "맵 단위 멀티플레이 동기화 결과 영상",
@@ -158,17 +158,17 @@ const projects = {
       },
       {
         title: "IOCP 비동기 세션과 패킷 수명주기",
-        summary: "비동기 작업의 메모리 수명과 TCP 패킷 경계를 관리해 안정적인 다중 접속 통신을 구성합니다.",
-        emphasis: ["소유권", "누적 버퍼", "헤더와 길이", "송신은 큐"],
+        summary: "누적 수신 버퍼·세션 소유권·직렬 송신 큐를 구현한 IOCP 서버 프로토타입입니다.",
+        emphasis: ["소유권", "누적 버퍼", "헤더와 길이", "송신 큐"],
         why: "비동기 I/O가 완료되기 전에 세션이나 버퍼가 해제되면 완료 통지에서 이미 사라진 메모리에 접근하게 됩니다. TCP는 연속된 바이트 스트림이므로 하나의 패킷이 나뉘거나 여러 패킷이 합쳐져 도착할 수 있어, 수신 횟수와 메시지 개수를 동일하게 볼 수 없습니다.",
-        how: "세션·비동기 작업·송수신 버퍼의 소유권을 구분하고 완료 통지를 처리할 때까지 필요한 객체의 수명을 유지했습니다. 수신 바이트는 누적 버퍼에 보관한 뒤 헤더와 길이를 기준으로 완전한 패킷만 분리합니다. 송신은 큐에서 순서대로 처리해 겹친 요청을 직렬화하고, 연결 종료 시 남은 작업과 자원을 정리하는 흐름도 함께 관리했습니다.",
+        how: "세션·비동기 작업의 소유권을 구분하고 IOContext가 세션을 참조하도록 구성했습니다. 수신 바이트는 누적 버퍼의 헤더와 길이로 패킷을 분리하며, 송신 큐에서 한 건씩 전송합니다.",
       },
       {
         title: "재접속 가능한 게임 상태 영속화",
-        summary: "캐릭터·인벤토리·퀘스트 상태를 관계형 데이터로 저장하고 다음 접속에서 일관되게 복원합니다.",
-        emphasis: ["관계형 구조", "연결 기준", "저장 형식", "복원"],
+        summary: "위치·맵 저장과 정상 로그아웃의 상태 저장 요청, 로그인 조회 경로를 구현했습니다.",
+        emphasis: ["복원 경로", "위치·맵 정보", "정상 로그아웃", "저장 요청"],
         why: "온라인 RPG의 맵·위치·스탯·인벤토리·퀘스트는 클라이언트가 종료되어도 다음 접속에서 이어져야 합니다. 서로 연결된 상태를 한 번에 다루지 않으면 일부 데이터만 저장되거나 잘못된 순서로 복원되어 플레이 상태가 불일치할 수 있습니다.",
-        how: "계정, 캐릭터, 보유 아이템과 진행 정보를 관계형 구조로 나누고 연결 기준을 명확히 했습니다. 로그인 시 기본 캐릭터 정보부터 연관된 플레이 데이터까지 순서대로 읽어 런타임 상태를 구성합니다. 맵 변경과 연결 종료 시에는 현재 상태를 저장 형식으로 변환해 반영하고, 다음 접속에서 동일한 흐름으로 복원되도록 연결했습니다.",
+        how: "로그인에서 캐릭터·인벤토리·퀘스트 상태를 조회하는 복원 경로를 구성했습니다. 맵 전환과 연결 종료는 위치·맵 정보를 저장하며, 정상 로그아웃에서는 클라이언트가 스탯·인벤토리·퀘스트의 저장 요청을 전송합니다.",
         video: {
           src: "assets/videos/07-relogin-persistence.mp4",
           title: "재접속 가능한 게임 상태 영속화 결과 영상",
@@ -206,10 +206,10 @@ const projects = {
       },
       {
         title: "몬스터 제어권과 사망 요청 충돌",
-        summary: "몬스터 제어권과 사망 요청을 검증해 클라이언트 간 상태 충돌을 막았습니다.",
+        summary: "일부 몬스터 메시지에 소유자 검증을 적용하고 원격 보간으로 중복 갱신을 줄였습니다.",
         emphasis: ["제어권", "소유자", "보간", "사망 중복 방지", "회전 보정값"],
         problem: "여러 클라이언트가 같은 몬스터를 제어해 위치와 공격 대상이 엇갈렸습니다. 중복 사망 요청과 모델별 정면 축 차이도 상태 불일치를 만들었습니다.",
-        solution: "한 소유자에게 제어권을 주고 나머지는 보간으로 표현했습니다. 서버의 소유자 검증과 사망 중복 방지로 요청을 제한하고, 모델 차이는 회전 보정값으로 처리했습니다.",
+        solution: "한 소유자에게 제어권을 주고 나머지는 보간으로 표현했습니다. 일부 몬스터 이동·공격·사망 요청에 소유자 검증과 중복 요청 제한을 적용했습니다.",
       },
       {
         title: "Animator 상태 증가와 클립 교체의 분리",
@@ -574,50 +574,57 @@ const projects = {
 const everwindDesignDocument = {
   kicker: "EVERWIND / 상세 설계 기록",
   title: "확장되는 RPG를 지탱하는 책임과 데이터의 경계",
-  summary: "기능을 많이 붙이는 것보다, 콘텐츠가 늘어날 때 무엇이 바뀌고 무엇은 유지되어야 하는지를 먼저 설계했습니다. 아래 문서는 Unity 클라이언트, C++ IOCP 서버, MariaDB의 기능별 구현과 전체 흐름을 책임 관계 중심으로 설명합니다.",
+  summary: "Unity 클라이언트, C++ IOCP 서버, MariaDB를 연결한 온라인 RPG 프로토타입의 구현과 설계 의도를 정리했습니다. 기능별 설명과 UML로 책임 관계를 보여주며, 각 설명 하단의 ‘한계점과 개선점’에 보완 방향을 정리했습니다.",
   keywords: ["확장성", "상태 패턴", "이벤트 기반", "스레드 경계", "맵 컨텍스트", "비동기 수명주기", "영속화"],
   systemFlow: ["Unity Client", "TCP Binary Protocol", "C++ IOCP Server", "Queries", "MariaDB"],
   coreFeatures: [
     {
       title: "데이터 중심 RPG 콘텐츠 확장",
       intent: "새 콘텐츠를 추가하는 작업이 기존 시스템을 수정하는 작업으로 번지지 않게 한다.",
-      keywords: ["정의/상태 분리", "공통 계약", "다형성", "데이터 에셋"],
+      keywords: ["정의/상태 분리", "종류별 계약", "다형성", "데이터 에셋"],
       problem: "스킬·아이템·퀘스트의 정의와 플레이 중 상태가 섞이면 유형별 예외가 관리자에 누적되고, 콘텐츠 하나를 추가할 때 실행 로직·UI·저장 구조를 함께 건드리게 됩니다.",
       decisions: [
         ["정의 데이터", "아이템·레시피·퀘스트의 변하지 않는 규칙은 ScriptableObject로 공유했습니다."],
-        ["실행 상태", "수량·쿨다운·장착·진행도는 런타임 객체와 DB 상태로 분리했습니다."],
-        ["확장 지점", "공통 수명주기는 계약으로 고정하고 효과·공격 방식·조건 판정만 파생 구현으로 열었습니다."],
+        ["실행 상태", "아이템 수량·장착 여부와 퀘스트 진행도를 정의 데이터와 나눴습니다. 스킬은 MonoBehaviour이며 피해량·쿨다운을 코드와 Init에서 설정합니다."],
+        ["종류별 확장", "아이템은 IUsableItem, 스킬은 추상 Skill, 튜토리얼은 ITutorialStep을 사용합니다. 각 종류의 계약을 공유하는 파생 타입끼리 동작을 확장합니다."],
       ],
-      result: "아이템 12종과 제작 레시피 8종이 같은 데이터·실행 경로를 사용하며, 새 스킬과 퀘스트는 정의 데이터와 유형별 동작을 추가하는 방식으로 확장됩니다.",
-      tradeoff: "상속은 초기 확장 지점을 명확히 하지만 조합 축이 늘면 타입 수도 증가합니다. 효과·타깃·비용·조건을 전략 객체로 분리하는 것이 다음 단계입니다.",
+      result: "아이템 12종·레시피 8종·퀘스트 3종을 정의 자산으로 관리합니다. 새 아이템·레시피·퀘스트는 데이터와 필요한 처리기를, 새 스킬은 파생 코드와 프리팹·애니메이션 연결을 추가합니다.",
+      tradeoff: "콘텐츠 종류별 계약을 사용하므로 유형을 넘나드는 조합은 별도 연결이 필요합니다. 상속의 조합 축이 늘면 타입 수도 증가하므로 효과·타깃·비용·조건을 전략 객체로 나누는 방향을 검토합니다. 새 콘텐츠의 타입 등록·프리팹·데이터 연결과 튜토리얼 단계표·스킬별 애니메이션 분기는 함께 수정해야 하며, 저장된 단계 값과의 호환성도 확인해야 합니다. 인벤토리·장비 UI가 수량과 스탯 변경도 담당하므로, 상태 모델을 분리해 저장·테스트를 화면 수명과 독립시키는 것이 개선 방향입니다.",
       diagram: {
         title: "콘텐츠 정의와 실행 책임 UML",
         groups: [
           { title: "Definition", nodes: ["InventoryItem", "CraftItemRecipe", "Quest"] },
           { title: "Runtime", nodes: ["ItemMediator", "CombatManager", "QuestManager"] },
-          { title: "Variant", nodes: ["ConsumeItem", "EquipmentItem", "NormalSkill", "SmashSkill", "Windmill"] },
+          { title: "Item Variants", nodes: ["ConsumeItem", "EquipmentItem", "IUsableItem"] },
+          { title: "MonoBehaviour Skills", nodes: ["Skill", "AreaSkill", "NormalSkill", "SmashSkill", "Windmill"] },
         ],
         relations: [
           ["ConsumeItem", "inheritance", "InventoryItem", "유형 확장"],
           ["EquipmentItem", "inheritance", "InventoryItem", "유형 확장"],
+          ["ConsumeItem", "implementation", "IUsableItem", "아이템 사용 계약"],
+          ["EquipmentItem", "implementation", "IUsableItem", "아이템 사용 계약"],
+          ["AreaSkill", "inheritance", "Skill"],
+          ["NormalSkill", "inheritance", "Skill"],
+          ["SmashSkill", "inheritance", "Skill"],
+          ["Windmill", "inheritance", "AreaSkill"],
           ["CombatManager", "aggregation", "Skill", "실행 관리"],
-          ["QuestManager", "aggregation", "Quest", "진행 상태"],
+          ["QuestManager", "aggregation", "Quest", "목표 정의"],
           ["CraftItemRecipe", "dependency", "InventoryItem", "재료·결과 정의"],
         ],
       },
     },
     {
       title: "상태 머신 기반 전투 흐름",
-      intent: "행동 충돌을 조건문으로 막지 않고, 허용 가능한 상태 전환으로 제한한다.",
-      keywords: ["진입/갱신/종료", "전환 규칙", "판정/표현 분리", "인터럽트"],
+      intent: "행동별 갱신과 정리를 상태 클래스에 나누고, 현재 상태 교체 경로를 모은다.",
+      keywords: ["진입/갱신/종료", "현재 상태 교체", "분산된 전이 조건", "Animation Event"],
       problem: "이동·추적·공격·피격·사망을 한 갱신 흐름에서 처리하면 여러 조건이 동시에 참이 되고, 애니메이션과 실제 판정 시점도 쉽게 어긋납니다.",
       decisions: [
-        ["상태 수명주기", "모든 행동을 진입·갱신·종료 단계로 통일해 정리 시점을 보장했습니다."],
-        ["전환 책임", "PlayerStateContexter가 현재 상태와 우선순위를 관리하고 상태는 자신의 규칙만 담당합니다."],
+        ["상태 수명주기", "각 행동을 Enter/Update/Exit 상태 클래스로 나눴습니다. 전환 시 기존 상태의 Exit를 호출하고 현재 상태를 바꾼 뒤 새 상태의 Enter를 호출합니다."],
+        ["전환 책임", "PlayerStateContexter는 현재 상태 교체를 담당하며 전이 조건은 개별 상태·CombatManager에서 판단합니다."],
         ["판정 시점", "CombatManager의 전투 판단과 Animation Event의 유효 프레임을 연결했습니다."],
       ],
-      result: "타깃 접근부터 공격·피격·사망까지 전환 경로가 명시되어, 새 행동을 추가해도 Player의 조건문이 연쇄적으로 증가하지 않습니다.",
-      tradeoff: "상태 수가 늘수록 전환표와 인터럽트 우선순위를 함께 관리해야 합니다. 디버그 로그와 상태 전이 시각화가 보완 지점입니다.",
+      result: "타깃 접근·공격·피격·사망의 동작을 별도 상태로 분리했습니다. 새 행동은 상태 클래스와 상태표 등록, 이를 호출하는 전이 조건을 함께 추가해야 합니다.",
+      tradeoff: "전이 조건이 여러 상태와 전투 로직에 분산되어 있어 조건이 겹칠 때의 판단을 추적하기 어렵습니다. 전이표와 우선순위 규칙, 경쟁 전이 검증을 추가해 판단 기준을 명시하고, 상태 변화와 전환 이유를 디버그 시각화로 확인하는 것이 개선 방향입니다.",
       diagram: {
         title: "플레이어 행동 상태 UML",
         groups: [
@@ -668,16 +675,16 @@ const everwindDesignDocument = {
     },
     {
       title: "Unity 메인 스레드와 지연 데이터 조립",
-      intent: "데이터가 도착한 시점과 Unity 오브젝트를 만들 수 있는 시점을 분리한다.",
+      intent: "수신 데이터를 임시 보관하고 다수의 Unity 반영을 디스패처로 넘겨 스레드 접근을 줄인다.",
       keywords: ["스레드 경계", "작업 큐", "DataCenter", "초기화 순서"],
       problem: "소켓 응답은 씬과 GameObject가 준비되기 전에 도착할 수 있고, 수신 스레드에서 Unity API를 직접 호출하면 엔진의 스레드 제약을 위반합니다.",
       decisions: [
-        ["수신 스레드", "바이트 수신·패킷 분리·해석 후 메인 스레드 작업을 등록합니다."],
-        ["메인 스레드", "GameObject 생성, Transform, UI, 애니메이션 변경은 Dispatcher 작업 큐에서 실행합니다."],
-        ["지연 조립", "DataCenter에 상태를 보관하고 SceneLoader와 WorldLoader가 준비된 뒤 순서대로 소비합니다."],
+        ["수신 스레드", "패킷별 처리기가 데이터 보관과 디스패처 작업 등록을 담당합니다. 로그인 ACK는 큐 등록 전 SingletonManager·DataCenter·NetworkClient에 접근해 로그인 데이터를 기록합니다."],
+        ["메인 스레드", "다수의 GameObject·Transform·UI·애니메이션 변경은 Dispatcher 작업 큐에서 실행합니다. 로그인 결과 UI와 씬 전환도 큐에 등록합니다."],
+        ["조립 시점", "SceneLoader는 LoadSceneAsync 완료 후 당시 DataCenter에 도착한 값으로 WorldLoader를 호출합니다."],
       ],
-      result: "로그인 응답의 도착 속도와 씬 로딩 순서가 달라도 사용자·월드·원격 객체를 같은 순서로 구성할 수 있습니다.",
-      tradeoff: "데이터 소비 완료와 재접속 중복 반영을 명시적인 상태로 관리해야 하며, 초기화 실패 시 재시도 정책도 필요합니다.",
+      result: "네트워크 데이터를 보관하고 씬 로딩 후 월드를 구성하는 경로를 구현했습니다.",
+      tradeoff: "로그인 ACK의 싱글톤 접근과 데이터 기록은 큐 등록 전에 실행됩니다. 서버가 ACK 뒤에도 인벤토리를 전송하지만 현재 조립은 씬 완료 시점에 도착한 값만 사용하므로 늦게 도착한 데이터가 누락될 수 있습니다. ACK의 Unity 접근을 큐 안으로 이동하고 전체 데이터 수신 완료 배리어·지연 인벤토리 반영·초기화 실패 재시도를 추가하는 것이 개선 방향입니다.",
       diagram: {
         title: "네트워크 수신과 Unity 반영 UML",
         groups: [
@@ -687,10 +694,11 @@ const everwindDesignDocument = {
         ],
         relations: [
           ["NetworkClient", "dependency", "PacketMethod", "역직렬화"],
-          ["PacketMethod", "data", "DataCenter", "메인 스레드 작업에서 보관"],
-          ["PacketMethod", "event", "UnityMainThreadDispatcher", "작업 등록"],
+          ["PacketMethod", "data", "DataCenter", "로그인 ACK는 큐 밖에서 기록"],
+          ["PacketMethod", "event", "UnityMainThreadDispatcher", "다수의 Unity 작업 등록"],
           ["PacketMethod", "dependency", "SceneLoader", "등록한 작업에서 씬 전환"],
-          ["WorldLoader", "dependency", "DataCenter", "준비 후 소비"],
+          ["SceneLoader", "dependency", "WorldLoader", "씬 완료 후 조립 요청"],
+          ["WorldLoader", "dependency", "DataCenter", "현재 도착한 값 사용"],
           ["WorldLoader", "dependency", "OtherPlayerManager", "원격 객체 구성"],
         ],
       },
@@ -698,15 +706,16 @@ const everwindDesignDocument = {
     {
       title: "맵 단위 멀티플레이 동기화",
       intent: "같은 월드를 공유하는 세션만 연결하고 상태의 결정권자를 명확히 한다.",
-      keywords: ["맵 컨텍스트", "관심 범위", "원격 객체 수명", "소유권"],
+      keywords: ["맵 컨텍스트", "원격 객체 수명", "클라이언트 권위", "선택적 Owner 검증"],
       problem: "모든 상태를 모든 사용자에게 전파하면 트래픽과 객체 관리 비용이 커지고, 동일한 몬스터를 여러 클라이언트가 갱신하면 결과가 충돌합니다.",
       decisions: [
         ["전파 범위", "세션을 MapData에 소속시키고 같은 맵 사용자에게만 입장·이동·전투 이벤트를 전달합니다."],
         ["객체 수명", "입장 패킷으로 원격 객체를 생성하고 퇴장·맵 변경에서 객체와 관련 UI를 함께 정리합니다."],
         ["갱신 책임", "프로토타입에서는 몬스터별 한 클라이언트에 갱신 소유권을 부여하고 서버가 상태를 중계합니다."],
+        ["검증 범위", "일부 몬스터 이동·공격·사망 요청에는 Owner 검증을 적용합니다."],
       ],
       result: "맵 전환을 기준으로 이전 월드가 정리되고 새 컨텍스트의 플레이어와 몬스터만 다시 구성됩니다.",
-      tradeoff: "클라이언트 소유권은 완성 속도에는 유리하지만 치트 방지와 일관성에 한계가 있습니다. 상용 구조에서는 서버 권위 시뮬레이션으로 이전해야 합니다.",
+      tradeoff: "클라이언트 권위형 구조로 피해량은 클라이언트 값이며 일부 플레이어 동기화는 패킷의 UserDBID를 그대로 전달합니다. 피해량·사용자 식별을 세션 기준으로 재검증하고 AI·전투 판정을 서버로 이전하는 것이 개선 방향입니다. 맵 목록의 잠금 밖 읽기는 스냅샷이나 동일 잠금 범위로 보완해야 합니다.",
       diagram: {
         title: "맵 컨텍스트 동기화 UML",
         groups: [
@@ -726,16 +735,16 @@ const everwindDesignDocument = {
     },
     {
       title: "IOCP 비동기 세션과 패킷 수명주기",
-      intent: "I/O 완료가 돌아올 때까지 객체와 버퍼가 살아 있다는 불변식을 코드 구조로 보장한다.",
+      intent: "완료 통지에 필요한 세션·컨텍스트 소유권과 TCP 패킷 경계를 명시한다.",
       keywords: ["소유권", "OVERLAPPED", "패킷 프레이밍", "송신 큐", "종료 경합"],
       problem: "비동기 요청은 함수 반환 뒤에도 세션과 버퍼를 참조합니다. TCP 스트림은 패킷이 분할·병합될 수 있고 연결 종료와 완료 통지가 경쟁할 수도 있습니다.",
       decisions: [
-        ["객체 수명", "shared·weak·unique ownership을 역할에 맞게 나눠 완료 전 파괴와 순환 참조를 방지했습니다."],
+        ["객체 수명", "SessionManager가 세션을 공유 소유하고 IOContext가 owner 참조를 보관합니다."],
         ["수신 경계", "누적 버퍼에서 헤더 길이를 검증하고 완전한 패킷만 핸들러로 전달합니다."],
         ["송신 직렬화", "세션별 송신 큐가 버퍼 순서를 보존하고 한 번에 하나의 비동기 송신만 유지합니다."],
       ],
       result: "수신 횟수와 메시지 개수를 분리해 처리하고, 세션·IOContext·버퍼의 수명을 완료 통지 흐름에 맞춰 관리했습니다.",
-      tradeoff: "부분 송신, 오류 시 큐 정리, 종료와 완료의 경합을 운영 수준으로 검증하는 테스트가 남아 있습니다.",
+      tradeoff: "현재 OnSendCompleted는 실제 전송 바이트 수를 반영하지 않아 부분 송신의 잔여 데이터가 누락될 수 있습니다. 전송량 기준 재송신과 스레드 시작 전 의존성 설정, 리슨 소켓 종료 후 accept 스레드 join 순서를 보강해야 합니다. 이후 종료 경합·부분 송신·다중 접속의 부하·통합 테스트로 세션과 버퍼의 수명 경로를 검증하는 것이 개선 방향입니다.",
       diagram: {
         title: "IOCP 세션 수명 UML",
         groups: [
@@ -757,26 +766,29 @@ const everwindDesignDocument = {
     {
       title: "재접속 가능한 게임 상태 영속화",
       intent: "런타임 객체의 수명과 무관하게 플레이어의 진행 상태를 다시 조립할 수 있게 한다.",
-      keywords: ["관계형 상태", "정의 ID", "복원 순서", "Prepared Statement", "체크포인트"],
+      keywords: ["위치·맵 저장", "정상 로그아웃 요청", "Prepared Statement", "부분 복원"],
       problem: "맵·위치·스탯·인벤토리·장비·퀘스트 진행도는 서로 연결되어 있어 일부만 저장되거나 잘못된 순서로 복원되면 플레이 상태가 불일치합니다.",
       decisions: [
         ["관계 분리", "계정, 캐릭터, 인벤토리, 퀘스트와 조건별 진행도를 역할별 테이블로 나눴습니다."],
-        ["복원 흐름", "로그인에서 기본 상태를 조회하고 연관 데이터를 순차 전송한 뒤 DataCenter를 거쳐 런타임 객체로 조립합니다."],
-        ["저장 경계", "맵 변경과 연결 종료에서 런타임 상태를 DB 모델로 변환하고 Prepared Statement로 반영합니다."],
+        ["복원 흐름", "로그인에서 기본 상태와 연관 데이터를 조회·전송하고 DataCenter를 거쳐 도착한 값으로 런타임 객체를 구성합니다."],
+        ["위치·맵 저장", "맵 변경과 Session::Close는 위치·맵 정보만 UpdateUserPosition으로 저장합니다."],
+        ["정상 로그아웃", "NetworkClient가 스탯·인벤토리·퀘스트 저장 패킷을 전송합니다."],
       ],
-      result: "재로그인 시 저장된 맵·위치·스탯·인벤토리·장비·퀘스트 상태를 동일한 데이터 흐름으로 복원합니다.",
-      tradeoff: "종료 시점 중심 저장은 비정상 종료에 취약합니다. 중요 이벤트 체크포인트, 트랜잭션, DB 작업 큐와 커넥션 풀이 다음 개선 순서입니다.",
+      result: "저장된 위치·맵과 캐릭터·아이템·퀘스트 데이터를 다시 조회하는 경로를 구현했습니다.",
+      tradeoff: "저장 완료 ACK 없이 종료가 이어지므로 비정상 종료의 전체 상태 저장과 원자적 반영은 보장되지 않습니다. 현재 항목을 REPLACE하는 인벤토리는 제거된 행이 DB에 남을 수 있습니다. 저장 완료 확인·삭제 행 정리·다중 테이블 트랜잭션과 전체 수신 완료 후 조립을 보강하고, 종료 유형별 저장·재접속 테스트로 시연 범위를 넘어 일관성을 검증하는 것이 개선 방향입니다.",
       diagram: {
         title: "런타임 상태 영속화 UML",
         direction: "TB",
         groups: [
-          { title: "Client", nodes: ["DataCenter", "QuestManager", "PlayerStatManager"] },
+          { title: "Client", nodes: ["NetworkClient", "DataCenter", "QuestManager", "PlayerStatManager"] },
           { title: "Server", nodes: ["Session", "PacketMethod", "Queries", "DBManager"] },
           { title: "DB Tables", nodes: ["UserAccount", "UserInfo", "Inventory", "UserQuest", "UserQuestProgress"] },
         ],
         relations: [
           ["QuestManager", "dependency", "DataCenter", "퀘스트 진행 복원"],
           ["PlayerStatManager", "dependency", "DataCenter", "스탯 복원"],
+          ["NetworkClient", "data", "PacketMethod", "정상 로그아웃 저장 요청"],
+          ["Session", "dependency", "Queries", "Close에서 위치·맵만 저장"],
           ["PacketMethod", "dependency", "Queries", "조회·저장"],
           ["Queries", "dependency", "DBManager", "Prepared Statement"],
           ["PacketMethod", "dependency", "Session", "조회 결과로 세션 구성"],
@@ -796,22 +808,22 @@ const everwindDesignDocument = {
       responsibilities: [
         ["Core", "SingletonManager가 DataCenter·NetworkClient·SceneLoader·WorldLoader의 초기화 순서를 조정합니다."],
         ["Gameplay", "PlayerStateContexter와 CombatManager가 행동 전환과 전투 판단을 분리합니다."],
-        ["Content", "아이템·스킬·퀘스트는 정의 데이터와 런타임 진행 상태를 분리합니다."],
+        ["Content", "아이템·레시피·퀘스트는 정의와 런타임 상태를 나누며, 스킬은 MonoBehaviour 기반 추상 타입과 파생 코드로 확장합니다."],
         ["Presentation", "AnimationContexter·EffectManager·UIEvents가 판정 결과를 화면 표현으로 변환합니다."],
-        ["Network Boundary", "수신 스레드는 데이터를 보관하고 메인 스레드가 오브젝트와 UI를 갱신합니다."],
+        ["Network Boundary", "수신 데이터를 보관하고 다수의 Unity 반영을 메인 스레드 큐로 넘깁니다."],
       ],
       flow: ["입력", "상태 판정", "게임 규칙", "도메인 이벤트", "UI·Animation", "NetworkClient"],
       notes: [
-        ["변경 범위", "새 행동은 상태와 전환 조건, 새 스킬은 파생 동작과 정의 데이터가 주된 추가 지점입니다."],
+        ["변경 범위", "새 행동은 상태 클래스·상태표·전이 조건을, 새 스킬은 파생 코드·프리팹·애니메이션 연결을 추가합니다."],
         ["초기화", "로그인 데이터는 DataCenter에 대기시키고 씬과 매니저가 준비된 뒤 월드를 조립합니다."],
-        ["한계", "전역 관리자 접근은 빠르지만 숨은 의존성과 초기화 순서를 만들 수 있어 의존성 주입으로 발전할 수 있습니다."],
       ],
+      tradeoff: "전역 관리자 접근은 호출 측의 의존성과 초기화 순서를 숨길 수 있습니다. 의존성 주입과 명시적 부트스트랩으로 서비스 관계를 드러내고, 네트워크 수신 완료와 씬 준비를 구분해 초기화 조건을 검증하는 것이 개선 방향입니다.",
       features: [
         {
           title: "코어 초기화와 월드 조립",
           summary: "씬보다 오래 살아야 하는 서비스와 인게임에 종속된 객체를 분리하고, 준비 순서를 한 곳에서 통제했습니다.",
           details: [
-            ["설계 의도", "네트워크 응답 속도와 씬 로딩 속도가 달라도 동일한 순서로 월드를 만들 수 있게 합니다."],
+            ["설계 의도", "서비스 초기화와 씬 이후 월드 조립을 나눴습니다."],
             ["구현 방식", "SingletonManager가 DataCenter·NetworkClient·SceneLoader를 먼저 준비하고 WorldLoader가 맵·로컬 플레이어·원격 객체·몬스터를 조립합니다."],
             ["변경 지점", "새 씬 의존 객체는 WorldLoader 단계에 연결하고, 여러 씬에서 유지되는 상태는 DataCenter 경계 안에 둡니다."],
           ],
@@ -838,10 +850,11 @@ const everwindDesignDocument = {
           title: "플레이어 상태와 전투",
           summary: "이동·추적·공격·피격·사망을 상태 단위로 나누고 전투 판정과 애니메이션 표현을 분리했습니다.",
           details: [
-            ["설계 의도", "행동 충돌을 조건문으로 봉합하지 않고 허용 가능한 상태 전환으로 제한합니다."],
-            ["구현 방식", "PlayerStateContexter가 IState의 진입·갱신·종료를 관리하고 CombatManager가 타깃·스킬·쿨다운을 판단합니다."],
+            ["설계 의도", "행동별 처리와 정리를 별도 상태 클래스로 분리하고 현재 상태 교체 경로를 모았습니다."],
+            ["구현 방식", "PlayerStateContexter가 이전 상태 Exit → 상태 교체 → Enter를 수행하고 CombatManager가 타깃·스킬·쿨다운을 판단합니다. 전이 조건은 각 상태와 전투 로직에서 확인합니다."],
             ["변경 지점", "새 행동은 상태 클래스와 전환 조건에, 새 표현은 AnimationSet과 Override 데이터에 추가합니다."],
           ],
+          tradeoff: "전이 조건이 상태와 전투 로직에 분산되어 있어 경쟁하는 조건의 판단을 추적하기 어렵습니다. 전이표·우선순위 규칙·경쟁 전이 검증을 추가하고 상태 변화와 전환 이유를 시각화하는 것이 개선 방향입니다.",
           diagram: {
             title: "상태 전환과 전투·표현의 경계",
             direction: "TB",
@@ -864,11 +877,11 @@ const everwindDesignDocument = {
         },
         {
           title: "스킬·아이템·장비·제작",
-          summary: "정의 데이터와 플레이 중 상태를 분리해 콘텐츠 추가가 관리자 조건문의 증가로 이어지지 않게 했습니다.",
+          summary: "아이템·레시피는 데이터 정의로, 스킬은 파생 코드로 확장하며 서로 다른 실행 계약을 사용합니다.",
           details: [
-            ["설계 의도", "새 콘텐츠가 공통 실행 흐름을 재사용하면서 유형별 차이만 구현하도록 만듭니다."],
-            ["구현 방식", "ScriptableObject가 아이템·레시피 정의를 보관하고, 추상 스킬과 IUsableItem 계약이 실행 수명주기를 통일합니다."],
-            ["변경 지점", "새 아이템·스킬은 정의 에셋과 파생 동작을 추가합니다. 인벤토리는 공통 사용 계약으로 실행하고, 장비·제작 UI는 장착 처리와 재료 검증·차감을 담당합니다."],
+            ["설계 의도", "아이템 유형은 공통 사용 계약을 재사용하고 스킬 유형은 추상 스킬을 상속해 각 종류의 실행을 확장합니다."],
+            ["구현 방식", "ScriptableObject가 아이템·레시피 정의를 보관하고 IUsableItem이 아이템 사용을 담당합니다. Skill은 MonoBehaviour 기반 실행 타입이며 수치·쿨다운을 코드와 초기화에서 설정합니다."],
+            ["변경 지점", "새 아이템은 정의 에셋과 필요 동작을, 새 스킬은 파생 클래스·프리팹·애니메이션 연결을 추가합니다. 장비·제작 UI는 장착과 재료 검증·차감을 담당합니다."],
           ],
           diagram: {
             title: "아이템 사용 계약과 장비·제작 연결",
@@ -923,10 +936,10 @@ const everwindDesignDocument = {
         },
         {
           title: "네트워크 수신과 Unity 반영",
-          summary: "소켓 스레드의 데이터 처리와 Unity 메인 스레드의 GameObject·UI 갱신을 작업 큐로 분리했습니다.",
+          summary: "수신 데이터를 보관하고 다수의 오브젝트·UI 갱신을 메인 스레드 작업 큐로 전달합니다.",
           details: [
             ["설계 의도", "Unity API의 스레드 제약을 지키면서 네트워크 도착 시점과 객체 생성 시점을 독립시킵니다."],
-            ["구현 방식", "수신 스레드는 헤더·본문을 읽고 패킷을 해석한 뒤 Dispatcher에 작업을 등록합니다. 로드 데이터 보관과 원격 객체 갱신은 등록된 메인 스레드 작업에서 수행합니다."],
+            ["구현 방식", "패킷별 처리기가 데이터를 보관하고 다수의 Unity 반영을 Dispatcher 작업으로 등록합니다."],
             ["변경 지점", "새 수신 기능은 순수 데이터 변환과 Unity 반영 작업을 나누어 등록합니다."],
           ],
           diagram: {
@@ -935,12 +948,13 @@ const everwindDesignDocument = {
             groups: [
               { title: "Receive Thread", nodes: ["NetworkClient", "PacketMethod"] },
               { title: "Main Thread Queue", nodes: ["UnityMainThreadDispatcher"] },
-              { title: "Main Thread Targets", nodes: ["DataCenter", "WorldLoader", "OtherPlayerManager", "EnemySpawner"] },
+              { title: "Shared Data", nodes: ["DataCenter"] },
+              { title: "Main Thread Targets", nodes: ["WorldLoader", "OtherPlayerManager", "EnemySpawner"] },
             ],
             relations: [
               ["NetworkClient", "dependency", "PacketMethod", "PacketType별 처리"],
               ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Action 등록"],
-              ["PacketMethod", "data", "DataCenter", "큐 안에서 로드 데이터 보관"],
+              ["PacketMethod", "data", "DataCenter", "로그인 ACK는 큐 밖에서 기록"],
               ["PacketMethod", "dependency", "WorldLoader", "큐 안에서 월드 갱신"],
               ["PacketMethod", "dependency", "OtherPlayerManager", "큐 안에서 원격 상태 반영"],
               ["PacketMethod", "dependency", "EnemySpawner", "큐 안에서 몬스터 조회"],
@@ -957,7 +971,7 @@ const everwindDesignDocument = {
             ["체력·쿨다운", "체력은 현재 값과 최대 값의 비율을 게이지에 반영합니다. 스킬 버튼은 자신의 스킬 인덱스에 해당하는 쿨다운 비율과 사용 가능 여부만 받아 채움 이미지와 버튼 활성 상태를 바꾸고, 클릭 시 실행 판단은 전투 시스템에 요청합니다."],
             ["미니맵", "맵별 이미지·위치·회전·크기 보정값을 적용하고, 시작 시 저장된 맵 정보를 조회해 초기 화면을 맞춥니다. 이후 미니맵 변경 이벤트로 맵 이미지를 교체하고 카메라는 LateUpdate에서 플레이어의 수평 위치를 따라갑니다."],
             ["전투 피드백", "피격·성공·저체력 상태에 따라 초상화를 교체하고, 적 체력바와 피해 숫자는 오브젝트 풀에서 재사용합니다. 피해 숫자는 위로 이동하며 투명해진 뒤 풀로 돌아가고, 적 체력바는 사망 시 비활성화됩니다."],
-            ["맵 전환·한계", "맵 전환 정리 함수는 체력바의 이전 타깃을 해제하고 활성 피해 숫자를 풀로 돌려보냅니다. 체력바는 부족하면 추가 생성하지만 피해 숫자는 고정 풀을 모두 사용하면 표시를 생략하므로, 동시 타격이 많은 상황의 풀 크기는 별도 조정 지점입니다."],
+            ["맵 전환·한계", "맵 전환 정리 함수는 체력바의 이전 타깃을 해제하고 활성 피해 숫자를 풀로 돌려보냅니다."],
           ],
           diagram: {
             title: "UI 이벤트와 HUD 갱신 구조",
@@ -986,7 +1000,6 @@ const everwindDesignDocument = {
             ["인벤토리·장비", "중첩 가능한 아이템은 기존 슬롯의 수량을 올리고, 사용할 때 공통 사용 계약을 통해 실행한 뒤 수량과 목록을 갱신합니다. 장비 슬롯은 장비 유형에 맞춰 아이콘과 공격·방어 스탯을 반영하고, 해제한 아이템은 인벤토리로 되돌립니다."],
             ["제작 흐름", "레시피로 제작 목록을 만들고, 선택한 결과 아이템과 재료·필요 수량을 표시합니다. 보유 수량으로 제작 버튼을 활성화하며 클릭 시 재검증한 뒤 재료를 차감하고 결과 아이템을 추가합니다. 완료 후 성공 초상화와 제작 완료 이벤트를 전달합니다."],
             ["목록 배치", "인벤토리와 제작 목록은 슬롯 수, 열 수, 셀 크기와 간격으로 콘텐츠 높이를 계산합니다. 포인터가 목록 영역 안에 있을 때만 휠 입력을 세로 스크롤에 반영해 아이템 수가 늘어나도 목록을 탐색할 수 있게 했습니다."],
-            ["설계 판단", "공통 슬롯으로 표시·입력 중복을 줄였지만, 현재 인벤토리·장비 UI는 수량과 스탯 변경까지 맡습니다. UI와 상태 모델의 완전한 분리는 아직 되어 있지 않으며, 향후 아이템 상태를 별도 모델로 옮겨 저장·테스트가 화면 수명에 의존하지 않도록 개선할 수 있습니다."],
           ],
           diagram: {
             title: "슬롯 UI의 공통 계약과 확장 구조",
@@ -1014,10 +1027,10 @@ const everwindDesignDocument = {
             ["퀘스트 표시", "진행 변경 이벤트와 창을 다시 여는 시점에 활성 퀘스트 목록을 갱신하고, 보상을 받은 항목은 제외합니다. 각 항목은 이름·설명·조건별 현재/목표 수량·보상·진행 상태를 표시하며 조건 충족 여부는 색상으로 구분합니다."],
             ["보상 요청", "항목 클릭은 완료 상태이며 아직 보상을 받지 않은 경우에만 퀘스트 관리자에 보상을 요청합니다. 화면이 완료 조건을 새로 판단하지 않고 이미 계산된 진행 상태를 읽어 표시와 요청 가능 여부에 사용합니다."],
             ["스크롤·카메라", "포인터가 퀘스트 스크롤 영역 안에 있는지 공유하고, 그 영역에서는 휠을 목록 스크롤에 사용합니다. 카메라 쪽은 이 상태를 확인해 카메라 줌을 건너뛰므로 퀘스트를 읽는 동안 화면 확대·축소가 함께 일어나는 것을 막습니다."],
-            ["Escape 처리", "열린 팝업 상태를 공유해 Escape 입력의 종료·UI 닫기 경로를 구분합니다. 이는 팝업이 열리면 이동·전투 입력 전체를 차단하는 방식이 아니라, 현재 UI 상태에 맞는 닫기 동작을 선택하는 처리입니다."],
+            ["Escape 처리", "Escape 입력을 현재 열린 팝업을 닫는 요청으로 연결했습니다. 팝업 관리자가 화면과 공유 팝업 상태를 함께 갱신합니다."],
             ["사망·부활", "사망 화면은 페이드 인과 15초 카운트다운을 표시하고 대기 중에는 부활 버튼을 비활성화합니다. 시간이 지난 뒤 버튼을 활성화하며 클릭 시 창을 닫고 부활 요청 이벤트를 발행합니다."],
-            ["현재 한계", "퀘스트 목록은 진행 변경 때 기존 항목을 제거하고 전체 재생성합니다. 현재 규모에서는 단순한 갱신 경로를 얻지만, 목록이 커지면 퀘스트 ID별 항목 재사용과 변경된 텍스트만 갱신하는 방식이 개선 지점입니다."],
           ],
+          tradeoff: "퀘스트 목록은 진행 변경 때 전체 재생성하므로, 규모가 커지면 ID별 항목 재사용과 변경된 텍스트만 갱신하도록 개선할 수 있습니다. Escape는 팝업 닫기에 연결되어 있고 게임 종료 경로는 연결되지 않았습니다. 종료 확인 흐름과 UI 조작 중 이동·전투 입력 정책을 별도로 정리하는 것이 개선 방향입니다.",
           diagram: {
             title: "퀘스트 표시와 UI 입력 경계",
             groups: [
@@ -1030,7 +1043,8 @@ const everwindDesignDocument = {
               ["QuestUI", "data", "UIEvents", "포인터·스크롤 영역"],
               ["PopUpUIManager", "data", "UIEvents", "팝업 열림 상태"],
               ["CameraMoving", "dependency", "UIEvents", "줌 입력 구분"],
-              ["InputManager", "dependency", "UIEvents", "Escape 경로 구분"],
+              ["InputManager", "dependency", "UIEvents", "팝업 상태 조회"],
+              ["PopUpUIManager", "dependency", "InputManager", "UI 닫기 입력 조회"],
             ],
           },
         },
@@ -1159,7 +1173,7 @@ const everwindDesignDocument = {
       id: "server",
       label: "SERVER",
       title: "C++ IOCP 서버와 게임 월드",
-      summary: "완료 통지 기반 네트워크 위에 세션·패킷·맵·몬스터·타이머를 배치하고, 비동기 객체의 소유권과 공유 상태의 불변식을 관리했습니다.",
+      summary: "세션·패킷·맵·몬스터·타이머를 분리하고 누적 수신 버퍼와 직렬 송신 큐를 구현한 IOCP 서버 프로토타입입니다.",
       keywords: ["IOCP", "Session", "MapData", "Packet Framing", "Send Queue", "Timer"],
       responsibilities: [
         ["I/O", "IOCPServer가 Accept·Recv·Send 완료를 워커 스레드에서 처리합니다."],
@@ -1170,19 +1184,20 @@ const everwindDesignDocument = {
       ],
       flow: ["WSARecv 등록", "완료 바이트 누적", "헤더·길이 검증", "패킷 라우팅", "월드 상태 갱신", "맵 단위 전파"],
       notes: [
-        ["동시성", "atomic은 단일 상태, mutex는 컨테이너 불변식, condition_variable은 작업 대기에 사용했습니다."],
-        ["소유권", "shared ownership은 완료 전 수명을 보장하고 weak ownership은 순환 참조를 끊습니다."],
-        ["한계", "부분 송신·오류 큐 정리·종료 경합·가상 클라이언트 부하 테스트가 운영 수준의 남은 검증입니다."],
+        ["동시성", "변경 경로에 mutex를 적용하고 작업 대기에 condition_variable을 사용했습니다."],
+        ["소유권", "shared ownership으로 세션과 IOContext를 연결하고 weak ownership으로 맵 소속을 보관합니다."],
       ],
+      tradeoff: "부분 송신 재전송과 시작·종료 순서, 맵 목록의 잠금 밖 읽기는 보강이 필요합니다. 전송 바이트 수 기준 재송신, 스레드 시작 전 의존성 설정, 리슨 소켓 종료 후 accept join, 읽기 스냅샷을 적용하고 부하·통합 테스트로 경합 경로를 검증하는 것이 개선 방향입니다.",
       features: [
         {
           title: "IOCP 완료 통지와 세션 수명",
-          summary: "I/O 요청 이후에도 커널이 참조하는 세션·OVERLAPPED 컨텍스트·버퍼의 수명을 완료 시점까지 보장합니다.",
+          summary: "세션과 OVERLAPPED 컨텍스트를 공유 참조로 연결해 비동기 작업의 수명을 관리하는 경로를 구현했습니다.",
           details: [
-            ["설계 의도", "연결 종료와 완료 통지가 경쟁해도 해제된 객체에 접근하지 않는 불변식을 만듭니다."],
+            ["설계 의도", "완료 통지에서 사용할 세션과 버퍼의 소유권을 명시했습니다."],
             ["구현 방식", "SessionManager가 세션을 공유 소유하고 IOContext가 작업과 세션 수명을 묶으며 완료 루틴이 연결 상태를 재확인합니다."],
-            ["동시성", "atomic은 단일 상태 전이, mutex는 세션·맵 컨테이너, condition_variable은 작업 대기에 사용합니다."],
+            ["동시성", "단일 종료 상태에는 atomic, 변경 경로에는 mutex를 사용합니다."],
           ],
+          tradeoff: "로직 의존성 설정 전 스레드가 시작되며 리슨 소켓을 닫기 전에 accept 스레드를 기다리는 순서가 남아 있습니다. 의존성 설정·스레드 시작·소켓 종료·join 순서를 정리하고 종료 경합 테스트로 세션과 버퍼의 수명을 검증해야 합니다.",
           diagram: {
             title: "완료 통지와 세션 공유 수명",
             zoomable: true,
@@ -1208,6 +1223,7 @@ const everwindDesignDocument = {
             ["구현 방식", "누적 버퍼의 헤더·길이를 검증해 완성 패킷만 라우팅하고 잔여 바이트를 다음 수신으로 넘깁니다."],
             ["송신 규칙", "세션별 큐에서 한 번에 하나의 비동기 송신만 진행하고 완료 후 다음 버퍼를 이어 보냅니다."],
           ],
+          tradeoff: "OnSendCompleted는 bytesTransferred를 반영하지 않아 부분 송신의 잔여 바이트가 누락될 수 있습니다. 전송량만큼 버퍼 오프셋을 이동해 남은 데이터를 재송신하고, 분할 송신·큐 순서·연결 종료를 함께 테스트하는 것이 개선 방향입니다.",
           diagram: {
             title: "TCP 누적 수신과 큐 기반 송신",
             zoomable: true,
@@ -1230,8 +1246,8 @@ const everwindDesignDocument = {
           details: [
             ["설계 의도", "월드 경계를 명확히 해 불필요한 브로드캐스트와 원격 객체 관리를 줄입니다."],
             ["구현 방식", "MapDataManager가 맵별 Session과 Enemy를 보유하고 PacketMethod가 세션의 현재 맵을 기준으로 대상을 선택합니다."],
-            ["확장 방향", "월드 규모가 커지면 맵 단위 경계를 공간 분할과 AOI로 세분화합니다."],
           ],
+          tradeoff: "읽기 API가 맵 목록의 const reference를 반환하므로 워커·타이머의 변경과 순회가 경쟁할 수 있습니다. 읽기 스냅샷이나 동일 잠금 범위가 필요합니다. 피해량과 일부 UserDBID는 클라이언트 값에 의존하므로 세션 기준 검증과 서버 권위 판정을 보강하고, 규모가 커지면 공간 분할·AOI로 전파 범위를 세분화하는 것이 개선 방향입니다.",
           diagram: {
             title: "맵 소속과 브로드캐스트 범위",
             zoomable: true,
@@ -1255,7 +1271,6 @@ const everwindDesignDocument = {
           details: [
             ["설계 의도", "주기 이벤트가 워커 스레드를 점유하거나 I/O 완료 처리와 뒤섞이지 않게 합니다."],
             ["구현 방식", "TimerManager가 우선순위 큐와 condition_variable로 단발·반복 작업을 실행하고 맵별 최대 수를 기준으로 몬스터를 보충합니다."],
-            ["권위 경계", "현재 일부 몬스터 갱신은 클라이언트 소유이며 운영 구조에서는 AI와 판정을 서버로 이전해야 합니다."],
           ],
           diagram: {
             title: "반복 타이머와 맵별 몬스터 보충",
@@ -1279,8 +1294,8 @@ const everwindDesignDocument = {
           details: [
             ["설계 의도", "전송 계층과 게임 규칙, 영속화 변경이 서로 직접 전파되지 않게 합니다."],
             ["구현 방식", "PacketMethod가 사용자·맵 상태를 확인해 처리기를 선택하고 Queries가 Prepared Statement 기반 조회·저장을 담당합니다."],
-            ["확장 방향", "DB 작업 큐와 커넥션 풀을 추가해 네트워크 워커가 쿼리 완료를 기다리지 않게 합니다."],
           ],
+          tradeoff: "현재 DB 쿼리는 동기 실행되어 네트워크 워커가 완료를 기다립니다. DB 작업 큐와 커넥션 풀로 I/O 처리와 DB 대기를 분리하고, 실패·타임아웃·재시도 정책을 명시하는 것이 개선 방향입니다.",
           diagram: {
             title: "요청 라우팅과 현재의 동기 DB 접근",
             zoomable: true,
@@ -1325,7 +1340,7 @@ const everwindDesignDocument = {
       label: "DATABASE",
       title: "MariaDB 게임 상태 영속화",
       summary: "로그인 확인을 넘어 계정·캐릭터·인벤토리·퀘스트를 관계형 상태로 분리하고, 런타임 객체와 영속 데이터 사이의 변환 경계를 만들었습니다.",
-      keywords: ["관계형 모델", "Prepared Statement", "정의 ID", "복원", "트랜잭션"],
+      keywords: ["쿼리 기반 논리 모델", "Prepared Statement", "정의 ID", "정상 로그아웃 요청"],
       responsibilities: [
         ["UserAccount", "로그인 ID와 인증 정보를 보관하는 사용자 기준입니다."],
         ["UserInfo", "맵·위치·튜토리얼·전투 스탯을 캐릭터 상태로 보관합니다."],
@@ -1334,21 +1349,22 @@ const everwindDesignDocument = {
         ["UserQuestProgress", "퀘스트의 조건별 현재 진행 수치를 분리해 저장합니다."],
         ["MapInfo", "플레이어와 몬스터 스폰 정보 및 맵별 최대 개체 수의 기준입니다."],
       ],
-      flow: ["DB 조회", "Session 상태 구성", "패킷 전송", "DataCenter 보관", "런타임 객체 조립", "체크포인트 저장"],
+      flow: ["DB 조회", "Session 상태 구성", "패킷 전송", "DataCenter 보관", "도착 데이터 반영", "경로별 저장 요청"],
       notes: [
         ["복원", "ScriptableObject의 정의 ID와 DB 진행 상태를 결합해 아이템·퀘스트 런타임 인스턴스를 구성합니다."],
-        ["안전성", "Prepared Statement로 쿼리 구조와 값 바인딩을 분리하고, 누락 데이터에는 기본 상태 정책이 필요합니다."],
-        ["한계", "여러 테이블을 함께 바꾸는 보상·제작·퀘스트 완료에는 트랜잭션과 주기적 저장, DB 작업 큐가 필요합니다."],
+        ["값 바인딩", "Prepared Statement로 쿼리 구조와 값 바인딩을 분리합니다."],
+        ["모델 근거", "다이어그램은 Queries.cpp에서 확인한 열과 조회 연결을 기준으로 정리한 논리 모델입니다."],
       ],
+      tradeoff: "DDL이 없어 실제 PK/FK 제약·카디널리티·SQL 자료형은 확정하지 않았습니다. 스키마 SQL과 마이그레이션을 함께 관리해 물리 제약을 확인하고, 보상·제작·퀘스트 완료의 다중 테이블 트랜잭션과 주기 저장·DB 작업 큐, 누락 데이터의 기본 상태 정책을 보강하는 것이 개선 방향입니다.",
       features: [
         {
           title: "계정·캐릭터 식별과 로그인 복원",
           summary: "인증 정보와 플레이 상태를 분리하고 로그인 시 캐릭터·맵·기본 스탯을 하나의 복원 흐름으로 구성합니다.",
           details: [
-            ["테이블 경계", "UserAccount는 인증 기준, UserInfo는 맵·위치·튜토리얼·전투 스탯을 담당하는 1:1 상태입니다."],
+            ["테이블 경계", "UserAccount의 인증 정보와 UserInfo의 맵·위치·튜토리얼·스탯을 UserID로 JOIN합니다."],
             ["복원 방식", "로그인 성공 후 UserInfo와 MapInfo를 조회해 세션 상태를 만들고 클라이언트 DataCenter로 전달합니다."],
-            ["보안 과제", "고정 솔트와 평문 TCP는 운영 수준이 아니므로 사용자별 솔트와 TLS 적용이 필요합니다."],
           ],
+          tradeoff: "현재 인증은 고정 솔트와 평문 TCP를 사용합니다. 사용자별 솔트와 TLS로 인증·전송 보안을 보강하고, 스키마 SQL로 계정과 캐릭터의 실제 제약 관계를 확인하는 것이 개선 방향입니다.",
           diagram: {
             title: "로그인 조회 대상과 세션 복원",
             zoomable: true,
@@ -1371,8 +1387,9 @@ const everwindDesignDocument = {
           details: [
             ["테이블 경계", "Inventory가 UserID와 ItemID를 연결하고 Amount·SlotIndex·IsEquipped를 플레이 상태로 보관합니다."],
             ["복원 방식", "DB의 ItemID와 클라이언트 ScriptableObject 정의를 결합해 런타임 아이템과 슬롯을 재구성합니다."],
-            ["설계 판단", "정의 데이터의 중복 저장을 피했지만 클라이언트와 DB가 동일한 정의 ID 계약을 유지해야 합니다."],
+            ["정의 연결", "클라이언트의 아이템 정의 ID로 보유 상태를 연결해 정의 데이터의 중복 저장을 줄였습니다."],
           ],
+          tradeoff: "현재 항목만 REPLACE하고 제거된 행은 DELETE하지 않아 수량이 0이 된 항목이 DB에 남을 수 있습니다. 삭제 행 정리와 저장 완료 ACK를 추가하고, 클라이언트·DB의 정의 ID 호환성을 함께 검증하는 것이 개선 방향입니다.",
           diagram: {
             title: "인벤토리 행 조회와 장착 상태 저장",
             zoomable: true,
@@ -1396,8 +1413,8 @@ const everwindDesignDocument = {
           details: [
             ["테이블 경계", "UserQuest는 수락·완료·보상 상태를, UserQuestProgress는 ConditionIndex별 CurrentCount를 저장합니다."],
             ["복원 방식", "퀘스트 정의 ID에 조건별 진행 행을 결합해 QuestProgressData를 다시 구성합니다."],
-            ["트랜잭션", "보상 수령은 완료 상태·보상 플래그·인벤토리 지급을 하나의 트랜잭션으로 묶는 것이 다음 단계입니다."],
           ],
+          tradeoff: "진행도는 기존 행을 DELETE한 뒤 여러 INSERT로 저장하므로 실패 시 일부만 반영될 수 있습니다. 상태·진행도와 보상 플래그·인벤토리 지급을 트랜잭션으로 묶고, 저장 실패와 중복 보상 요청을 테스트하는 것이 개선 방향입니다.",
           diagram: {
             title: "퀘스트 상태와 조건별 진행 행",
             zoomable: true,
@@ -1421,8 +1438,8 @@ const everwindDesignDocument = {
           details: [
             ["테이블 경계", "MapInfo는 플레이어·몬스터 스폰 좌표와 최대 개체 수를, Monster는 맵에서 생성할 몬스터 종류를 가리킵니다."],
             ["서버 연결", "서버 시작 시 전체 맵의 스폰 기준을 조회해 MapData를 등록합니다. 맵 진입·이동 시에는 등록된 맵을 조회하고 세션의 현재 맵과 위치를 갱신합니다."],
-            ["설계 판단", "정적 월드 정의가 커지면 전용 콘텐츠 데이터와 런타임 스폰 상태를 추가로 분리해야 합니다."],
           ],
+          tradeoff: "정적 월드 정의가 커지면 DB 조회와 런타임 스폰 상태의 변경 범위가 넓어집니다. 전용 콘텐츠 정의와 현재 개체 상태를 분리하고 맵 ID·몬스터 ID의 호환성을 검증하는 것이 개선 방향입니다.",
           diagram: {
             title: "맵 정의 조회와 서버 월드 등록",
             zoomable: true,
@@ -1442,22 +1459,23 @@ const everwindDesignDocument = {
         },
         {
           title: "저장 시점과 일관성",
-          summary: "맵 이동·연결 종료를 기본 체크포인트로 사용하고 여러 테이블의 변경 경계를 명시했습니다.",
+          summary: "위치·맵 저장과 정상 로그아웃의 상태 저장 요청을 경로별로 나눴습니다.",
           details: [
             ["현재 구현", "맵 변경 요청과 서버 연결 종료 시 맵·위치를 저장합니다. 클라이언트는 정상 종료 요청 때 인벤토리·스탯·퀘스트 저장 패킷을 보내며, 서버가 각 요청에 대해 DB 행을 갱신합니다."],
-            ["문제 인식", "종료 시점 중심 저장은 비정상 종료에 취약하고 여러 테이블이 일부만 반영될 수 있습니다."],
-            ["개선 방향", "중요 이벤트 체크포인트, 주기 저장, 트랜잭션, 비동기 DB 작업 큐를 순서대로 추가합니다."],
           ],
+          tradeoff: "저장 완료 ACK 없이 종료가 이어져 비정상 종료에서는 전체 상태가 남지 않을 수 있습니다. 인벤토리의 삭제 행 정리와 퀘스트 트랜잭션도 필요합니다. 저장 완료 확인·중요 이벤트 체크포인트·주기 저장·트랜잭션·비동기 DB 작업 큐를 보강하고 종료 유형별 복원을 검증하는 것이 개선 방향입니다.",
           diagram: {
             title: "저장 요청 경로와 테이블별 반영",
             zoomable: true,
             groups: [
+              { title: "Client Request", nodes: ["NetworkClient"] },
               { title: "Server Entry Points", nodes: ["Session", "PacketMethod"] },
               { title: "Persistence", nodes: ["Queries", "DBManager"] },
               { title: "DB Tables", nodes: ["UserInfo", "Inventory", "UserQuest", "UserQuestProgress"] },
             ],
             relations: [
-              ["Session", "dependency", "Queries", "Close에서 위치 저장"],
+              ["NetworkClient", "data", "PacketMethod", "정상 로그아웃 상태 저장 요청"],
+              ["Session", "dependency", "Queries", "Close에서 위치·맵만 저장"],
               ["PacketMethod", "dependency", "Queries", "맵 이동·상태 저장 요청"],
               ["Queries", "dependency", "DBManager", "동기 쿼리 실행"],
               ["Queries", "data", "UserInfo", "위치·맵·스탯·튜토리얼"],
@@ -1469,94 +1487,70 @@ const everwindDesignDocument = {
         },
       ],
       diagram: {
-        kind: "er",
-        source: String.raw`erDiagram
-    UserAccount ||--|| UserInfo : has
-    UserAccount ||--o{ Inventory : owns
-    UserAccount ||--o{ UserQuest : tracks
-    UserQuest ||--o{ UserQuestProgress : contains
-    MapInfo ||--o{ UserInfo : locates
-    MapInfo ||--o{ Monster : spawns
-
-    UserAccount {
-        string UserID PK
-        string PasswordHash
-        string Salt
+        kind: "logical",
+        caption: "Mermaid 논리 모델 · 쿼리에서 확인한 컬럼·조회 연결 / 물리 제약 미확인",
+        zoomable: true,
+        source: String.raw`classDiagram
+    direction LR
+    class UserAccount {
+        UserID
+        PasswordHash
+        Salt
     }
-    UserInfo {
-        string UserID PK
-        int MapId FK
-        float PosX
-        float PosY
-        float PosZ
-        int TutorialStep
-        float HP
-        int AttackPower
-        int DefencePower
+    class UserInfo {
+        UserID
+        MapId
+        PosX
+        PosY
+        PosZ
+        TutorialStep
+        MaxHP
+        HP
+        AttackPower
+        DefencePower
+        Speed
     }
-    Inventory {
-        string UserID FK
-        string ItemID
-        int Amount
-        int SlotIndex
-        boolean IsEquipped
+    class Inventory {
+        UserID
+        ItemID
+        Amount
+        SlotIndex
+        IsEquipped
     }
-    UserQuest {
-        string UserID PK
-        int QuestId PK
-        boolean IsCompleted
-        boolean RewardClaimed
+    class UserQuest {
+        UserID
+        QuestId
+        IsCompleted
+        RewardClaimed
     }
-    UserQuestProgress {
-        string UserID PK
-        int QuestId PK
-        int ConditionIndex PK
-        int CurrentCount
+    class UserQuestProgress {
+        UserID
+        QuestId
+        ConditionIndex
+        CurrentCount
     }
-    MapInfo {
-        int MapId PK
-        float SpawnX
-        float SpawnY
-        float SpawnZ
-        int MaxEnemyCount
+    class MapInfo {
+        MapId
+        SpawnX
+        SpawnY
+        SpawnZ
+        SpawnEnemyX
+        SpawnEnemyY
+        SpawnEnemyZ
+        SpawnEnemyRadius
+        MaxEnemyCount
     }
-    Monster {
-        int MonsterId PK
-        int MapId FK
-    }`,
-        entities: [
-          { name: "UserAccount", fields: ["PK  UserID", "PasswordHash", "Salt"] },
-          { name: "UserInfo", fields: ["PK  UserID", "FK  MapId", "PosX / PosY / PosZ", "TutorialStep", "HP / Attack / Defence"] },
-          { name: "MapInfo", fields: ["PK  MapId", "SpawnX / SpawnY / SpawnZ", "MaxEnemyCount"] },
-          { name: "Inventory", fields: ["FK  UserID", "ItemID", "Amount", "SlotIndex", "IsEquipped"] },
-          { name: "UserQuest", fields: ["PK  UserID + QuestId", "IsCompleted", "RewardClaimed"] },
-          { name: "Monster", fields: ["PK  MonsterId", "FK  MapId"] },
-          { name: "UserQuestProgress", fields: ["PK  UserID + QuestId", "PK  ConditionIndex", "CurrentCount"] },
-        ],
-        erRelations: [
-          ["UserAccount", "UserInfo", "1", "1", "계정 상태"],
-          ["UserAccount", "Inventory", "1", "N", "보유 아이템"],
-          ["UserAccount", "UserQuest", "1", "N", "퀘스트 상태"],
-          ["UserQuest", "UserQuestProgress", "1", "N", "조건별 진행"],
-          ["MapInfo", "UserInfo", "1", "N", "현재 맵"],
-          ["MapInfo", "Monster", "1", "N", "스폰 정의"],
-        ],
-        title: "게임 상태 테이블 ER 다이어그램",
-        groups: [
-          { title: "Identity", nodes: ["UserAccount", "UserInfo"] },
-          { title: "Progress", nodes: ["Inventory", "UserQuest", "UserQuestProgress"] },
-          { title: "World", nodes: ["MapInfo", "Monster"] },
-          { title: "Access", nodes: ["Queries", "DBManager"] },
-        ],
-        relations: [
-          ["UserAccount", "composition", "UserInfo", "1:1"],
-          ["UserAccount", "aggregation", "Inventory", "1:N"],
-          ["UserAccount", "aggregation", "UserQuest", "1:N"],
-          ["UserQuest", "composition", "UserQuestProgress", "1:N"],
-          ["MapInfo", "aggregation", "UserInfo", "현재 맵"],
-          ["MapInfo", "aggregation", "Monster", "스폰 정의"],
-          ["Queries", "dependency", "DBManager", "Prepared Statement"],
-        ],
+    class Monster {
+        MonsterId
+        MapId
+    }
+    UserAccount ..> UserInfo : UserID JOIN
+    UserAccount ..> Inventory : UserID 기준 조회
+    UserAccount ..> UserQuest : UserID 기준 조회
+    UserQuest ..> UserQuestProgress : UserID + QuestId JOIN
+    UserInfo ..> MapInfo : MapId JOIN
+    MapInfo ..> Monster : MapId JOIN`,
+        title: "게임 상태 테이블의 쿼리 기반 논리 모델",
       },
     },
   ],
@@ -1577,8 +1571,8 @@ receiveFeature.details = [
   ["해결하려는 문제", assemblyDesign.problem],
   ...assemblyDesign.decisions,
   ["구현 결과", assemblyDesign.result],
-  ["설계 판단과 다음 단계", assemblyDesign.tradeoff],
 ];
+receiveFeature.tradeoff = assemblyDesign.tradeoff;
 receiveFeature.media = assemblyFeature.video;
 everwindProject.coreFeatures = everwindProject.coreFeatures.filter((item) => item.title !== assemblyTitle);
 everwindDesignDocument.coreFeatures = everwindDesignDocument.coreFeatures.filter((item) => item.title !== assemblyTitle);
@@ -1588,7 +1582,6 @@ contentDesign.implementationSections = clientDocument.features.filter((item) => 
 clientDocument.features = clientDocument.features.filter((item) => !contentDesign.implementationSections.includes(item));
 contentDesign.decisions.push(
   ["호출 측의 경계", "스킬 실행은 Skill, 아이템 사용은 IUsableItem, 튜토리얼 단계는 ITutorialStep으로 요청합니다. 호출 측은 공통 계약을 사용하고, 구체적인 행동은 파생 클래스가 담당합니다."],
-  ["확장과 현실적 한계", "새 타입의 등록과 프리팹·데이터 연결은 필요합니다. 튜토리얼 단계표와 스킬별 애니메이션 분기도 남아 있으므로, 모든 콘텐츠를 코드 변경 없이 추가하는 구조는 아닙니다."],
 );
 contentDesign.implementationSections.push(
   {
@@ -1625,7 +1618,7 @@ contentDesign.implementationSections.push(
     details: [
       ["공통 수명주기", "TutorialGuide는 현재 단계를 ITutorialStep으로 보관합니다. 전환할 때 이전 단계의 종료를 호출하고 새 단계를 진입시키며, 매 프레임 현재 단계만 갱신합니다."],
       ["개별 규칙", "CameraStep·MoveStep·CombatStep·InteractStep·CraftStep·EquipStep이 같은 계약을 구현합니다. 입력이나 플레이 사건을 관찰하는 방식은 각 단계가 맡고, 종료 시 필요한 구독 해제를 수행합니다."],
-      ["확장 지점", "새 단계는 구현 클래스와 TutorialStep 열거형·단계표 등록을 추가합니다. 공통 전환 흐름은 재사용하지만 새 단계가 자동 탐색되는 구조는 아니며, 저장된 단계 값과의 호환성도 확인해야 합니다."],
+      ["확장 지점", "새 단계는 구현 클래스와 TutorialStep 열거형·단계표 등록을 추가해 공통 전환 흐름에서 실행합니다."],
     ],
     diagram: {
       title: "튜토리얼 공통 계약과 단계별 구현",
@@ -1665,11 +1658,11 @@ everwindDesignDocument.coreFeatures.push({
   decisions: [
     ["시간 기준", "steady_clock의 실행 시각으로 작업을 정렬하고, 단발 작업과 반복 작업을 같은 큐로 관리합니다."],
     ["대기와 실행", "빈 큐에서는 조건 변수로 대기하고 가장 이른 실행 시각까지 wait_until합니다. 새 작업 등록 시 알림을 보내며, 콜백 실행 중에는 큐 잠금을 유지하지 않습니다."],
-    ["반복 정책", "반복 작업은 실행 후 기존 예정 시각에 간격을 더해 다시 등록합니다. 긴 콜백이 후속 작업을 늦출 수 있으므로 정밀한 실시간 틱을 보장하는 구조는 아닙니다."],
+    ["반복 정책", "반복 작업은 실행 후 기존 예정 시각에 간격을 더해 다시 등록합니다."],
     ["게임 규칙", "서버 시작 시 10초 간격 몬스터 리필을 등록합니다. 타이머는 호출 시점만 결정하고, 맵 관리자는 부족한 개체 생성과 해당 맵에 신규 스폰 패킷을 전파하는 일을 맡습니다."],
   ],
   result: "클라이언트 입력이 없어도 서버가 맵별 몬스터 수를 보충하며, 전체 목록을 반복 전송하지 않고 새로 생성된 개체만 전달합니다.",
-  tradeoff: "콜백은 하나의 타이머 스레드에서 순차 실행됩니다. 종료 함수는 스레드를 깨워 합류하지만, 현재 main의 종료 경로에서 타이머 정리를 명시적으로 연결하는 보완이 필요합니다. 몬스터 이동·공격의 서버 권위 이전도 별도 과제입니다.",
+  tradeoff: "콜백이 하나의 타이머 스레드에서 순차 실행되어 긴 작업은 후속 실행을 늦출 수 있습니다. 종료 함수는 스레드를 깨워 합류하지만 main의 종료 경로와 명시적으로 연결하는 보완이 필요합니다. 긴 작업의 분리·실행 지연 측정·종료 정리를 보강하고, 몬스터 이동·공격 판정을 서버 권위로 이전하는 것이 개선 방향입니다.",
   diagram: timerImplementation.diagram,
 });
 
@@ -1725,7 +1718,7 @@ everwindDesignDocument.troubleshooting = [
       ["타입별 구현", "SingletonBase<T>는 공통 베이스를 상속하면서 T별 정적 인스턴스 접근, 기존 객체 검색·생성, 중복 제거와 파괴 시 해제를 맡습니다. 개별 매니저는 이 제네릭 베이스를 상속합니다."],
       ["등록과 조회", "등록 딕셔너리는 실제 Type을 키로 사용하고 공통 베이스를 값으로 보관합니다. 조회 시 요청한 매니저 타입으로 돌려주므로, 초기화는 공통 계약으로 처리하면서 사용 측의 타입별 접근은 유지합니다."],
     ],
-    tradeoff: "접근점이 전역으로 열려 있어 호출 측의 의존성이 드러나지 않는 한계는 남습니다. 공통 베이스를 도입한 것과 결합도를 완전히 제거한 것은 구분했습니다.",
+    tradeoff: "전역 접근점은 호출 측의 의존성을 숨길 수 있습니다. 공통 베이스의 초기화 계약은 유지하면서 의존성 주입과 명시적 서비스 참조로 연결 관계를 드러내는 것이 개선 방향입니다.",
     diagram: {
       title: "싱글톤 공통 계약과 타입별 접근",
       direction: "TB", zoomable: true,
@@ -1748,8 +1741,8 @@ everwindDesignDocument.troubleshooting = [
       ["좌표 반영", "새 맵과 원격 객체를 구성한 후 로컬 플레이어를 스폰 좌표로 이동합니다. CharacterController를 잠시 끄고 위치를 반영한 뒤 다시 켜, 이동 컴포넌트가 이전 위치를 기준으로 좌표를 보정하지 않게 합니다."],
       ["표현 자원", mapCleanupDetail[1]],
     ],
-    tradeoff: "맵 전환의 정리 순서는 명시했지만, 로딩 실패 시 이전 월드로 복귀하는 절차와 연속 전환 요청의 검증은 별도 보완 과제입니다.",
-    implementationSections: [mapTransitionImplementation],
+    tradeoff: `로딩 실패 시 이전 월드로 복귀하는 절차와 연속 전환 요청의 검증을 보강해야 합니다. 피해 숫자는 고정 풀이 소진되면 표시를 생략하므로 동시 타격 규모에 맞춘 풀 크기 조정이 필요합니다. ${mapTransitionImplementation.tradeoff}`,
+    implementationSections: [{ ...mapTransitionImplementation, tradeoff: undefined }],
     diagram: {
       title: "맵 전환 시 월드·전투·UI 정리 책임",
       direction: "TB", zoomable: true,
@@ -1776,7 +1769,7 @@ everwindDesignDocument.troubleshooting = [
       ["요청 검증", "서버의 이동·공격 처리기는 요청 세션이 현재 Owner인지 확인합니다. 사망 요청은 Owner가 지정되어 있으면 해당 사용자만 허용하고, 서버 맵에서 몬스터를 제거한 뒤 사망 확인 패킷을 전파합니다."],
       ["중복 방지", "클라이언트는 HP와 사망·요청 전송 플래그를 확인해 사망 요청을 한 번만 보냅니다. 서버에서 이미 제거된 인스턴스는 후속 요청에서 조회되지 않아 다시 제거하거나 확인 응답을 생성하지 않습니다."],
     ],
-    tradeoff: "이는 클라이언트 소유권을 서버가 검증하는 프로토타입 구조입니다. AI·판정이 완전히 서버 권위로 실행되는 구조나 동시 요청의 완전한 원자성을 보장했다고 설명하지 않았습니다.",
+    tradeoff: "Owner 검증은 일부 몬스터 요청에만 적용되며 피해량과 일부 UserDBID는 클라이언트 값에 의존합니다. 세션 기준 사용자 식별·피해량 재검증과 서버 권위 판정을 추가하고, 맵 목록의 잠금 밖 읽기는 스냅샷이나 동일 잠금 범위로 보강하는 것이 개선 방향입니다.",
     diagram: {
       title: "서버의 몬스터 소유자 검증과 제거",
       direction: "TB", zoomable: true,
@@ -1802,7 +1795,7 @@ everwindDesignDocument.troubleshooting = [
       ["중복 필터", "WorldLoader는 EnemySpawner에 같은 인스턴스 ID가 등록되어 있는지 먼저 확인합니다. 이미 존재하거나 정의 테이블에 없는 몬스터 종류면 생성하지 않습니다."],
       ["지형 보정", "서버 좌표보다 위에서 Ground 레이어를 향해 아래로 Raycast합니다. 충돌 지점을 찾으면 y좌표만 지면 높이로 바꾸고 프리팹을 생성한 뒤 인스턴스 ID로 등록합니다."],
     ],
-    tradeoff: "지면을 찾지 못하면 현재 코드는 원래 높이를 사용합니다. Ground 레이어 설정과 스폰 반경 검증이 필요하며, 서버 자체가 지형 충돌을 판정하는 구조는 아닙니다.",
+    tradeoff: "지면을 찾지 못하면 원래 높이를 사용하며 지형 충돌 판정은 클라이언트 Raycast에 의존합니다. Ground 레이어·스폰 반경 검증과 탐색 실패 시 재시도 정책을 추가하고 서버 좌표 검증을 보강하는 것이 개선 방향입니다.",
     diagram: {
       title: "수신된 몬스터의 중복 검사와 높이 보정",
       direction: "TB", zoomable: true,
@@ -1855,7 +1848,7 @@ everwindDesignDocument.troubleshooting = [
       ["초기 동기화", "HUD의 Start에서는 현재 로그인 맵 ID로 DataCenter의 맵 테이블을 조회하고 같은 적용 함수를 호출합니다. 이벤트보다 UI 준비가 늦더라도 현재 맵 표시를 다시 맞춥니다."],
       ["플레이어 추적", minimapDetail[1]],
     ],
-    tradeoff: "이미지별 보정값은 수동으로 설정하며, 현재 표시 대상은 맵 이미지와 플레이어 위치입니다. 자동 캘리브레이션이나 서버 기반 가시성 시스템까지 구현한 것은 아닙니다.",
+    tradeoff: "맵 이미지와 플레이어 위치를 표시하며 이미지별 보정값은 수동으로 설정합니다. 맵 변경 시 보정값 검증과 캘리브레이션을 자동화하고, 표시 대상이 늘면 서버 기반 가시성 정보와 연결하는 것이 개선 방향입니다.",
     diagram: {
       title: "미니맵 보정 데이터와 변경·초기 동기화",
       direction: "TB", zoomable: true,
@@ -2423,7 +2416,7 @@ const makeUmlDiagram = (diagram) => {
   figure.className = "uml-diagram";
   if (diagram.kind === "er") figure.classList.add("is-er-diagram");
   caption.textContent = diagram.title;
-  hint.textContent = diagram.kind === "er" ? "Mermaid ERD · 실제 쿼리 컬럼 기준" : "Mermaid UML · 메서드·속성 제외";
+  hint.textContent = diagram.caption || (diagram.kind === "er" ? "Mermaid ERD · 실제 쿼리 컬럼 기준" : "Mermaid UML · 메서드·속성 제외");
   caption.append(hint);
   canvas.className = "mermaid-canvas";
   canvas.dataset.mermaidSource = makeMermaidSource(diagram);
@@ -2611,6 +2604,17 @@ const makeDecisionList = (items = [], className = "design-decision-list", emphas
   return list;
 };
 
+const makeLimitations = (copy) => {
+  const section = document.createElement("aside");
+  const title = document.createElement("strong");
+  const description = document.createElement("p");
+  section.className = "design-tradeoff";
+  title.textContent = "한계점과 개선점";
+  description.textContent = copy;
+  section.append(title, description);
+  return section;
+};
+
 const makeImplementationSection = (feature, number, id) => {
   const section = document.createElement("section");
   const header = document.createElement("header");
@@ -2632,6 +2636,7 @@ const makeImplementationSection = (feature, number, id) => {
   section.append(header, makeDecisionList(feature.details, "design-decision-list", feature.emphasis));
   if (feature.media) section.append(makeResultMediaButton(feature.media));
   if (feature.diagram) section.append(makeUmlDiagram(feature.diagram));
+  if (feature.tradeoff) section.append(makeLimitations(feature.tradeoff));
   return section;
 };
 
@@ -2649,9 +2654,6 @@ const makeFeatureImplementation = (feature, index) => {
   const result = document.createElement("section");
   const resultLabel = document.createElement("p");
   const resultCopy = document.createElement("p");
-  const tradeoff = document.createElement("aside");
-  const tradeoffTitle = document.createElement("strong");
-  const tradeoffCopy = document.createElement("p");
   const implementationBlocks = document.createElement("div");
   article.className = "design-feature-card";
   article.id = `design-feature-${index + 1}`;
@@ -2670,10 +2672,6 @@ const makeFeatureImplementation = (feature, index) => {
   result.append(resultLabel, resultCopy);
   context.className = "design-context-grid";
   context.append(problem, result);
-  tradeoff.className = "design-tradeoff";
-  tradeoffTitle.textContent = "설계 판단과 다음 단계";
-  tradeoffCopy.textContent = feature.tradeoff;
-  tradeoff.append(tradeoffTitle, tradeoffCopy);
   implementationBlocks.className = "implementation-block-list";
   implementationBlocks.append(
     ...[{
@@ -2692,7 +2690,7 @@ const makeFeatureImplementation = (feature, index) => {
     makeKeywordList(feature.keywords),
     context,
     implementationBlocks,
-    tradeoff,
+    makeLimitations(feature.tradeoff),
   );
   return article;
 };
@@ -2762,6 +2760,7 @@ const buildDesignDocument = (documentData) => {
       noteTitle,
       makeDecisionList(documentItem.notes, "technical-note-list"),
     );
+    if (documentItem.tradeoff) article.append(makeLimitations(documentItem.tradeoff));
     return article;
   }));
 };
