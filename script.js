@@ -736,10 +736,13 @@ const everwindDesignDocument = {
     {
       title: "IOCP 비동기 세션과 패킷 수명주기",
       intent: "완료 통지에 필요한 세션·컨텍스트 소유권과 TCP 패킷 경계를 명시한다.",
-      keywords: ["소유권", "OVERLAPPED", "패킷 프레이밍", "송신 큐", "종료 경합"],
+      keywords: ["shared_ptr", "weak_ptr", "OVERLAPPED", "패킷 프레이밍", "송신 큐", "종료 경합"],
       problem: "비동기 요청은 함수 반환 뒤에도 세션과 버퍼를 참조합니다. TCP 스트림은 패킷이 분할·병합될 수 있고 연결 종료와 완료 통지가 경쟁할 수도 있습니다.",
       decisions: [
-        ["객체 수명", "SessionManager가 세션을 공유 소유하고 IOContext가 owner 참조를 보관합니다."],
+        ["세션 소유", "Session은 enable_shared_from_this를 사용하고 SessionManager가 접속 중인 세션을 shared_ptr로 보관합니다. 패킷 처리와 맵 이동처럼 세션이 필요한 작업은 이 공유 참조를 전달받습니다."],
+        ["비동기 작업 수명", "Recv·Send를 등록할 때 생성한 IOContext가 세션의 shared_ptr owner를 보관합니다. 완료 통지에서는 owner를 꺼내 처리하므로 비동기 작업이 끝날 때까지 해당 세션의 수명이 유지됩니다."],
+        ["맵 소속 참조", "MapData는 세션을 weak_ptr로만 보관해 맵 소속이 세션의 소유권을 연장하지 않게 했습니다. 브로드캐스트 시 lock으로 유효한 세션만 shared_ptr로 승격하고, 만료된 참조는 목록에서 제거합니다."],
+        ["월드 객체 소유", "MapData는 생성된 몬스터를 shared_ptr로 소유하고 외부 조회에는 weak_ptr를 반환해, 조회 측이 월드 객체의 수명을 불필요하게 연장하지 않도록 구분했습니다."],
         ["수신 경계", "누적 버퍼에서 헤더 길이를 검증하고 완전한 패킷만 핸들러로 전달합니다."],
         ["송신 직렬화", "세션별 송신 큐가 버퍼 순서를 보존하고 한 번에 하나의 비동기 송신만 유지합니다."],
       ],
@@ -750,13 +753,17 @@ const everwindDesignDocument = {
         groups: [
           { title: "Server", nodes: ["IOCPServer", "SessionManager", "PacketMethod"] },
           { title: "Connection", nodes: ["Session", "IOContext"] },
+          { title: "World Reference", nodes: ["MapData", "Enemy"] },
           { title: "Protocol", nodes: ["PacketHeader"] },
         ],
         relations: [
           ["IOCPServer", "aggregation", "SessionManager", "접속 등록"],
-          ["SessionManager", "aggregation", "Session", "공유 수명"],
+          ["SessionManager", "aggregation", "Session", "shared_ptr로 접속 수명 소유"],
           ["Session", "dependency", "IOContext", "큐 데이터로 비동기 작업 생성"],
-          ["IOContext", "aggregation", "Session", "owner가 공유 수명 유지"],
+          ["IOContext", "aggregation", "Session", "shared_ptr owner로 완료까지 유지"],
+          ["MapData", "dependency", "Session", "weak_ptr를 lock해 유효 세션만 사용"],
+          ["MapData", "aggregation", "Enemy", "shared_ptr로 월드 개체 소유"],
+          ["PacketMethod", "dependency", "Enemy", "weak_ptr 조회 후 lock"],
           ["Session", "dependency", "PacketHeader", "누적 vector 길이 검증"],
           ["Session", "dependency", "IOCPServer", "완전한 패킷"],
           ["IOCPServer", "dependency", "PacketMethod", "요청 라우팅"],
@@ -1684,8 +1691,7 @@ everwindDesignDocument.coreFeatures = coreFeatureOrder.map((title) => everwindDe
 everwindProject.troubleshooting = [0, 1, 2, 4, 3, 5, 6].map((index) => everwindProject.troubleshooting[index]);
 const startupImplementation = clientDocument.features.find((item) => item.title === "코어 초기화와 월드 조립");
 clientDocument.features = clientDocument.features.filter((item) => item !== startupImplementation);
-const mapTransitionImplementation = serverDocument.features.find((item) => item.title === "맵 단위 세션과 멀티플레이 전파");
-serverDocument.features = serverDocument.features.filter((item) => item !== mapTransitionImplementation);
+serverDocument.features = serverDocument.features.filter((item) => item.title !== "맵 단위 세션과 멀티플레이 전파");
 const hudImplementation = clientDocument.features.find((item) => item.title === "UI 이벤트와 HUD·미니맵·전투 피드백");
 const mapCleanupDetail = hudImplementation.details.find(([label]) => label === "맵 전환·한계");
 const minimapDetail = hudImplementation.details.find(([label]) => label === "미니맵");
@@ -1741,8 +1747,7 @@ everwindDesignDocument.troubleshooting = [
       ["좌표 반영", "새 맵과 원격 객체를 구성한 후 로컬 플레이어를 스폰 좌표로 이동합니다. CharacterController를 잠시 끄고 위치를 반영한 뒤 다시 켜, 이동 컴포넌트가 이전 위치를 기준으로 좌표를 보정하지 않게 합니다."],
       ["표현 자원", mapCleanupDetail[1]],
     ],
-    tradeoff: `로딩 실패 시 이전 월드로 복귀하는 절차와 연속 전환 요청의 검증을 보강해야 합니다. 피해 숫자는 고정 풀이 소진되면 표시를 생략하므로 동시 타격 규모에 맞춘 풀 크기 조정이 필요합니다. ${mapTransitionImplementation.tradeoff}`,
-    implementationSections: [{ ...mapTransitionImplementation, tradeoff: undefined }],
+    tradeoff: "로딩 실패 시 이전 월드로 복귀하는 절차와 연속 전환 요청을 정리하는 상태 관리가 필요합니다. 피해 숫자는 고정 풀이 소진되면 표시를 생략하므로 동시 타격 규모를 측정해 풀 크기를 조정하고, 전환 중 실패·재요청·연속 이동을 포함한 시나리오를 검증하는 것이 개선 방향입니다.",
     diagram: {
       title: "맵 전환 시 월드·전투·UI 정리 책임",
       direction: "TB", zoomable: true,
