@@ -100,15 +100,6 @@ const projects = {
       ["데이터베이스", "MySQL / MariaDB"],
       ["통신", "TCP 커스텀 바이너리 프로토콜"],
     ],
-    principles: [
-      ["상태 중심 행동 분리", "이동·전투·피격·상호작용처럼 충돌하기 쉬운 행동을 상태 단위로 나눠 전환 규칙을 명확히 했습니다."],
-      ["정의 데이터와 진행 상태 분리", "변하지 않는 콘텐츠 정의와 수량·쿨다운·진행도 같은 런타임 상태를 분리해 저장과 확장의 경계를 세웠습니다."],
-      ["공통 계약과 다형성", "공통 실행 흐름은 하나의 계약으로 유지하고, 콘텐츠별 차이만 독립적으로 확장하도록 구성했습니다."],
-      ["이벤트 기반 결과 전달", "전투·채집·제작의 결과를 이벤트로 전달해 퀘스트와 튜토리얼이 생산 시스템의 내부 구현에 의존하지 않게 했습니다."],
-      ["네트워크와 Unity 생명주기 분리", "데이터 수신 시점과 씬·오브젝트 생성 시점을 분리하고, Unity API 작업은 메인 스레드에서 처리했습니다."],
-      ["맵 단위 월드 경계", "세션과 게임 월드를 맵 컨텍스트로 구분해 필요한 사용자에게만 상태 변화를 전달하도록 했습니다."],
-      ["재접속 가능한 영속 상태", "클라이언트 수명과 무관하게 이어져야 하는 캐릭터 상태를 관계형 데이터로 저장하고 복원했습니다."],
-    ],
     coreFeatures: [
       {
         title: "데이터 중심 RPG 콘텐츠 확장",
@@ -210,7 +201,7 @@ const projects = {
         title: "몬스터 리필 시 중복 생성과 지형 이탈",
         summary: "서버 기준 리필과 증분 전송으로 중복 생성과 지형 이탈 스폰을 줄였습니다.",
         emphasis: ["서버", "인스턴스 ID", "새로 추가된 몬스터", "지면을 탐색"],
-        problem: "클라이언트별 리젠 판단과 전체 목록 재전송으로 몬스터가 중복 생성됐습니다. 무작위 좌표는 경사진 지형의 높이와 맞지 않았습니다.",
+        problem: "클라이언트별 리젠 판단과 전체 목록 재전송으로 몬스터가 중복 생성됐습니다. 무작위 좌표는 경사진 지형의 높이에 맞지 않게 몬스터 스폰 위치가 설정되었습니다.",
         solution: "서버가 부족한 수량만 보충하고 새로 추가된 몬스터만 전송했습니다. 클라이언트는 인스턴스 ID로 중복을 거르고, 지면을 탐색해 스폰 높이를 보정했습니다.",
       },
       {
@@ -1896,7 +1887,7 @@ everwindDesignDocument.troubleshooting = [
     resultLabel: "해결 방안",
   };
 });
-everwindDesignDocument.summary += " 콘텐츠 확장·서버 타이머와 트러블슈팅의 상세 구현은 각 항목의 ‘상세 구현 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
+everwindDesignDocument.summary += " 콘텐츠 확장·서버 타이머의 구현은 ‘상세 구현 설명’, 트러블슈팅의 해결 과정은 ‘상세 해결 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
 everwindProject.designDocument = everwindDesignDocument;
 
 const modal = document.querySelector("#project-modal");
@@ -2120,7 +2111,7 @@ const makeImplementationButton = (index, type = "coreFeatures") => {
   button.className = "feature-implementation-trigger";
   button.dataset.implementationIndex = index;
   button.dataset.implementationType = type;
-  button.textContent = "상세 구현 설명";
+  button.textContent = type === "troubleshooting" ? "상세 해결 설명" : "상세 구현 설명";
   button.setAttribute("aria-haspopup", "dialog");
   return button;
 };
@@ -3110,7 +3101,12 @@ const handleImplementationClick = (event) => {
   const type = trigger.dataset.implementationType || "coreFeatures";
   const feature = activeProject.designDocument[type]?.[index];
   if (!feature) return;
-  featureDesignTitle.textContent = "상세 구현 설명";
+  const explanationTitle = type === "troubleshooting" ? "상세 해결 설명" : "상세 구현 설명";
+  featureDesignTitle.textContent = explanationTitle;
+  featureDesignClose.setAttribute("aria-label", `${explanationTitle} 닫기`);
+  featureDesignModal.querySelector(".project-type").textContent = type === "troubleshooting"
+    ? "EVERWIND / TROUBLESHOOTING"
+    : "EVERWIND / CORE FEATURE";
   featureDesignContent.replaceChildren(makeFeatureImplementation(feature, index));
   featureDesignModal.showModal();
   featureDesignModal.scrollTop = 0;
