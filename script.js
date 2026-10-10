@@ -1976,12 +1976,546 @@ everwindDesignDocument.troubleshooting = [
 everwindDesignDocument.summary += " 콘텐츠 확장·IOCP 세션과 패킷·상태 영속화·전투 상태 머신·퀘스트 이벤트·서버 타이머의 구현은 Core Feature의 ‘상세 구현 설명’, 트러블슈팅의 해결 과정은 ‘상세 해결 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
 everwindProject.designDocument = everwindDesignDocument;
 
+const littleSurvivalProject = projects["project-2"];
+const littleSurvivalDesignDocument = {
+  kicker: "LITTLE SURVIVAL PLANET 상세 기술 설계",
+  title: "작은 생존 루프를 완성하는 행동과 피드백의 연결",
+  summary: "플레이어 입력에서 생존 수치·상호작용·미션·UI 피드백까지 이어지는 Unity 구조를 정리했습니다. Core Feature의 구현은 ‘상세 구현 설명’, 문제 해결 과정은 ‘상세 해결 설명’에서 제공하며, 이 문서에는 공통 입력·게임 루프·표현 경계만 남겼습니다.",
+  keywords: ["행동 상태", "상호작용 규칙", "생존 루프", "이벤트", "가중 랜덤", "UI 피드백"],
+  systemFlow: ["Player Input", "Action State", "Interaction Rule", "Game Progress", "UI Feedback"],
+  coreFeatures: [
+    {
+      title: "아이템·대상 기반 상호작용 판정과 제작 흐름",
+      intent: "플레이어가 든 아이템과 바라보는 대상의 조합을 한 경로에서 판정하고 제작 결과를 진행 규칙으로 연결한다.",
+      keywords: ["Comparer", "IInteractable", "RecipeItemTypeComparer", "기능 해금"],
+      problem: "낚시·요리·불 피우기·벌목·수리·제작의 조건이 입력과 오브젝트마다 흩어지면 같은 조합이 서로 다르게 판단되고 새 행동을 추가할 때 기존 규칙을 함께 수정하게 됩니다.",
+      decisions: [
+        ["대상과 보유 아이템", "Player는 전방 후보와 PlayerInventory의 현재 아이템을 Comparer에 전달해 가능한 행동 메시지를 계산합니다."],
+        ["역할 기반 판정", "Comparer는 ItemType과 IInteractable 구현 대상의 역할을 함께 확인해 Cook·Fishing·Burning·Logging·Repair·Craft 중 하나를 선택합니다."],
+        ["순서 독립 레시피", "CraftManager는 RecipeItemTypeComparer를 사용하는 튜플 Dictionary로 재료 순서가 바뀌어도 같은 제작 함수를 찾습니다."],
+        ["결과 연결", "제작 성공은 재료 정리, 미션 완료, 낚시·도끼 해금 이벤트와 사운드 피드백으로 이어집니다."],
+      ],
+      result: "상호작용 가능 여부와 실제 제작 실행이 같은 아이템·대상 규칙을 사용하고, 제작 결과가 기능 해금과 미션 진행으로 연결됩니다.",
+      tradeoff: "대상 탐색은 현재 씬의 Transform을 순회하고 Comparer의 행동 분기는 코드에 고정되어 있습니다. Physics 기반 후보 조회와 데이터 중심 규칙 테이블로 바꾸면 오브젝트 수와 행동 종류가 늘어날 때 탐색·수정 범위를 줄일 수 있습니다.",
+      diagram: {
+        title: "아이템·대상 판정과 제작 결과 연결",
+        zoomable: true,
+        groups: [
+          { title: "Player Boundary", nodes: ["Player", "PlayerInventory", "Comparer"] },
+          { title: "Interaction Rule", nodes: ["IInteractable", "CraftManager", "RecipeItemTypeComparer"] },
+          { title: "World Objects", nodes: ["Pond", "Campfire", "Tree", "Rocket", "Item"] },
+          { title: "Progress And Feedback", nodes: ["MissionManager", "InventoryUI", "SystemMessageUI"] },
+        ],
+        relations: [
+          ["Player", "composition", "PlayerInventory", "현재 아이템"],
+          ["Player", "dependency", "Comparer", "가능 행동 조회"],
+          ["Player", "dependency", "IInteractable", "X 입력 실행"],
+          ["Comparer", "dependency", "CraftManager", "레시피 존재 확인"],
+          ["CraftManager", "aggregation", "RecipeItemTypeComparer", "순서 독립 키 비교"],
+          ...["Pond", "Campfire", "Tree", "Rocket"].map((node) => [node, "implementation", "IInteractable"]),
+          ["CraftManager", "dependency", "MissionManager", "제작 완료"],
+          ["CraftManager", "event", "InventoryUI", "도구 해금"],
+          ["Player", "event", "SystemMessageUI", "가능 행동 안내"],
+        ],
+      },
+    },
+    {
+      title: "상태 머신으로 나눈 플레이어 행동 처리",
+      intent: "시간이 필요한 행동의 시작·진행·종료와 입력 제한을 상태별 책임으로 분리한다.",
+      keywords: ["IState", "Enter/Update/Exit", "상태 잠금", "행동 수명주기"],
+      problem: "이동·낚시·벌목·섭취·요리·수리는 소요 시간과 종료 정리가 달라 하나의 Update 흐름에 섞으면 이동 입력, 보상 지급과 반복 사운드가 충돌할 수 있습니다.",
+      decisions: [
+        ["공통 계약", "IState가 Enter·Update·Exit를 정의하고 PlayerStateMachine이 현재 상태의 종료와 새 상태의 진입 순서를 통제합니다."],
+        ["행동별 책임", "Idle·Move·Fishing·Logging·Eating·Cooking·Repair 상태가 각자의 시간, 이동 속도, 애니메이션과 완료 처리를 담당합니다."],
+        ["중간 입력 제한", "시간이 필요한 상태는 isStateLocked를 설정해 완료 전 다른 상태 전환과 줍기·버리기 입력을 막습니다."],
+        ["종료 정리", "상태 종료에서 발소리·벌목·수리 반복음을 멈추고, 완료 처리 후 잠금을 해제해 Idle 상태로 복귀합니다."],
+      ],
+      result: "행동마다 완료 보상이 한 번 실행되고, 이동 제한과 애니메이션·사운드 정리가 상태 수명주기 안에서 함께 처리됩니다.",
+      tradeoff: "새 행동은 PlayerStateMachine의 상태 필드와 생성 경로, Player 입력 제한 조건을 함께 수정해야 합니다. 상태 등록을 데이터나 팩토리로 분리하고 취소·실패 전이를 명시하면 행동 종류가 늘어날 때 변경 범위를 줄일 수 있습니다.",
+      diagram: {
+        title: "플레이어 행동 상태와 잠금 경계",
+        zoomable: true,
+        groups: [
+          { title: "Context", nodes: ["Player", "PlayerStateMachine"] },
+          { title: "State Contract", nodes: ["IState"] },
+          { title: "Movement", nodes: ["IdleState", "MoveState"] },
+          { title: "Timed Actions", nodes: ["FishingState", "LoggingState", "EatingState", "CookingState", "RepairState"] },
+          { title: "Effects", nodes: ["PlayerInventory", "MissionManager", "SoundManager"] },
+        ],
+        relations: [
+          ["Player", "composition", "PlayerStateMachine", "현재 행동 갱신"],
+          ["PlayerStateMachine", "aggregation", "IState", "상태 교체·잠금"],
+          ...["IdleState", "MoveState", "FishingState", "LoggingState", "EatingState", "CookingState", "RepairState"]
+            .map((node) => [node, "implementation", "IState"]),
+          ["FishingState", "dependency", "MissionManager", "낚시 완료"],
+          ["LoggingState", "dependency", "MissionManager", "벌목 완료"],
+          ["EatingState", "dependency", "PlayerInventory", "소비 아이템 제거"],
+          ["LoggingState", "dependency", "SoundManager", "반복음 시작·종료"],
+          ["RepairState", "dependency", "SoundManager", "반복음 시작·종료"],
+        ],
+      },
+    },
+    {
+      title: "미션 진행과 결과 화면 구성",
+      intent: "행동 결과를 미션 완료 이벤트로 모으고 동일한 진행 상태를 슬롯 UI와 최종 결과 화면에서 재사용한다.",
+      keywords: ["Mission ScriptableObject", "MissionType", "완료 이벤트", "ResultUI"],
+      problem: "제작·낚시·벌목 결과를 각 UI가 직접 확인하면 완료 판단이 중복되고, 플레이 중 미션 표시와 게임 종료 결과가 서로 다른 상태를 보여줄 수 있습니다.",
+      decisions: [
+        ["정의 데이터", "Mission ScriptableObject가 ID·유형·설명과 완료 여부를 보관하고 MissionManager가 목록을 소유합니다."],
+        ["유형별 조회", "MissionManager는 MissionType별 MissionSlot을 Dictionary에 등록해 행동 완료 요청을 해당 미션으로 연결합니다."],
+        ["이벤트 반영", "완료 요청은 OnMissionExecuted 이벤트로 전달되고 MissionSlot이 자신의 미션인지 확인한 뒤 완료 연출과 상태 갱신을 수행합니다."],
+        ["결과 재사용", "ResultUI는 같은 미션 목록과 GameManager의 경과 시간을 읽어 완료 여부와 클리어 타임을 한 화면에 구성합니다."],
+      ],
+      result: "게임 행동, 미션 슬롯과 결과 화면이 하나의 미션 목록을 기준으로 동작해 진행 표시와 최종 결과가 일치합니다.",
+      tradeoff: "현재 Mission의 isCompleted가 ScriptableObject 정의에 함께 저장되고 MissionSlot 초기화에서 재설정됩니다. 변하지 않는 미션 정의와 세션별 진행 상태를 별도 객체로 분리하면 에디터 상태와 재시작 수명에 더 안전하게 대응할 수 있습니다.",
+      diagram: {
+        title: "행동 결과에서 미션·결과 UI까지",
+        zoomable: true,
+        groups: [
+          { title: "Gameplay", nodes: ["CraftManager", "FishingState", "LoggingState"] },
+          { title: "Mission", nodes: ["MissionManager", "Mission", "MissionSlot"] },
+          { title: "Game Result", nodes: ["GameManager", "UIManager", "ResultUI"] },
+        ],
+        relations: [
+          ...["CraftManager", "FishingState", "LoggingState"].map((node) => [node, "dependency", "MissionManager", "유형별 완료 요청"]),
+          ["MissionManager", "aggregation", "Mission", "정의·완료 상태"],
+          ["MissionManager", "event", "MissionSlot", "완료 이벤트"],
+          ["GameManager", "aggregation", "MissionManager", "진행 목록"],
+          ["GameManager", "dependency", "UIManager", "클리어·실패 결과"],
+          ["UIManager", "aggregation", "ResultUI", "결과 팝업"],
+          ["ResultUI", "dependency", "MissionManager", "완료 목록 조회"],
+        ],
+      },
+    },
+    {
+      title: "월드 자원 랜덤 스폰과 배치 안정화",
+      intent: "무작위성을 유지하면서 지형·간격·거리 가중치로 플레이 가능한 자원 배치를 만든다.",
+      keywords: ["Raycast", "CheckSphere", "가중 랜덤", "스폰 간격"],
+      problem: "x·z 무작위 좌표에 바로 생성하면 자원이 공중·지형 밖·다른 아이템과 겹친 곳에 놓이고, 로켓과의 거리에 따라 수집 난이도가 크게 흔들릴 수 있습니다.",
+      decisions: [
+        ["후보 생성", "SpawnManager는 BoxCollider 범위 안에서 여러 무작위 후보를 만들고 위에서 아래로 Raycast해 지정된 groundCollider에 닿은 지점만 남깁니다."],
+        ["간격 검증", "Physics.CheckSphere로 기존 아이템 주변 후보를 제외해 줍기 판정과 시각적 겹침을 줄입니다."],
+        ["아이템별 가중치", "Item의 GetSpawnWeight 계약을 Iron과 Plant가 재정의해 로켓과의 거리에 따른 후보 가중치를 제공합니다."],
+        ["시간에 따른 공급", "후보 가중치 누적으로 위치를 선택하고 생성 횟수에 따라 철·식물의 스폰 간격을 늘립니다."],
+      ],
+      result: "자원이 실제 지면 위의 겹치지 않는 위치에 생성되고, 거리와 시간 흐름을 이용해 생존 루프의 공급 속도를 조절할 수 있습니다.",
+      tradeoff: "스폰할 때마다 고정 수의 Raycast와 CheckSphere를 동기 실행하고 생성 오브젝트를 풀링하지 않습니다. 후보 수와 검사 비용을 프로파일링하고 오브젝트 풀·실패 재시도 정책을 추가하면 장시간 플레이의 비용을 안정화할 수 있습니다.",
+      diagram: {
+        title: "검증 후보와 가중 랜덤 스폰",
+        zoomable: true,
+        groups: [
+          { title: "Spawner", nodes: ["SpawnManager", "SpawnCandidate"] },
+          { title: "Validation", nodes: ["BoxCollider", "MeshCollider", "Physics"] },
+          { title: "Spawn Policy", nodes: ["Item", "Iron", "Plant"] },
+          { title: "World Reference", nodes: ["Rocket"] },
+        ],
+        relations: [
+          ["SpawnManager", "aggregation", "SpawnCandidate", "위치·가중치 후보"],
+          ["SpawnManager", "dependency", "BoxCollider", "생성 범위"],
+          ["SpawnManager", "dependency", "MeshCollider", "지면 일치"],
+          ["SpawnManager", "dependency", "Physics", "Raycast·CheckSphere"],
+          ["SpawnManager", "dependency", "Item", "가중치 요청"],
+          ["Iron", "inheritance", "Item", "거리 가중치"],
+          ["Plant", "inheritance", "Item", "거리 가중치"],
+          ["Iron", "dependency", "Rocket", "거리 계산"],
+          ["Plant", "dependency", "Rocket", "거리 계산"],
+        ],
+      },
+    },
+  ],
+  technicalDocs: [
+    {
+      id: "player-ui",
+      label: "PLAYER & UI",
+      title: "입력·인벤토리·상호작용 안내 경계",
+      summary: "입력 판단과 현재 아이템 상태를 플레이어 경계에 두고 이벤트로 인벤토리 아이콘과 행동 안내를 갱신합니다.",
+      keywords: ["Player", "PlayerInventory", "SystemMessageUI", "InventoryUI"],
+      architectureTitle: "플레이어 입력과 UI 반영 구조",
+      notes: [
+        ["단일 보유 슬롯", "PlayerInventory가 현재 아이템 참조를 한 곳에서 관리하고 변경 시 UI와 상호작용 타깃을 다시 계산합니다."],
+      ],
+      tradeoff: "입력 키와 대상 탐색이 Player.Update에 집중되어 있습니다. 입력 어댑터와 상호작용 탐색 서비스를 분리하면 키 변경과 테스트가 쉬워집니다.",
+      features: [
+        {
+          title: "현재 아이템과 인벤토리 UI 갱신",
+          summary: "아이템 설정·제거·버리기를 하나의 변경 이벤트로 모아 화면과 판정이 같은 상태를 보게 합니다.",
+          emphasis: ["변경 이벤트", "현재 아이템", "지면 보정"],
+          details: [
+            ["상태 경계", "PlayerInventory가 현재 아이템과 낚시 해금 상태를 보관합니다."],
+            ["변경 이벤트", "SetCurrentItem은 OnInventoryChanged를 발행하고 Player.RefreshForwardTarget을 다시 호출합니다."],
+            ["버리기", "플레이어 앞쪽 위치를 아래 방향 Raycast로 지면 보정한 뒤 아이템 부모를 해제합니다."],
+          ],
+          tradeoff: "현재 인벤토리는 한 개 아이템만 보유합니다. 슬롯 확장이 필요하면 보유 컬렉션과 선택 슬롯, 월드 오브젝트 수명을 별도 모델로 분리해야 합니다.",
+          diagram: {
+            title: "현재 아이템 변경과 UI 재계산",
+            groups: [
+              { title: "Player", nodes: ["Player", "PlayerInventory"] },
+              { title: "UI", nodes: ["InventoryUI", "SystemMessageUI"] },
+            ],
+            relations: [
+              ["Player", "composition", "PlayerInventory"],
+              ["PlayerInventory", "event", "InventoryUI", "아이콘 갱신"],
+              ["PlayerInventory", "dependency", "Player", "타깃 재계산"],
+              ["Player", "event", "SystemMessageUI", "행동 메시지"],
+            ],
+          },
+        },
+        {
+          title: "가능 행동 메시지의 대상 추적",
+          summary: "판정된 행동 문자열과 대상 객체를 전달해 월드 공간에서 현재 가능한 행동을 보여줍니다.",
+          emphasis: ["행동 문자열", "대상 추적", "월드 공간"],
+          details: [
+            ["발행", "Player가 타깃 변경 시 Comparer 결과와 대상 객체를 OnChangeForwardGameObject로 전달합니다."],
+            ["표시", "SystemMessageUI가 메시지가 없으면 숨기고, 대상이 있으면 월드 위치 위에 텍스트를 표시합니다."],
+            ["특수 대상", "사과 심기처럼 대상 객체가 없는 행동은 플레이어를 따라가도록 표시 위치를 바꿉니다."],
+          ],
+          diagram: {
+            title: "행동 판정과 월드 메시지",
+            groups: [
+              { title: "Detection", nodes: ["Player", "Comparer"] },
+              { title: "Presentation", nodes: ["SystemMessageUI", "TargetObject"] },
+            ],
+            relations: [
+              ["Player", "dependency", "Comparer", "행동 문자열 조회"],
+              ["Player", "event", "SystemMessageUI", "문자열·대상 전달"],
+              ["SystemMessageUI", "dependency", "TargetObject", "위치 추적"],
+            ],
+          },
+        },
+      ],
+      diagram: {
+        title: "플레이어 입력·인벤토리·안내 UI 책임 지도",
+        zoomable: true,
+        groups: [
+          { title: "Input", nodes: ["Player", "PlayerMovement"] },
+          { title: "Held Item", nodes: ["PlayerInventory", "Item"] },
+          { title: "Decision", nodes: ["Comparer"] },
+          { title: "UI", nodes: ["InventoryUI", "SystemMessageUI"] },
+        ],
+        relations: [
+          ["Player", "aggregation", "PlayerMovement", "이동 입력"],
+          ["Player", "composition", "PlayerInventory", "현재 아이템"],
+          ["PlayerInventory", "aggregation", "Item"],
+          ["Player", "dependency", "Comparer", "가능 행동"],
+          ["PlayerInventory", "event", "InventoryUI", "아이콘"],
+          ["Player", "event", "SystemMessageUI", "행동 안내"],
+        ],
+      },
+    },
+    {
+      id: "survival-loop",
+      label: "SURVIVAL LOOP",
+      title: "생존 수치와 게임 종료 흐름",
+      summary: "체력·모닥불·로켓 수치와 경과 시간을 한 게임 상태에서 갱신하고 클리어·실패 결과로 연결합니다.",
+      keywords: ["GameState", "Player Health", "Fire", "Rocket", "ResultUI"],
+      architectureTitle: "생존 수치에서 결과 화면까지",
+      notes: [
+        ["진행 기준", "플레이어와 모닥불은 시간이 지나며 감소하고, 로켓은 자원별 수리량만큼 증가합니다."],
+      ],
+      tradeoff: "게임 수치와 진행 규칙이 GameManager에 모여 있습니다. 수치별 모델과 종료 조건을 분리하면 난이도 조절과 자동 테스트가 쉬워집니다.",
+      features: [
+        {
+          title: "생존 수치와 승패 전환",
+          summary: "플레이 중에만 체력과 불을 감소시키고 로켓 수리 완료를 클리어 상태로 전환합니다.",
+          emphasis: ["Playing", "GameOver", "GameClear"],
+          details: [
+            ["실패 조건", "GameState가 Playing일 때 플레이어 체력과 불 수치를 감소시키고 어느 하나가 0이면 GameOver로 전환합니다."],
+            ["성공 조건", "Rocket.Repair가 재료별 수리량을 GameManager에 전달하고 최대 수치에 도달하면 GameClear로 전환합니다."],
+            ["시간", "Playing 상태에서만 gameTimer를 증가시켜 결과 화면의 클리어 시간으로 사용합니다."],
+          ],
+          diagram: {
+            title: "생존 수치와 게임 상태 전환",
+            groups: [
+              { title: "Runtime", nodes: ["GameManager", "GameState"] },
+              { title: "Interaction", nodes: ["Rocket", "Campfire"] },
+              { title: "Result", nodes: ["UIManager", "ResultUI"] },
+            ],
+            relations: [
+              ["GameManager", "aggregation", "GameState", "Playing·Clear·Over"],
+              ["Rocket", "dependency", "GameManager", "수리 수치"],
+              ["Campfire", "dependency", "GameManager", "불 수치 표현"],
+              ["GameManager", "dependency", "UIManager", "종료 결과"],
+              ["UIManager", "aggregation", "ResultUI"],
+            ],
+          },
+        },
+        {
+          title: "결과 요약과 재시작",
+          summary: "미션 완료 여부와 경과 시간을 결과 패널에서 함께 보여주고 현재 씬을 다시 시작합니다.",
+          details: [
+            ["결과 구성", "ResultUI가 MissionManager의 미션 목록을 순회해 완료 여부를 표시하고 분·초 형식의 클리어 시간을 추가합니다."],
+            ["재시작", "결과 화면의 버튼은 GameManager.Restart를 호출해 현재 씬을 다시 로드합니다."],
+          ],
+          diagram: {
+            title: "결과 데이터와 재시작 경로",
+            groups: [
+              { title: "Source", nodes: ["GameManager", "MissionManager"] },
+              { title: "UI", nodes: ["UIManager", "ResultUI"] },
+              { title: "Scene", nodes: ["SceneManager"] },
+            ],
+            relations: [
+              ["GameManager", "dependency", "UIManager", "결과·시간"],
+              ["ResultUI", "dependency", "MissionManager", "미션 완료 목록"],
+              ["UIManager", "aggregation", "ResultUI"],
+              ["ResultUI", "dependency", "GameManager", "재시작 요청"],
+              ["GameManager", "dependency", "SceneManager", "현재 씬 로드"],
+            ],
+          },
+        },
+      ],
+      diagram: {
+        title: "생존 게임 루프 책임 지도",
+        zoomable: true,
+        groups: [
+          { title: "Game State", nodes: ["GameManager", "GameState"] },
+          { title: "World", nodes: ["Campfire", "Rocket", "Player"] },
+          { title: "Progress", nodes: ["MissionManager"] },
+          { title: "Result", nodes: ["UIManager", "ResultUI"] },
+        ],
+        relations: [
+          ["GameManager", "aggregation", "GameState"],
+          ...["Campfire", "Rocket", "Player"].map((node) => [node, "dependency", "GameManager", "생존 수치"]),
+          ["GameManager", "aggregation", "MissionManager"],
+          ["GameManager", "dependency", "UIManager", "클리어·실패"],
+          ["UIManager", "aggregation", "ResultUI"],
+        ],
+      },
+    },
+    {
+      id: "feedback",
+      label: "FEEDBACK",
+      title: "수치·아이콘·사운드 피드백",
+      summary: "같은 게임 상태를 HUD·인벤토리 아이콘·미션 연출과 행동별 오디오 채널로 전달합니다.",
+      keywords: ["FigureUI", "InventoryUI", "MissionSlot", "SoundManager"],
+      architectureTitle: "게임 상태의 시각·청각 피드백",
+      notes: [
+        ["표현 분리", "게임 규칙은 수치와 이벤트를 제공하고 각 UI·오디오 컴포넌트가 자신의 표현만 갱신합니다."],
+      ],
+      tradeoff: "FigureUI는 매 프레임 전체 수치바를 갱신합니다. 값 변경 이벤트를 사용하면 불필요한 UI 갱신을 줄일 수 있습니다.",
+      features: [
+        {
+          title: "HUD 수치와 미션 완료 연출",
+          summary: "생존 수치를 fillAmount로 표시하고 미션 완료 이벤트를 슬롯별 연출로 변환합니다.",
+          details: [
+            ["수치 HUD", "FigureUI가 플레이어·불·로켓의 현재/최대 비율을 Image.fillAmount에 반영합니다."],
+            ["미션 슬롯", "MissionSlot은 자신의 Mission과 일치하는 완료 이벤트만 받아 2초 동안 완료 이미지를 채웁니다."],
+          ],
+          diagram: {
+            title: "게임 수치와 미션 UI 반영",
+            groups: [
+              { title: "State", nodes: ["GameManager", "MissionManager"] },
+              { title: "UI", nodes: ["UIManager", "FigureUI", "MissionSlot"] },
+            ],
+            relations: [
+              ["UIManager", "aggregation", "FigureUI"],
+              ["FigureUI", "dependency", "GameManager", "생존 수치"],
+              ["MissionManager", "event", "MissionSlot", "완료 연출"],
+            ],
+          },
+        },
+        {
+          title: "행동별 사운드 채널과 종료 정리",
+          summary: "BGM·단발 효과·발소리·행동 반복음을 분리해 동시 재생과 정지를 제어합니다.",
+          details: [
+            ["채널", "SoundManager는 BGM, 단발 SFX, 발소리와 행동 반복음에 각각 AudioSource를 사용합니다."],
+            ["수명", "MoveState는 발소리를 시작·종료하고 LoggingState와 RepairState는 행동 반복음을 상태 종료에서 정리합니다."],
+            ["제작", "CraftManager는 제작 성공 시 단발 제작 효과음을 재생합니다."],
+          ],
+          diagram: {
+            title: "행동 상태와 오디오 채널",
+            groups: [
+              { title: "Actions", nodes: ["MoveState", "LoggingState", "RepairState", "CraftManager"] },
+              { title: "Audio", nodes: ["SoundManager", "BgmSource", "SfxSource", "FootstepSource", "ActionLoopSource"] },
+            ],
+            relations: [
+              ...["MoveState", "LoggingState", "RepairState", "CraftManager"].map((node) => [node, "dependency", "SoundManager"]),
+              ["SoundManager", "aggregation", "BgmSource"],
+              ["SoundManager", "aggregation", "SfxSource"],
+              ["SoundManager", "aggregation", "FootstepSource"],
+              ["SoundManager", "aggregation", "ActionLoopSource"],
+            ],
+          },
+        },
+      ],
+      diagram: {
+        title: "시각·청각 피드백 책임 지도",
+        zoomable: true,
+        groups: [
+          { title: "Game State", nodes: ["GameManager", "PlayerInventory", "MissionManager"] },
+          { title: "Visual", nodes: ["FigureUI", "InventoryUI", "MissionSlot", "SystemMessageUI"] },
+          { title: "Audio", nodes: ["SoundManager"] },
+        ],
+        relations: [
+          ["FigureUI", "dependency", "GameManager", "수치 비율"],
+          ["PlayerInventory", "event", "InventoryUI", "아이템 아이콘"],
+          ["MissionManager", "event", "MissionSlot", "완료 상태"],
+          ["SystemMessageUI", "dependency", "PlayerInventory", "행동 안내 기준"],
+          ["GameManager", "aggregation", "SoundManager", "공통 오디오"],
+        ],
+      },
+    },
+  ],
+  troubleshooting: [
+    {
+      keywords: ["상태 잠금", "입력 차단", "완료 보상", "종료 정리"],
+      decisions: [
+        ["전환 차단", "PlayerStateMachine.ChangeState는 isStateLocked가 켜진 동안 현재 상태가 아닌 다른 상태로의 전환을 거부합니다."],
+        ["입력 차단", "Player는 잠금 중 줍기·버리기를 처리하지 않고, 시간 행동 중에는 이동 입력 갱신도 건너뜁니다."],
+        ["완료 순서", "각 상태는 보상 지급·대상 제거·아이템 소비를 끝낸 뒤 잠금을 해제하고 Idle 상태로 전환합니다."],
+        ["반복음 정리", "LoggingState와 RepairState는 Exit에서 행동 반복음을 중지해 다음 상태까지 소리가 남지 않게 합니다."],
+      ],
+      tradeoff: "낚시 상태는 다른 시간 행동과 달리 잠금 플래그를 직접 설정하지 않고 입력 차단에 의존합니다. 모든 시간 행동에 공통 잠금·완료·취소 계약을 적용하면 규칙 차이로 생기는 누락을 줄일 수 있습니다.",
+      diagram: {
+        title: "시간 행동의 입력 잠금과 완료 순서",
+        groups: [
+          { title: "Control", nodes: ["Player", "PlayerStateMachine"] },
+          { title: "Timed State", nodes: ["LoggingState", "EatingState", "CookingState", "RepairState"] },
+          { title: "Completion", nodes: ["PlayerInventory", "MissionManager", "SoundManager"] },
+        ],
+        relations: [
+          ["Player", "dependency", "PlayerStateMachine", "입력 전 잠금 확인"],
+          ["PlayerStateMachine", "aggregation", "LoggingState", "잠금 상태"],
+          ["PlayerStateMachine", "aggregation", "EatingState", "잠금 상태"],
+          ["PlayerStateMachine", "aggregation", "CookingState", "잠금 상태"],
+          ["PlayerStateMachine", "aggregation", "RepairState", "잠금 상태"],
+          ["LoggingState", "dependency", "MissionManager", "완료 보상"],
+          ["EatingState", "dependency", "PlayerInventory", "아이템 소비"],
+          ["RepairState", "dependency", "SoundManager", "반복음 정리"],
+        ],
+      },
+    },
+    {
+      keywords: ["부채꼴 탐색", "LayerMask", "거리 우선", "이중 제외"],
+      decisions: [
+        ["후보 범위", "Player.CheckForward는 ItemLayer에 포함되고 전방 45도 안에 있는 Transform만 후보로 남깁니다."],
+        ["대상 선택", "수평 거리 제곱이 가장 작은 후보를 현재 상호작용 대상으로 선택합니다."],
+        ["감지 단계 방어", "현재 들고 있는 아이템과 Player 자식 Transform은 후보에서 제외합니다."],
+        ["판정 단계 방어", "Comparer.checkCraft도 대상이 현재 아이템인지 다시 확인해 다른 진입 경로에서 자기 조합이 발생하지 않게 합니다."],
+      ],
+      tradeoff: "FindObjectsOfType로 씬 전체 Transform을 순회하므로 오브젝트 수가 늘면 탐색 비용이 커집니다. OverlapSphereNonAlloc 같은 범위 질의와 거리·각도 필터로 후보 수를 먼저 줄이는 것이 개선 방향입니다.",
+      diagram: {
+        title: "전방 후보 선택과 자기 아이템 제외",
+        groups: [
+          { title: "Detector", nodes: ["Player", "ItemLayer"] },
+          { title: "Inventory", nodes: ["PlayerInventory", "HeldItem"] },
+          { title: "Rule", nodes: ["Comparer", "CraftManager"] },
+          { title: "Result", nodes: ["TargetObject", "SystemMessageUI"] },
+        ],
+        relations: [
+          ["Player", "dependency", "ItemLayer", "후보 필터"],
+          ["Player", "dependency", "PlayerInventory", "현재 아이템 제외"],
+          ["Player", "dependency", "TargetObject", "각도·거리 선택"],
+          ["Player", "dependency", "Comparer", "행동 판정"],
+          ["Comparer", "dependency", "CraftManager", "자기 조합 재검사"],
+          ["Player", "event", "SystemMessageUI", "선택 결과"],
+        ],
+      },
+    },
+    {
+      keywords: ["튜플 키", "IEqualityComparer", "대칭 비교", "XOR 해시"],
+      decisions: [
+        ["대칭 동등성", "RecipeItemTypeComparer.Equals는 (A, B)와 (B, A)를 같은 조합으로 판단합니다."],
+        ["대칭 해시", "두 ItemType 해시를 XOR해 순서가 바뀌어도 동일한 Dictionary 버킷을 사용하게 합니다."],
+        ["단일 등록", "CraftManager는 레시피를 한 번만 등록하고 보유 아이템과 대상 아이템의 순서와 무관하게 제작 함수를 조회합니다."],
+      ],
+      tradeoff: "현재 레시피 키는 재료 두 개로 고정되어 있고 제작 결과가 Func<Player, bool> 코드에 연결됩니다. 재료 수가 늘면 정렬된 재료 집합과 데이터 정의로 확장할 필요가 있습니다.",
+      diagram: {
+        title: "순서 독립 레시피 조회",
+        groups: [
+          { title: "Input", nodes: ["HoldItem", "TargetItem"] },
+          { title: "Recipe", nodes: ["CraftManager", "RecipeItemTypeComparer", "RecipeTable"] },
+          { title: "Result", nodes: ["UnlockFishing", "UnlockAxe", "CraftBucket"] },
+        ],
+        relations: [
+          ["HoldItem", "data", "CraftManager", "ItemType A"],
+          ["TargetItem", "data", "CraftManager", "ItemType B"],
+          ["CraftManager", "aggregation", "RecipeTable", "튜플 Dictionary"],
+          ["RecipeTable", "dependency", "RecipeItemTypeComparer", "대칭 비교·해시"],
+          ...["UnlockFishing", "UnlockAxe", "CraftBucket"].map((node) => ["CraftManager", "dependency", node, "제작 결과"]),
+        ],
+      },
+    },
+    {
+      keywords: ["지면 검증", "겹침 검사", "거리 가중치", "공급 속도"],
+      decisions: [
+        ["지면 한정", "생성 범위 위에서 Raycast하고 충돌 대상이 지정한 groundCollider인 후보만 사용합니다."],
+        ["겹침 제거", "Physics.CheckSphere로 기존 아이템 주변 후보를 제외합니다."],
+        ["난이도 가중치", "Iron과 Plant가 로켓과의 거리에 따라 낮은 값에서 높은 값으로 스폰 가중치를 반환합니다."],
+        ["시간 밸런스", "철과 식물의 생성 루틴을 분리하고 누적 생성 횟수에 따라 대기 시간을 늘립니다."],
+      ],
+      tradeoff: "유효 후보를 찾지 못하면 해당 주기의 생성이 취소되고 별도 재시도 이유가 기록되지 않습니다. 실패 원인 로깅과 단계별 재시도, 최소 공급량 보장을 추가하면 진행 중 자원 고갈을 더 안정적으로 막을 수 있습니다.",
+      diagram: {
+        title: "랜덤 좌표에서 유효 스폰까지",
+        groups: [
+          { title: "Sampling", nodes: ["SpawnManager", "BoxCollider"] },
+          { title: "Validation", nodes: ["Raycast", "GroundCollider", "CheckSphere"] },
+          { title: "Weight", nodes: ["Iron", "Plant", "Rocket"] },
+          { title: "Spawn", nodes: ["ValidCandidate", "ItemInstance"] },
+        ],
+        relations: [
+          ["SpawnManager", "dependency", "BoxCollider", "무작위 후보"],
+          ["SpawnManager", "dependency", "Raycast", "지면 탐색"],
+          ["Raycast", "dependency", "GroundCollider", "지정 지형 확인"],
+          ["SpawnManager", "dependency", "CheckSphere", "간격 검사"],
+          ["Iron", "dependency", "Rocket", "거리 가중치"],
+          ["Plant", "dependency", "Rocket", "거리 가중치"],
+          ["SpawnManager", "aggregation", "ValidCandidate", "가중 선택"],
+          ["ValidCandidate", "dependency", "ItemInstance", "생성"],
+        ],
+      },
+    },
+    {
+      keywords: ["단일 상태", "머티리얼", "아이콘", "변경 이벤트"],
+      decisions: [
+        ["상태 변경", "Bucket.Fill과 Empty가 isFilled, ItemSprite와 MeshRenderer 머티리얼을 한 흐름에서 바꿉니다."],
+        ["월드 표현", "빈 상태와 찬 상태에 맞는 머티리얼을 MeshRenderer 첫 슬롯에 적용합니다."],
+        ["인벤토리 표현", "Pond와 Tree의 상호작용이 상태 변경 후 PlayerInventory.OnInventoryChanged를 발행해 InventoryUI가 현재 ItemSprite를 다시 읽습니다."],
+      ],
+      tradeoff: "UI 변경 이벤트 발행을 Bucket 내부가 아니라 Pond와 Tree 호출자가 담당해 새 사용처에서 알림이 누락될 수 있습니다. Bucket이 상태 변경 이벤트를 직접 발행하도록 만들면 데이터와 표현 동기화 책임을 한곳에 둘 수 있습니다.",
+      diagram: {
+        title: "양동이 상태와 두 표현 계층 동기화",
+        groups: [
+          { title: "Interaction", nodes: ["Pond", "Tree"] },
+          { title: "State", nodes: ["Bucket", "PlayerInventory"] },
+          { title: "Presentation", nodes: ["MeshRenderer", "InventoryUI"] },
+        ],
+        relations: [
+          ["Pond", "dependency", "Bucket", "Fill"],
+          ["Tree", "dependency", "Bucket", "Empty"],
+          ["Bucket", "dependency", "MeshRenderer", "머티리얼"],
+          ["Bucket", "data", "PlayerInventory", "ItemSprite"],
+          ["PlayerInventory", "event", "InventoryUI", "아이콘 다시 읽기"],
+        ],
+      },
+    },
+  ],
+};
+
+littleSurvivalProject.principles = [];
+littleSurvivalProject.coreFeatures.forEach((feature) => {
+  feature.keywords = littleSurvivalDesignDocument.coreFeatures.find((item) => item.title === feature.title)?.keywords || [];
+});
+littleSurvivalDesignDocument.troubleshooting = littleSurvivalDesignDocument.troubleshooting.map((implementation, index) => {
+  const item = littleSurvivalProject.troubleshooting[index];
+  return {
+    ...implementation,
+    title: item.title,
+    intent: item.summary,
+    problem: item.problem,
+    result: item.solution,
+    problemLabel: "문제 상황",
+    resultLabel: "해결 방안",
+  };
+});
+littleSurvivalProject.designDocument = littleSurvivalDesignDocument;
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
 const designOpenButton = modal.querySelector("#modal-open-design");
 const designModal = document.querySelector("#design-modal");
 const designModalClose = designModal.querySelector(".design-modal-close");
+const designModalProjectType = designModal.querySelector("#design-modal-project-type");
 const designToc = designModal.querySelector("#design-toc-list");
 const featureDesignModal = document.querySelector("#feature-design-modal");
 const featureDesignClose = featureDesignModal.querySelector(".design-modal-close");
@@ -2834,7 +3368,8 @@ const buildDesignDocument = (documentData) => {
     summary.textContent = documentItem.summary;
     headingGroup.append(label, title, summary);
     header.append(number, headingGroup);
-    architectureTitle.textContent = documentItem.id === "database" ? "월드 스폰 데이터 경계" : "분야 전체 구조";
+    architectureTitle.textContent = documentItem.architectureTitle
+      || (documentItem.id === "database" ? "월드 스폰 데이터 경계" : "분야 전체 구조");
     featureTitle.textContent = "기능별 구현";
     noteTitle.textContent = "공통 설계 판단";
     featureList.className = "technical-feature-list";
@@ -3117,7 +3652,7 @@ const setDesignTocActive = (targetId) => {
   activeButton.setAttribute("aria-current", "location");
 
   const parentTargets = [];
-  const deepDomainMatch = targetId.match(/^design-doc-(client|server|database)-\d+$/);
+  const deepDomainMatch = targetId.match(/^design-doc-([a-z0-9-]+)-\d+$/);
   if (deepDomainMatch) parentTargets.push(`design-doc-${deepDomainMatch[1]}`);
   if (targetId.startsWith("design-doc-")) parentTargets.push("design-technical-docs");
   parentTargets.forEach((parentTarget) => {
@@ -3154,6 +3689,8 @@ const scheduleDesignTocUpdate = () => {
 
 designOpenButton.addEventListener("click", () => {
   if (!activeProject?.designDocument) return;
+  designModalProjectType.textContent = activeProject.designDocument.kicker
+    || `${activeProject.title.toUpperCase()} 상세 기술 설계`;
   buildDesignDocument(activeProject.designDocument);
   designModal.showModal();
   designModal.scrollTop = 0;
@@ -3207,9 +3744,10 @@ const handleImplementationClick = (event) => {
   const explanationTitle = type === "troubleshooting" ? "상세 해결 설명" : "상세 구현 설명";
   featureDesignTitle.textContent = explanationTitle;
   featureDesignClose.setAttribute("aria-label", `${explanationTitle} 닫기`);
+  const projectLabel = activeProject.title.toUpperCase();
   featureDesignModal.querySelector(".project-type").textContent = type === "troubleshooting"
-    ? "EVERWIND / TROUBLESHOOTING"
-    : "EVERWIND / CORE FEATURE";
+    ? `${projectLabel} / TROUBLESHOOTING`
+    : `${projectLabel} / CORE FEATURE`;
   featureDesignContent.replaceChildren(makeFeatureImplementation(feature, index));
   featureDesignModal.showModal();
   featureDesignModal.scrollTop = 0;
