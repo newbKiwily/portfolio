@@ -1566,6 +1566,7 @@ const everwindDesignDocument = {
 const everwindProject = projects["project-1"];
 const clientDocument = everwindDesignDocument.technicalDocs.find((item) => item.id === "client");
 const serverDocument = everwindDesignDocument.technicalDocs.find((item) => item.id === "server");
+const databaseDocument = everwindDesignDocument.technicalDocs.find((item) => item.id === "database");
 
 // Move only the requested topics; keep their verified descriptions and diagrams.
 const assemblyTitle = "Unity 메인 스레드와 지연 데이터 조립";
@@ -1703,6 +1704,93 @@ const combatImplementation = clientDocument.features.find((item) => item.title =
 combatImplementation.details = combatImplementation.details.filter(([label]) => label !== "변경 지점");
 const questImplementation = clientDocument.features.find((item) => item.title === "퀘스트·튜토리얼 이벤트");
 questImplementation.details = questImplementation.details.filter(([label]) => label !== "변경 지점");
+
+const coreFeatureImplementationTitles = {
+  client: new Set(["플레이어 상태와 전투", "퀘스트·튜토리얼 이벤트"]),
+  server: new Set(["IOCP 완료 통지와 세션 수명", "TCP 패킷 프레이밍과 송신 큐"]),
+  database: new Set([
+    "계정·캐릭터 식별과 로그인 복원",
+    "인벤토리·장비 상태",
+    "퀘스트·조건별 진행 상태",
+    "저장 시점과 일관성",
+  ]),
+};
+clientDocument.features = clientDocument.features.filter((item) => !coreFeatureImplementationTitles.client.has(item.title));
+serverDocument.features = serverDocument.features.filter((item) => !coreFeatureImplementationTitles.server.has(item.title));
+databaseDocument.features = databaseDocument.features.filter((item) => !coreFeatureImplementationTitles.database.has(item.title));
+
+clientDocument.summary = "네트워크 수신을 Unity 메인 스레드에 반영하고, 월드 조립과 HUD·팝업 입력의 표현 경계를 구성했습니다.";
+clientDocument.keywords = ["메인 스레드 큐", "씬 수명주기", "UI 이벤트", "팝업 입력", "오브젝트 풀"];
+clientDocument.notes = [
+  ["반영 경계", "네트워크 데이터는 DataCenter에 보관하고 Unity 객체와 UI 변경은 메인 스레드 작업으로 전달합니다."],
+];
+clientDocument.tradeoff = "네트워크 데이터의 도착 완료와 씬 준비를 구분하는 명시적 배리어가 필요합니다. UI 구독 해제와 월드 재조립 실패 경로도 자동 검증할 수 있도록 초기화 상태와 테스트를 보강하는 것이 개선 방향입니다.";
+clientDocument.diagram = {
+  title: "클라이언트 수신·월드 조립·UI 책임 지도",
+  zoomable: true,
+  groups: [
+    { title: "Network Boundary", nodes: ["NetworkClient", "PacketMethod", "DataCenter", "UnityMainThreadDispatcher"] },
+    { title: "World Assembly", nodes: ["SceneLoader", "WorldLoader"] },
+    { title: "Presentation", nodes: ["UIEvents", "DisplayUIManager", "PopUpUIManager", "QuestUI", "DeadUI"] },
+  ],
+  relations: [
+    ["NetworkClient", "dependency", "PacketMethod", "수신 패킷 처리"],
+    ["PacketMethod", "data", "DataCenter", "도착 상태 보관"],
+    ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Unity 반영 작업 등록"],
+    ["SceneLoader", "dependency", "WorldLoader", "씬 로드 후 월드 조립"],
+    ["WorldLoader", "dependency", "DataCenter", "맵·대기 데이터 조회"],
+    ["UIEvents", "event", "DisplayUIManager", "HUD 갱신"],
+    ["PopUpUIManager", "aggregation", "QuestUI", "팝업 수명"],
+    ["PopUpUIManager", "aggregation", "DeadUI", "팝업 수명"],
+  ],
+};
+
+serverDocument.summary = "수신된 게임 요청을 패킷 처리 계층에서 월드와 데이터베이스 책임으로 나누는 서버 경계를 정리했습니다.";
+serverDocument.keywords = ["Packet Routing", "Application Boundary", "MapData", "Queries", "DBManager"];
+serverDocument.notes = [
+  ["레이어 경계", "IOCP 완료 처리는 PacketMethod에 요청을 넘기고, 게임 규칙과 SQL 실행은 각각 월드 객체와 Queries 경계에서 처리합니다."],
+];
+serverDocument.tradeoff = "현재 DB 쿼리는 네트워크 워커에서 동기 실행됩니다. DB 작업 큐와 커넥션 풀, 실패·타임아웃·재시도 정책을 추가해 패킷 처리와 저장 대기를 분리하는 것이 개선 방향입니다.";
+serverDocument.diagram = {
+  title: "서버 요청 라우팅과 데이터 접근 경계",
+  zoomable: true,
+  groups: [
+    { title: "Transport Entry", nodes: ["IOCPServer", "Session"] },
+    { title: "Application", nodes: ["PacketMethod", "MapDataManager"] },
+    { title: "Persistence", nodes: ["Queries", "DBManager"] },
+  ],
+  relations: [
+    ["IOCPServer", "dependency", "Session", "요청 세션 확인"],
+    ["IOCPServer", "dependency", "PacketMethod", "Packet ID별 전달"],
+    ["PacketMethod", "dependency", "MapDataManager", "월드 상태 요청"],
+    ["PacketMethod", "aggregation", "Queries", "조회·저장 호출"],
+    ["Queries", "dependency", "DBManager", "연결·쿼리 잠금"],
+  ],
+};
+
+databaseDocument.title = "MariaDB 월드 스폰 데이터";
+databaseDocument.summary = "플레이어와 몬스터의 스폰 기준을 MapInfo 중심으로 정의하고 서버 런타임 월드에 전달하는 경계를 정리했습니다.";
+databaseDocument.keywords = ["MapInfo", "Monster", "스폰 좌표", "최대 개체 수", "MapId"];
+databaseDocument.notes = [
+  ["모델 근거", "다이어그램은 Queries.cpp에서 확인한 MapInfo·Monster 조회 연결을 기준으로 정리한 논리 모델입니다."],
+];
+databaseDocument.tradeoff = "정적 월드 정의가 커지면 DB 조회와 런타임 상태의 변경 범위가 넓어집니다. 전용 콘텐츠 정의와 현재 개체 상태를 분리하고 맵 ID·몬스터 ID의 호환성을 검증하는 것이 개선 방향입니다.";
+databaseDocument.diagram = {
+  title: "맵 스폰 정의와 서버 월드 등록",
+  zoomable: true,
+  groups: [
+    { title: "DB Tables", nodes: ["MapInfo", "Monster"] },
+    { title: "Query Result", nodes: ["Queries", "MapInitialInfo"] },
+    { title: "Runtime World", nodes: ["MapData", "MapDataManager"] },
+  ],
+  relations: [
+    ["Queries", "data", "MapInfo", "스폰 좌표·최대 수"],
+    ["Queries", "data", "Monster", "MapId별 종류"],
+    ["Queries", "dependency", "MapInitialInfo", "맵별 조회 결과"],
+    ["MapInitialInfo", "data", "MapData", "초기 월드 정의"],
+    ["MapDataManager", "aggregation", "MapData", "MapId별 등록"],
+  ],
+};
 
 everwindDesignDocument.troubleshooting = [
   {
@@ -1885,7 +1973,7 @@ everwindDesignDocument.troubleshooting = [
     resultLabel: "해결 방안",
   };
 });
-everwindDesignDocument.summary += " 콘텐츠 확장·서버 타이머의 구현은 ‘상세 구현 설명’, 트러블슈팅의 해결 과정은 ‘상세 해결 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
+everwindDesignDocument.summary += " 콘텐츠 확장·IOCP 세션과 패킷·상태 영속화·전투 상태 머신·퀘스트 이벤트·서버 타이머의 구현은 Core Feature의 ‘상세 구현 설명’, 트러블슈팅의 해결 과정은 ‘상세 해결 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
 everwindProject.designDocument = everwindDesignDocument;
 
 const modal = document.querySelector("#project-modal");
@@ -2746,7 +2834,7 @@ const buildDesignDocument = (documentData) => {
     summary.textContent = documentItem.summary;
     headingGroup.append(label, title, summary);
     header.append(number, headingGroup);
-    architectureTitle.textContent = documentItem.id === "database" ? "테이블 관계와 영속화 경계" : "분야 전체 구조";
+    architectureTitle.textContent = documentItem.id === "database" ? "월드 스폰 데이터 경계" : "분야 전체 구조";
     featureTitle.textContent = "기능별 구현";
     noteTitle.textContent = "공통 설계 판단";
     featureList.className = "technical-feature-list";
