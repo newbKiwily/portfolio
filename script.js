@@ -3559,7 +3559,7 @@ const buildProjectDetail = (project) => {
     othersToggle.setAttribute("aria-expanded", "false");
     othersToggle.setAttribute("aria-controls", nestedId);
     othersTitle.className = "outline-title";
-    othersTitle.textContent = "OTHER FUNCTIONS";
+    othersTitle.textContent = "Other Functions";
     othersIcon.className = "outline-toggle-icon";
     othersIcon.setAttribute("aria-hidden", "true");
     othersToggle.append(othersTitle, othersIcon);
