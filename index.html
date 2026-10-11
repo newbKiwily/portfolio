@@ -349,6 +349,18 @@
             <div class="modal-section-title"><span id="modal-features-index">04</span><h3 id="modal-features-title">Core Features</h3></div>
             <div class="feature-detail-list" id="modal-feature-list"></div>
           </section>
+          <section class="modal-others" id="modal-others" aria-labelledby="modal-others-title" hidden>
+            <div class="modal-section-title is-collapsible">
+              <span id="modal-others-index">05</span>
+              <h3 id="modal-others-title">
+                <button class="section-collapse-toggle" id="modal-others-toggle" type="button" aria-expanded="false" aria-controls="modal-other-feature-list">
+                  <span>Other Functions</span>
+                  <span class="collapse-chevron" aria-hidden="true"></span>
+                </button>
+              </h3>
+            </div>
+            <div class="other-feature-list" id="modal-other-feature-list" hidden></div>
+          </section>
           <section class="modal-troubleshooting" id="modal-troubleshooting" aria-labelledby="modal-troubleshooting-title">
             <div class="modal-section-title"><span id="modal-troubleshooting-index">05</span><h3 id="modal-troubleshooting-title">Troubleshooting</h3></div>
             <div class="troubleshooting-list" id="modal-troubleshooting-list"></div>
@@ -363,19 +375,19 @@
           <ul class="tag-list" id="modal-tags" aria-label="프로젝트 사용 기술"></ul>
         </footer>
       </div>
-      <button class="modal-open-design" id="modal-open-design" type="button" hidden>상세 설계 페이지</button>
+      <button class="modal-open-design" id="modal-open-design" type="button" hidden>시스템 아키텍처</button>
     </dialog>
     <dialog class="design-modal" id="design-modal" aria-labelledby="design-modal-title">
       <div class="design-modal-shell">
         <header class="design-modal-header">
           <div>
-            <p class="project-type" id="design-modal-project-type">PROJECT 상세 기술 설계</p>
-            <h2 id="design-modal-title">상세 설계 페이지</h2>
+            <p class="project-type" id="design-modal-project-type">PROJECT SYSTEM ARCHITECTURE</p>
+            <h2 id="design-modal-title">시스템 아키텍처</h2>
           </div>
-          <button class="design-modal-close" type="button" aria-label="상세 설계 페이지 닫기">×</button>
+          <button class="design-modal-close" type="button" aria-label="시스템 아키텍처 닫기">×</button>
         </header>
         <div class="design-modal-layout">
-          <nav class="design-toc" aria-label="상세 설계 페이지 목차">
+          <nav class="design-toc" aria-label="시스템 아키텍처 목차">
             <p class="eyebrow">문서 목차</p>
             <ol id="design-toc-list"></ol>
           </nav>
@@ -385,12 +397,13 @@
               <h3 id="design-document-title"></h3>
               <p id="design-document-summary"></p>
               <div class="system-flow" id="design-system-flow" aria-label="전체 시스템 데이터 흐름"></div>
+              <div class="design-overall-diagram" id="design-overall-diagram"></div>
               <ul class="design-keywords" id="design-document-keywords" aria-label="핵심 설계 키워드"></ul>
             </section>
             <section class="design-section" id="design-technical-docs" aria-labelledby="design-technical-title">
               <div class="design-section-heading">
                 <span>01</span>
-                <div><p class="eyebrow">분야별 구현 구조</p><h3 id="design-technical-title">분야 &amp; 기능별 상세 기술 문서</h3></div>
+                <div><p class="eyebrow">분야별 시스템 구조</p><h3 id="design-technical-title">Client · Server · Database 아키텍처</h3></div>
               </div>
               <div class="technical-document-list" id="technical-document-list"></div>
             </section>

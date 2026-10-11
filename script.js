@@ -1066,7 +1066,7 @@ const everwindDesignDocument = {
         },
       ],
       diagram: {
-        title: "클라이언트 책임 지도",
+        title: "클라이언트 전체 구조 UML",
         direction: "LR",
         zoomable: true,
         routing: "elk",
@@ -1728,51 +1728,48 @@ clientDocument.features = clientDocument.features.filter((item) => !coreFeatureI
 serverDocument.features = serverDocument.features.filter((item) => !coreFeatureImplementationTitles.server.has(item.title));
 databaseDocument.features = databaseDocument.features.filter((item) => !coreFeatureImplementationTitles.database.has(item.title));
 
-clientDocument.summary = "네트워크 수신을 Unity 메인 스레드에 반영하고, 월드 조립과 HUD·팝업 입력의 표현 경계를 구성했습니다.";
-clientDocument.keywords = ["메인 스레드 큐", "씬 수명주기", "UI 이벤트", "팝업 입력", "오브젝트 풀"];
+clientDocument.summary = "초기화·네트워크·플레이어 상태·전투·아이템·퀘스트·튜토리얼·UI를 함께 배치한 전체 구조입니다. 각 영역의 상속·구현 관계와 영역 사이의 참조·이벤트 흐름을 보여줍니다.";
+clientDocument.keywords = ["초기화", "네트워크", "상태 머신", "전투·스킬", "아이템", "퀘스트·튜토리얼", "UI"];
 clientDocument.notes = [
   ["반영 경계", "네트워크 데이터는 DataCenter에 보관하고 Unity 객체와 UI 변경은 메인 스레드 작업으로 전달합니다."],
 ];
 clientDocument.tradeoff = "네트워크 데이터의 도착 완료와 씬 준비를 구분하는 명시적 배리어가 필요합니다. UI 구독 해제와 월드 재조립 실패 경로도 자동 검증할 수 있도록 초기화 상태와 테스트를 보강하는 것이 개선 방향입니다.";
-clientDocument.diagram = {
-  title: "클라이언트 수신·월드 조립·UI 책임 지도",
-  zoomable: true,
-  groups: [
-    { title: "Network Boundary", nodes: ["NetworkClient", "PacketMethod", "DataCenter", "UnityMainThreadDispatcher"] },
-    { title: "World Assembly", nodes: ["SceneLoader", "WorldLoader"] },
-    { title: "Presentation", nodes: ["UIEvents", "DisplayUIManager", "PopUpUIManager", "QuestUI", "DeadUI"] },
-  ],
-  relations: [
-    ["NetworkClient", "dependency", "PacketMethod", "수신 패킷 처리"],
-    ["PacketMethod", "data", "DataCenter", "도착 상태 보관"],
-    ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Unity 반영 작업 등록"],
-    ["SceneLoader", "dependency", "WorldLoader", "씬 로드 후 월드 조립"],
-    ["WorldLoader", "dependency", "DataCenter", "맵·대기 데이터 조회"],
-    ["UIEvents", "event", "DisplayUIManager", "HUD 갱신"],
-    ["PopUpUIManager", "aggregation", "QuestUI", "팝업 수명"],
-    ["PopUpUIManager", "aggregation", "DeadUI", "팝업 수명"],
-  ],
-};
-
-serverDocument.summary = "수신된 게임 요청을 패킷 처리 계층에서 월드와 데이터베이스 책임으로 나누는 서버 경계를 정리했습니다.";
-serverDocument.keywords = ["Packet Routing", "Application Boundary", "MapData", "Queries", "DBManager"];
+serverDocument.summary = "IOCP 입출력과 세션 수명, 맵별 플레이어·몬스터 상태, 반복 타이머와 동기 DB 접근을 연결한 전체 구조입니다. 타이머의 맵 보충 콜백은 서버 시작 시 등록합니다.";
+serverDocument.keywords = ["IOCP", "Session", "IOContext", "MapData", "Timer", "Queries", "DBManager"];
 serverDocument.notes = [
   ["레이어 경계", "IOCP 완료 처리는 PacketMethod에 요청을 넘기고, 게임 규칙과 SQL 실행은 각각 월드 객체와 Queries 경계에서 처리합니다."],
 ];
 serverDocument.tradeoff = "현재 DB 쿼리는 네트워크 워커에서 동기 실행됩니다. DB 작업 큐와 커넥션 풀, 실패·타임아웃·재시도 정책을 추가해 패킷 처리와 저장 대기를 분리하는 것이 개선 방향입니다.";
 serverDocument.diagram = {
-  title: "서버 요청 라우팅과 데이터 접근 경계",
+  title: "서버 전체 구조 UML",
   zoomable: true,
+  direction: "LR",
+  routing: "elk",
   groups: [
-    { title: "Transport Entry", nodes: ["IOCPServer", "Session"] },
-    { title: "Application", nodes: ["PacketMethod", "MapDataManager"] },
+    { title: "Transport", nodes: ["IOCPServer", "IOContext", "PacketHeader"] },
+    { title: "Sessions", nodes: ["SessionManager", "Session"] },
+    { title: "Application", nodes: ["PacketMethod"] },
+    { title: "World", nodes: ["MapDataManager", "MapData", "Enemy"] },
+    { title: "Schedule", nodes: ["TimerManager", "Timer"] },
     { title: "Persistence", nodes: ["Queries", "DBManager"] },
   ],
   relations: [
-    ["IOCPServer", "dependency", "Session", "요청 세션 확인"],
+    ["IOCPServer", "dependency", "SessionManager", "세션 등록·조회"],
+    ["IOCPServer", "dependency", "IOContext", "완료된 I/O 작업"],
+    ["SessionManager", "aggregation", "Session", "연결 관리"],
+    ["Session", "dependency", "IOContext", "비동기 작업 생성"],
+    ["IOContext", "aggregation", "Session", "완료 전 공유 수명"],
+    ["Session", "dependency", "PacketHeader", "수신 패킷 프레이밍"],
     ["IOCPServer", "dependency", "PacketMethod", "Packet ID별 전달"],
+    ["SessionManager", "composition", "MapDataManager", "월드 관리"],
+    ["MapDataManager", "aggregation", "MapData", "맵 ID별 등록"],
+    ["MapData", "aggregation", "Session", "같은 맵 전파 대상"],
+    ["MapData", "aggregation", "Enemy", "몬스터 상태"],
     ["PacketMethod", "dependency", "MapDataManager", "월드 상태 요청"],
+    ["TimerManager", "aggregation", "Timer", "실행 시각 순 작업 큐"],
+    ["Timer", "dependency", "MapDataManager", "등록된 반복 콜백"],
     ["PacketMethod", "aggregation", "Queries", "조회·저장 호출"],
+    ["Session", "dependency", "Queries", "연결 종료 시 위치·맵 저장"],
     ["Queries", "dependency", "DBManager", "연결·쿼리 잠금"],
   ],
 };
@@ -2031,7 +2028,48 @@ everwindDesignDocument.troubleshooting = [
     resultLabel: "해결 방안",
   };
 });
-everwindDesignDocument.summary += " 콘텐츠 확장·IOCP 세션과 패킷·상태 영속화·전투 상태 머신·퀘스트 이벤트·서버 타이머의 구현은 Core Feature의 ‘상세 구현 설명’, 트러블슈팅의 해결 과정은 ‘상세 해결 설명’에서 제공하며, 이 문서에는 중복하지 않았습니다.";
+const everwindOtherFeatureKeywords = {
+  "Unity 메인 스레드와 지연 데이터 조립": ["메인 스레드 큐", "DataCenter", "지연 조립", "씬 수명주기"],
+  "패킷 라우팅과 DB 접근 경계": ["Packet ID Routing", "PacketMethod", "Queries", "Prepared Statement"],
+  "맵·몬스터 스폰 기준": ["MapInfo", "Monster", "MapData", "스폰 기준"],
+};
+everwindProject.otherFeatures = everwindDesignDocument.technicalDocs.flatMap((documentItem) => (
+  documentItem.features.map((feature) => ({
+    ...feature,
+    domain: documentItem.label,
+    keywords: feature.emphasis || everwindOtherFeatureKeywords[feature.title] || [],
+  }))
+));
+everwindDesignDocument.architectureOnly = true;
+everwindDesignDocument.buttonLabel = "시스템 아키텍처";
+everwindDesignDocument.modalLabel = "EVERWIND / SYSTEM ARCHITECTURE";
+everwindDesignDocument.modalTitle = "시스템 아키텍처";
+everwindDesignDocument.kicker = "EVERWIND / SYSTEM ARCHITECTURE";
+everwindDesignDocument.title = "Client·Server·Database를 연결하는 전체 시스템 구조";
+everwindDesignDocument.summary = "Unity 클라이언트의 입력과 표현, TCP 패킷 경계, C++ IOCP 서버의 요청 처리, MariaDB 영속화가 연결되는 책임과 데이터 흐름을 정리했습니다. 개별 기능 구현은 프로젝트 상세보기의 Core Features와 Other Functions에서 확인할 수 있습니다.";
+everwindDesignDocument.keywords = ["Client", "TCP Protocol", "IOCP Server", "World State", "Queries", "MariaDB"];
+everwindDesignDocument.diagram = {
+  title: "EVERWIND 전체 시스템 아키텍처",
+  direction: "LR",
+  zoomable: true,
+  groups: [
+    { title: "Unity Client", nodes: ["InputAndUI", "GameplaySystems", "NetworkClient"] },
+    { title: "TCP Protocol", nodes: ["PacketHeader"] },
+    { title: "C++ IOCP Server", nodes: ["IOCPServer", "PacketMethod", "MapDataManager", "Queries"] },
+    { title: "Database", nodes: ["DBManager", "MariaDB"] },
+  ],
+  relations: [
+    ["InputAndUI", "dependency", "GameplaySystems", "입력·표현"],
+    ["GameplaySystems", "dependency", "NetworkClient", "게임 요청"],
+    ["NetworkClient", "data", "PacketHeader", "TCP binary packet"],
+    ["PacketHeader", "data", "IOCPServer", "완료 통지"],
+    ["IOCPServer", "dependency", "PacketMethod", "Packet ID 라우팅"],
+    ["PacketMethod", "dependency", "MapDataManager", "월드 상태"],
+    ["PacketMethod", "dependency", "Queries", "조회·저장"],
+    ["Queries", "dependency", "DBManager", "쿼리 실행"],
+    ["DBManager", "data", "MariaDB", "게임 상태 영속화"],
+  ],
+};
 everwindProject.designDocument = everwindDesignDocument;
 
 const littleSurvivalProject = projects["project-2"];
@@ -2585,6 +2623,7 @@ const designFields = {
   summary: designModal.querySelector("#design-document-summary"),
   keywords: designModal.querySelector("#design-document-keywords"),
   systemFlow: designModal.querySelector("#design-system-flow"),
+  overallDiagram: designModal.querySelector("#design-overall-diagram"),
 };
 const videoModal = document.querySelector("#video-modal");
 const videoModalTitle = videoModal.querySelector("#video-modal-title");
@@ -2623,6 +2662,10 @@ const modalFields = {
   features: modal.querySelector("#modal-feature-list"),
   featuresSection: modal.querySelector("#modal-features"),
   featuresIndex: modal.querySelector("#modal-features-index"),
+  others: modal.querySelector("#modal-other-feature-list"),
+  othersSection: modal.querySelector("#modal-others"),
+  othersIndex: modal.querySelector("#modal-others-index"),
+  othersToggle: modal.querySelector("#modal-others-toggle"),
   troubleshootingSection: modal.querySelector("#modal-troubleshooting"),
   troubleshootingIndex: modal.querySelector("#modal-troubleshooting-index"),
   troubleshooting: modal.querySelector("#modal-troubleshooting-list"),
@@ -3379,9 +3422,13 @@ const buildDesignDocument = (documentData) => {
   designFields.summary.textContent = documentData.summary;
   designFields.keywords.replaceChildren(...makeKeywordList(documentData.keywords).children);
   designFields.systemFlow.replaceChildren(...makeSystemFlow(documentData.systemFlow).children);
+  designFields.overallDiagram.replaceChildren();
+  if (documentData.diagram) designFields.overallDiagram.append(makeUmlDiagram(documentData.diagram));
+  designFields.overallDiagram.hidden = !documentData.diagram;
+  const architectureOnly = documentData.architectureOnly === true;
   designToc.replaceChildren(
-    makeDesignTocButton("00", "문서 개요", "design-intro"),
-    makeDesignTocButton("01", "분야 & 기능별 상세 기술 문서", "design-technical-docs"),
+    makeDesignTocButton("00", architectureOnly ? "시스템 개요" : "문서 개요", "design-intro"),
+    makeDesignTocButton("01", architectureOnly ? "Client · Server · DB 구조" : "분야 & 기능별 상세 기술 문서", "design-technical-docs"),
     ...documentData.technicalDocs.flatMap((documentItem, index) => [
       makeDesignTocButton(
         `01-${index + 1}`,
@@ -3389,12 +3436,12 @@ const buildDesignDocument = (documentData) => {
         `design-doc-${documentItem.id}`,
         "domain",
       ),
-      ...(documentItem.features || []).map((feature, featureIndex) => makeDesignTocButton(
+      ...(!architectureOnly ? (documentItem.features || []).map((feature, featureIndex) => makeDesignTocButton(
         `01-${index + 1}.${featureIndex + 1}`,
         feature.title,
         `design-doc-${documentItem.id}-${featureIndex + 1}`,
         "deep",
-      )),
+      )) : []),
     ]),
   );
 
@@ -3433,8 +3480,11 @@ const buildDesignDocument = (documentData) => {
     )));
     architectureSection.append(architectureTitle, makeUmlDiagram(documentItem.diagram));
     featureSection.append(featureTitle, featureList);
-    article.append(header, makeKeywordList(documentItem.keywords), architectureSection, featureSection);
-    if (documentItem.tradeoff) article.append(makeLimitations(documentItem.tradeoff));
+    article.append(header, makeKeywordList(documentItem.keywords), architectureSection);
+    if (!architectureOnly) {
+      article.append(featureSection);
+      if (documentItem.tradeoff) article.append(makeLimitations(documentItem.tradeoff));
+    }
     return article;
   }));
 };
@@ -3442,16 +3492,21 @@ const buildDesignDocument = (documentData) => {
 const buildProjectDetail = (project) => {
   const principles = project.principles || [];
   const coreFeatures = project.coreFeatures || [];
+  const otherFeatures = project.otherFeatures || [];
   const troubleshooting = project.troubleshooting || [];
-  const hasDetail = Boolean(principles.length || coreFeatures.length || troubleshooting.length);
+  const hasDetail = Boolean(principles.length || coreFeatures.length || otherFeatures.length || troubleshooting.length);
   modalFields.detail.hidden = !hasDetail;
   overviewJumpButton.hidden = !hasDetail;
   modalFields.outline.replaceChildren();
   modalFields.principles.replaceChildren();
   modalFields.features.replaceChildren();
+  modalFields.others.replaceChildren();
   modalFields.troubleshooting.replaceChildren();
   modalFields.principlesSection.hidden = principles.length === 0;
   modalFields.featuresSection.hidden = coreFeatures.length === 0;
+  modalFields.othersSection.hidden = otherFeatures.length === 0;
+  modalFields.othersToggle.setAttribute("aria-expanded", "false");
+  modalFields.others.hidden = true;
   modalFields.troubleshootingSection.hidden = troubleshooting.length === 0;
   if (!hasDetail) return;
 
@@ -3483,6 +3538,46 @@ const buildProjectDetail = (project) => {
     });
     featureOutline.append(nestedList);
     modalFields.outline.append(featureOutline);
+    sectionIndex += 1;
+  }
+
+  if (otherFeatures.length) {
+    const index = String(sectionIndex).padStart(2, "0");
+    const othersOutline = document.createElement("li");
+    const othersNumber = document.createElement("span");
+    const othersToggle = document.createElement("button");
+    const othersTitle = document.createElement("span");
+    const othersIcon = document.createElement("span");
+    const nestedList = document.createElement("ol");
+    const nestedId = "modal-others-outline-list";
+    othersOutline.className = "outline-collapsible";
+    othersNumber.textContent = index;
+    modalFields.othersIndex.textContent = index;
+    othersToggle.type = "button";
+    othersToggle.className = "outline-toggle";
+    othersToggle.dataset.outlineToggle = nestedId;
+    othersToggle.setAttribute("aria-expanded", "false");
+    othersToggle.setAttribute("aria-controls", nestedId);
+    othersTitle.className = "outline-title";
+    othersTitle.textContent = "OTHER FUNCTIONS";
+    othersIcon.className = "outline-toggle-icon";
+    othersIcon.setAttribute("aria-hidden", "true");
+    othersToggle.append(othersTitle, othersIcon);
+    nestedList.id = nestedId;
+    nestedList.hidden = true;
+    otherFeatures.forEach((feature, featureIndex) => {
+      const targetId = `modal-other-feature-${featureIndex + 1}`;
+      const nestedItem = document.createElement("li");
+      nestedItem.append(makeOutlineButton(
+        `${String(featureIndex + 1).padStart(2, "0")}. ${feature.title}`,
+        targetId,
+        "",
+        feature.keywords,
+      ));
+      nestedList.append(nestedItem);
+    });
+    othersOutline.append(othersNumber, othersToggle, nestedList);
+    modalFields.outline.append(othersOutline);
     sectionIndex += 1;
   }
 
@@ -3556,6 +3651,60 @@ const buildProjectDetail = (project) => {
     modalFields.features.append(article);
   });
 
+  otherFeatures.forEach((feature, index) => {
+    const article = document.createElement("article");
+    const header = document.createElement("header");
+    const number = document.createElement("span");
+    const headingGroup = document.createElement("div");
+    const domain = document.createElement("p");
+    const title = document.createElement("h4");
+    const summary = document.createElement("p");
+    const details = document.createElement("dl");
+    const umlId = `modal-other-feature-uml-${index + 1}`;
+    article.className = "other-feature-detail";
+    article.id = `modal-other-feature-${index + 1}`;
+    number.textContent = `${String(index + 1).padStart(2, "0")}.`;
+    domain.className = "eyebrow";
+    domain.textContent = feature.domain;
+    title.textContent = feature.title;
+    summary.className = "other-feature-summary";
+    appendEmphasizedText(summary, feature.summary, feature.keywords);
+    headingGroup.append(domain, title);
+    header.append(number, headingGroup);
+    details.className = "other-feature-details";
+    details.append(...(feature.details || []).flatMap(([label, copy]) => {
+      const term = document.createElement("dt");
+      const description = document.createElement("dd");
+      term.textContent = label;
+      appendEmphasizedText(description, copy, feature.keywords);
+      return [term, description];
+    }));
+    article.append(header, makeFeatureKeywords(feature.keywords), summary, details);
+    if (feature.tradeoff) article.append(makeLimitations(feature.tradeoff));
+    if (feature.diagram) {
+      const umlToggle = document.createElement("button");
+      const umlLabel = document.createElement("span");
+      const umlIcon = document.createElement("span");
+      const umlPanel = document.createElement("div");
+      umlToggle.type = "button";
+      umlToggle.className = "inline-collapse-toggle";
+      umlToggle.dataset.otherUmlToggle = umlId;
+      umlToggle.setAttribute("aria-expanded", "false");
+      umlToggle.setAttribute("aria-controls", umlId);
+      umlLabel.className = "inline-collapse-label";
+      umlLabel.textContent = "구조 UML 보기";
+      umlIcon.className = "collapse-chevron";
+      umlIcon.setAttribute("aria-hidden", "true");
+      umlToggle.append(umlLabel, umlIcon);
+      umlPanel.id = umlId;
+      umlPanel.className = "other-feature-uml";
+      umlPanel.hidden = true;
+      umlPanel.append(makeUmlDiagram(feature.diagram));
+      article.append(umlToggle, umlPanel);
+    }
+    modalFields.others.append(article);
+  });
+
   troubleshooting.forEach((item, index) => {
     const article = document.createElement("article");
     article.className = "troubleshooting-detail";
@@ -3609,6 +3758,7 @@ const openProject = (projectId) => {
   modal.classList.toggle("is-collection", isCollection);
   modal.classList.toggle("has-design-document", hasDesignPage);
   designOpenButton.hidden = !hasDesignPage;
+  designOpenButton.textContent = project.designDocument?.buttonLabel || "상세 설계 페이지";
 
   modalFields.type.textContent = project.type;
   modalFields.title.textContent = project.title;
@@ -3663,12 +3813,43 @@ document.querySelectorAll("[data-project-open]").forEach((button) => {
 let featureHighlightStartTimer;
 let featureHighlightEndTimer;
 
+const setOtherFunctionsExpanded = (expanded) => {
+  modalFields.othersToggle.setAttribute("aria-expanded", String(expanded));
+  modalFields.others.hidden = !expanded;
+};
+
+modalFields.othersToggle.addEventListener("click", () => {
+  const expanded = modalFields.othersToggle.getAttribute("aria-expanded") === "true";
+  setOtherFunctionsExpanded(!expanded);
+});
+
+modalFields.others.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-other-uml-toggle]");
+  if (!toggle) return;
+  const panel = modal.querySelector(`#${toggle.dataset.otherUmlToggle}`);
+  if (!panel) return;
+  const expanded = toggle.getAttribute("aria-expanded") === "true";
+  toggle.setAttribute("aria-expanded", String(!expanded));
+  toggle.querySelector(".inline-collapse-label").textContent = expanded ? "구조 UML 보기" : "구조 UML 접기";
+  panel.hidden = expanded;
+  if (!expanded) panel.querySelectorAll(".mermaid-canvas").forEach(queueMermaidRender);
+});
+
 modalFields.outline.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-outline-toggle]");
+  if (toggle) {
+    const list = modal.querySelector(`#${toggle.dataset.outlineToggle}`);
+    const expanded = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!expanded));
+    list.hidden = expanded;
+    return;
+  }
   const button = event.target.closest("[data-modal-target]");
   if (!button) return;
   const target = modal.querySelector(`#${button.dataset.modalTarget}`);
+  if (target?.matches(".other-feature-detail")) setOtherFunctionsExpanded(true);
   target?.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" });
-  if (!target?.matches(".feature-detail, .troubleshooting-detail")) return;
+  if (!target?.matches(".feature-detail, .other-feature-detail, .troubleshooting-detail")) return;
 
   window.clearTimeout(featureHighlightStartTimer);
   window.clearTimeout(featureHighlightEndTimer);
@@ -3740,8 +3921,11 @@ const scheduleDesignTocUpdate = () => {
 
 designOpenButton.addEventListener("click", () => {
   if (!activeProject?.designDocument || activeProject.designDocument.standalonePage === false) return;
-  designModalProjectType.textContent = activeProject.designDocument.kicker
+  designModalProjectType.textContent = activeProject.designDocument.modalLabel
+    || activeProject.designDocument.kicker
     || `${activeProject.title.toUpperCase()} 상세 기술 설계`;
+  designModal.querySelector("#design-modal-title").textContent = activeProject.designDocument.modalTitle
+    || "상세 설계 페이지";
   buildDesignDocument(activeProject.designDocument);
   designModal.showModal();
   designModal.scrollTop = 0;
