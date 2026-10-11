@@ -263,7 +263,8 @@ const projects = {
       {
         title: "아이템 조합 규칙과 상호작용 판정",
         summary: "현재 아이템과 대상의 역할을 비교해 가능한 행동과 제작 레시피를 판정합니다.",
-        emphasis: ["아이템", "대상", "공통 판정 흐름", "선택 순서와 관계없이", "기능 해금"],
+        whyEmphasis: ["손에 든 아이템", "바라보는 대상", "입력 처리", "새로운 상호작용", "기존 규칙과 충돌"],
+        emphasis: ["Comparer", "아이템의 종류", "대상 역할", "CraftManager", "선택 순서와 관계없이", "도구 기능 해금"],
         why: "플레이어가 손에 든 아이템과 바라보는 대상에 따라 낚시, 요리, 불 피우기, 벌목, 로켓 수리와 제작처럼 서로 다른 행동이 실행되어야 합니다. 이 조건이 입력 처리 곳곳에 흩어지면 새로운 상호작용을 추가할 때 기존 규칙과 충돌하기 쉽습니다.",
         how: "Comparer에서 현재 아이템의 종류와 대상 역할을 함께 확인하도록 구성했습니다. CraftManager에는 재료의 선택 순서와 관계없이 같은 조합으로 조회되는 비교 규칙을 적용하고, 제작 결과를 아이템 정리와 도구 기능 해금으로 연결했습니다.",
         video: {
@@ -274,7 +275,8 @@ const projects = {
       {
         title: "협업 상태 구조의 행동 잠금 확장",
         summary: "협업자가 만든 상태 구조에 일부 시간 행동의 잠금과 중간 입력 제한을 추가했습니다.",
-        emphasis: ["협업자가 만든 상태 구조", "상태 잠금", "이동·줍기 입력", "보완 과제"],
+        whyEmphasis: ["벌목·섭취·요리·수리", "상태가 바뀌면", "처리 순서", "대상 참조"],
+        emphasis: ["IState", "PlayerStateMachine", "상태 잠금", "이동·줍기 입력", "낚시", "X·C 입력", "보완 과제"],
         why: "벌목·섭취·요리·수리처럼 시간이 필요한 행동 중 상태가 바뀌면 남은 처리와 대상 참조가 다음 행동에 영향을 줄 수 있었습니다.",
         how: "협업자가 구현한 IState와 PlayerStateMachine을 기반으로 일부 시간 행동에 상태 잠금을 추가하고 이동·줍기 입력을 제한했습니다. 낚시는 별도 이동 제한으로 처리되어 있으며 X·C 입력을 포함한 전체 입력 경로의 공통 차단은 보완 과제로 남아 있습니다.",
         video: {
@@ -285,7 +287,8 @@ const projects = {
       {
         title: "검증 기반 랜덤 자원 스폰",
         summary: "지면·겹침·거리 가중치를 통과한 후보에서 자원 위치를 선택합니다.",
-        emphasis: ["지형과의 실제 접점", "겹치는 위치", "등장 확률", "생성 간격"],
+        whyEmphasis: ["무작위 좌표", "지형 밖", "공중", "기존 오브젝트와 겹칠", "접근할 수 없는 곳", "플레이 진행"],
+        emphasis: ["후보 위치", "지형 접점", "오브젝트 겹침", "로켓과의 거리", "가중치", "생성 횟수", "간격", "재시도", "최소 공급량"],
         why: "단순한 무작위 좌표에 자원을 생성하면 지형 밖이나 공중에 배치되거나 기존 오브젝트와 겹칠 수 있습니다. 생존 루프에 필요한 자원이 접근할 수 없는 곳에 생성되면 플레이 진행 자체가 막힙니다.",
         how: "월드 범위에서 후보 위치를 만든 뒤 지형 접점과 주변 오브젝트 겹침을 확인했습니다. 통과한 후보에는 로켓과의 거리에 따른 가중치를 적용하고, 생성 횟수에 따라 간격을 조절했습니다. 유효 후보가 없을 때의 재시도와 최소 공급량 보장은 보완 과제로 남아 있습니다.",
         video: {
@@ -299,6 +302,8 @@ const projects = {
         title: "행동 중복 입력으로 보상 흐름이 깨지는 문제",
         summary: "일부 시간 행동에 상태 잠금을 추가해 중간 전환과 이동·줍기 입력을 제한했습니다.",
         emphasis: ["일부 시간 행동", "상태 잠금", "이동·줍기 입력", "전체 입력 경로"],
+        problemEmphasis: ["벌목·섭취·요리·수리", "상태 전환", "입력", "처리 순서"],
+        solutionEmphasis: ["상태", "잠금", "이동·줍기 입력"],
         problem: "벌목·섭취·요리·수리 중 상태 전환과 입력이 끼어들어 처리 순서가 흔들릴 수 있었습니다.",
         solution: "해당 상태에 잠금을 추가하고 이동·줍기 입력을 제한했습니다.",
         detailProblem: "협업자가 구현한 상태 구조에서 벌목·섭취·요리·수리처럼 시간이 필요한 행동 중 다른 상태 전환이나 입력이 끼어들 수 있었습니다. FishingState는 잠금 플래그를 사용하지 않았고 X·C 입력에도 공통 잠금 검사가 없어 모든 행동이 같은 규칙으로 보호되는 구조는 아니었습니다.",
@@ -308,6 +313,8 @@ const projects = {
         title: "전방 탐색에서 자기 아이템이 선택되는 문제",
         summary: "협업자의 전방 후보 탐색에 현재 아이템·플레이어 자식 제외 조건을 추가했습니다.",
         emphasis: ["협업자의 전방 후보 탐색", "현재 들고 있는 아이템", "플레이어 자식", "제작 판정 단계"],
+        problemEmphasis: ["탐색 범위", "현재 들고 있는 아이템", "상호작용 후보"],
+        solutionEmphasis: ["현재 아이템", "플레이어 자식", "감지", "제작 판정"],
         problem: "탐색 범위를 넓힌 뒤 현재 들고 있는 아이템까지 상호작용 후보로 선택됐습니다.",
         solution: "현재 아이템·플레이어 자식 제외 조건을 감지와 제작 판정에 추가했습니다.",
         detailProblem: "단일 Raycast를 전방 45도 후보 탐색으로 바꾼 부분은 협업자의 작업입니다. 이 구조에서 플레이어 자식으로 붙어 있던 현재 아이템까지 후보가 되어 자기 자신을 제작 대상으로 판단하는 문제가 발생했습니다.",
@@ -317,6 +324,8 @@ const projects = {
         title: "재료 순서에 따라 제작 결과가 달라지는 문제",
         summary: "순서 독립 비교 규칙으로 같은 재료 조합이 동일한 레시피가 되게 했습니다.",
         emphasis: ["나무+철광석", "철광석+나무", "순서 독립 비교 규칙", "동일한 해시", "한 번만 등록"],
+        problemEmphasis: ["같은 재료", "선택 순서", "레시피 조회", "중복 등록"],
+        solutionEmphasis: ["순서 독립 비교", "동일한 해시", "한 번의 등록", "양방향 조합"],
         problem: "같은 재료라도 선택 순서가 바뀌면 레시피 조회가 실패하고 중복 등록이 필요했습니다.",
         solution: "순서 독립 비교와 동일한 해시를 적용해 한 번의 등록으로 양방향 조합을 처리했습니다.",
         detailProblem: "제작 레시피를 두 재료의 순서가 있는 조합으로 저장하자 나무+철광석은 성공하지만 철광석+나무는 실패했습니다. 같은 재료라도 무엇을 먼저 들었는지에 따라 결과가 달라져 플레이어 기대와 맞지 않았고, 반대 순서의 레시피를 매번 중복 등록해야 했습니다.",
@@ -326,6 +335,8 @@ const projects = {
         title: "랜덤 자원이 지형 밖과 오브젝트 위에 생성되는 문제",
         summary: "지형·겹침·거리 가중치를 검증해 무작위 스폰을 플레이 가능한 범위로 통제했습니다.",
         emphasis: ["무작위 좌표", "지면 검증", "겹침 검사", "거리 기반 가중치", "생성 간격"],
+        problemEmphasis: ["무작위 자원", "공중", "지형 밖", "기존 오브젝트 위", "진행", "밸런스"],
+        solutionEmphasis: ["지면 검증", "겹침 검사", "거리 가중치", "생성 간격", "유효 위치", "공급 속도"],
         problem: "무작위 자원이 공중·지형 밖·기존 오브젝트 위에 생성되어 진행과 밸런스를 해쳤습니다.",
         solution: "지면 검증·겹침 검사·거리 가중치·생성 간격으로 유효 위치와 공급 속도를 통제했습니다.",
         detailProblem: "철광석과 식물을 무작위 좌표에 바로 생성하자 공중이나 지형 밖에 배치되고, 기존 자원과 겹쳐 줍기 어려운 경우가 생겼습니다. 로켓 근처에 수리 재료가 몰리면 난이도가 지나치게 낮아지고, 반대로 멀리만 생성되면 수집 시간이 길어져 생존 루프의 균형도 흔들렸습니다.",
@@ -335,6 +346,8 @@ const projects = {
         title: "양동이 상태와 월드·인벤토리 표시 불일치",
         summary: "Bucket의 상태·월드 표현을 갱신하고 호출부에서 인벤토리 UI 갱신을 요청했습니다.",
         emphasis: ["내부 상태", "월드 머티리얼", "인벤토리 아이콘", "Pond·Tree 호출부"],
+        problemEmphasis: ["양동이 내부 상태", "월드 머티리얼", "인벤토리 아이콘"],
+        solutionEmphasis: ["Bucket", "상태", "월드 표현", "Pond·Tree", "UI 갱신 이벤트"],
         problem: "양동이 내부 상태와 월드 머티리얼·인벤토리 아이콘이 서로 다른 상태를 표시했습니다.",
         solution: "Bucket에서 상태·월드 표현을 바꾸고 Pond·Tree에서 UI 갱신 이벤트를 발행했습니다.",
         detailProblem: "양동이의 내부 상태는 물이 찬 상태로 바뀌었지만 월드 머티리얼이나 인벤토리 아이콘이 이전 모습을 유지하는 경우가 있었습니다. 실제로는 나무에 물을 줄 수 있는데 화면에는 빈 양동이로 보이거나, 물을 사용한 뒤에도 찬 아이콘이 남아 플레이어가 현재 상태를 잘못 판단할 수 있었습니다.",
@@ -2034,6 +2047,8 @@ const littleSurvivalDesignDocument = {
       title: "아이템 조합 규칙과 상호작용 판정",
       intent: "직접 구현한 Comparer와 CraftManager로 현재 아이템·대상 조합과 제작 레시피를 판정한다.",
       keywords: ["Comparer", "IInteractable", "RecipeItemTypeComparer", "기능 해금"],
+      problemEmphasis: ["낚시·요리·불 피우기·벌목·수리·제작", "입력과 오브젝트", "같은 조합", "새 행동", "기존 규칙"],
+      resultEmphasis: ["상호작용 가능 여부", "제작 실행", "아이템·대상 규칙", "재료 순서와 관계없이", "레시피"],
       problem: "낚시·요리·불 피우기·벌목·수리·제작의 조건이 입력과 오브젝트마다 흩어지면 같은 조합이 서로 다르게 판단되고 새 행동을 추가할 때 기존 규칙을 함께 수정하게 됩니다.",
       decisions: [
         ["대상과 보유 아이템", "Player는 전방 후보와 PlayerInventory의 현재 아이템을 Comparer에 전달해 가능한 행동 메시지를 계산합니다."],
@@ -2068,6 +2083,8 @@ const littleSurvivalDesignDocument = {
       title: "협업 상태 구조의 행동 잠금 확장",
       intent: "협업자가 만든 상태 구조에 일부 시간 행동의 전환 잠금과 입력 제한을 추가한다.",
       keywords: ["협업 기반", "isStateLocked", "이동 제한", "입력 경계"],
+      problemEmphasis: ["벌목·섭취·요리·수리", "다른 상태", "입력", "처리 순서", "대상 참조"],
+      resultEmphasis: ["잠금을 적용한 행동", "상태 전환", "일부 입력", "공통 정책"],
       problem: "벌목·섭취·요리·수리처럼 시간이 필요한 행동 중 다른 상태나 입력이 끼어들면 처리 순서와 대상 참조가 흔들릴 수 있습니다.",
       decisions: [
         ["협업 기반", "IState와 PlayerStateMachine, 이동·낚시·요리 상태의 기초 구조는 협업자가 구현했습니다."],
@@ -2100,6 +2117,8 @@ const littleSurvivalDesignDocument = {
       title: "검증 기반 랜덤 자원 스폰",
       intent: "지면·겹침·거리 가중치를 통과한 후보에서 자원 위치를 선택한다.",
       keywords: ["Raycast", "CheckSphere", "가중 랜덤", "스폰 간격"],
+      problemEmphasis: ["x·z 무작위 좌표", "공중", "지형 밖", "다른 아이템과 겹친", "로켓과의 거리", "수집 난이도"],
+      resultEmphasis: ["유효한 후보", "지정 지면", "간격 조건", "가중 랜덤"],
       problem: "x·z 무작위 좌표에 바로 생성하면 자원이 공중·지형 밖·다른 아이템과 겹친 곳에 놓이고, 로켓과의 거리에 따라 수집 난이도가 크게 흔들릴 수 있습니다.",
       decisions: [
         ["후보 생성", "SpawnManager는 BoxCollider 범위 안에서 여러 무작위 후보를 만들고 위에서 아래로 Raycast해 지정된 groundCollider에 닿은 지점만 남깁니다."],
@@ -2518,7 +2537,12 @@ const littleSurvivalDesignDocument = {
 
 littleSurvivalProject.principles = [];
 littleSurvivalProject.coreFeatures.forEach((feature) => {
-  feature.keywords = littleSurvivalDesignDocument.coreFeatures.find((item) => item.title === feature.title)?.keywords || [];
+  const implementation = littleSurvivalDesignDocument.coreFeatures.find((item) => item.title === feature.title);
+  feature.keywords = implementation?.keywords || [];
+  if (implementation) {
+    implementation.problemEmphasis ||= feature.whyEmphasis || feature.emphasis;
+    implementation.resultEmphasis ||= feature.emphasis;
+  }
 });
 littleSurvivalDesignDocument.troubleshooting = littleSurvivalDesignDocument.troubleshooting.map((implementation, index) => {
   const item = littleSurvivalProject.troubleshooting[index];
@@ -2528,6 +2552,8 @@ littleSurvivalDesignDocument.troubleshooting = littleSurvivalDesignDocument.trou
     intent: item.summary,
     problem: item.detailProblem,
     result: item.detailSolution,
+    problemEmphasis: item.problemEmphasis || implementation.keywords,
+    resultEmphasis: item.solutionEmphasis || implementation.keywords,
     problemLabel: "문제 상황",
     resultLabel: "해결 방안",
   };
@@ -3316,11 +3342,11 @@ const makeFeatureImplementation = (feature, index) => {
   header.append(number, headingGroup);
   problemLabel.className = "eyebrow";
   problemLabel.textContent = feature.problemLabel || "해결하려는 문제";
-  problemCopy.textContent = feature.problem;
+  appendEmphasizedText(problemCopy, feature.problem, feature.problemEmphasis || feature.keywords);
   problem.append(problemLabel, problemCopy);
   resultLabel.className = "eyebrow";
   resultLabel.textContent = feature.resultLabel || "구현 결과";
-  resultCopy.textContent = feature.result;
+  appendEmphasizedText(resultCopy, feature.result, feature.resultEmphasis || feature.keywords);
   result.append(resultLabel, resultCopy);
   context.className = "design-context-grid";
   context.append(problem, result);
@@ -3550,7 +3576,10 @@ const buildProjectDetail = (project) => {
       const text = document.createElement("p");
       eyebrow.className = "eyebrow";
       eyebrow.textContent = label;
-      appendEmphasizedText(text, copy, item.emphasis);
+      const emphasis = label === "문제 상황"
+        ? (item.problemEmphasis || item.emphasis)
+        : (item.solutionEmphasis || item.emphasis);
+      appendEmphasizedText(text, copy, emphasis);
       if (label === "해결 방안" && project.designDocument?.troubleshooting?.[index]) {
         const solutionHeader = document.createElement("div");
         solutionHeader.className = "feature-how-header";
