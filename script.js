@@ -373,6 +373,7 @@ const projects = {
         title: "렌더링 파이프라인과 WVP 변환",
         summary: "로컬 좌표를 월드·카메라·클립 공간으로 변환해 오브젝트를 화면에 배치합니다.",
         emphasis: ["World·View·Projection", "World Matrix", "View Matrix", "Projection Matrix", "직교 투영"],
+        whyEmphasis: ["로컬 좌표", "오브젝트 이동", "카메라 회전", "화면 투영"],
         why: "3D 오브젝트를 의도한 위치와 시점으로 화면에 표현하려면 로컬 좌표가 어떤 공간을 거쳐 변환되는지 이해해야 합니다. 변환 책임이 섞이면 오브젝트 이동, 카메라 회전과 화면 투영 중 어느 단계에서 문제가 생겼는지 추적하기 어렵습니다.",
         how: "오브젝트별 World Matrix로 위치·회전·크기를 구성하고, 카메라의 View Matrix와 화면 비율을 반영한 Projection Matrix를 순서대로 셰이더에 전달했습니다. 정점 셰이더에서 World·View·Projection 변환을 적용했으며, 화면 고정 UI에는 별도의 직교 투영을 사용했습니다.",
       },
@@ -380,6 +381,7 @@ const projects = {
         title: "Phong 조명과 HLSL 데이터 바인딩",
         summary: "C++의 조명·카메라 데이터를 셰이더에 전달해 표면의 입체감과 재질감을 계산합니다.",
         emphasis: ["Ambient·Diffuse·Specular", "상수 버퍼", "법선·빛·시선 방향", "텍스처 색상"],
+        whyEmphasis: ["표면 법선", "빛 방향", "시선 방향", "CPU 데이터", "셰이더 계산"],
         why: "조명은 단순히 물체를 밝게 만드는 효과가 아니라 표면 법선, 빛 방향과 시선 방향의 관계를 계산해 형태와 재질을 드러내는 과정입니다. CPU 데이터와 셰이더 계산이 분리되어 있어 두 단계의 계약을 함께 이해해야 했습니다.",
         how: "C++에서 행렬, 카메라 위치와 광원 정보를 상수 버퍼로 구성하고 HLSL에 바인딩했습니다. 픽셀 셰이더에서는 법선·빛·시선 방향을 사용해 Ambient·Diffuse·Specular 항을 계산하고 텍스처 색상과 합성했습니다. 노멀맵을 사용할 때는 접선 공간을 구성해 표면 법선을 보정했습니다.",
         media: {
@@ -393,6 +395,7 @@ const projects = {
         title: "멀티 텍스처링과 환경 표현",
         summary: "Diffuse·Normal·Cube Map을 목적별로 샘플링해 표면과 주변 환경을 함께 표현합니다.",
         emphasis: ["Diffuse Map", "Normal Map", "Cube Map", "텍스처 슬롯", "TextureCube"],
+        whyEmphasis: ["표면의 색상", "미세 굴곡", "주변 환경", "텍스처"],
         why: "하나의 텍스처만으로는 표면의 색상, 미세 굴곡과 주변 환경을 모두 표현하기 어렵습니다. 각 텍스처가 어떤 정보를 담고 셰이더의 어느 계산에 쓰이는지 구분할 필요가 있었습니다.",
         how: "Diffuse Map은 기본 색상, Normal Map은 조명 계산용 표면 방향, Cube Map은 스카이박스의 환경 정보로 사용했습니다. 여러 텍스처를 정해진 텍스처 슬롯에 바인딩하고 같은 렌더 패스에서 샘플링했으며, 큐브맵은 방향 벡터를 사용하는 TextureCube 방식으로 처리했습니다.",
         media: {
@@ -406,6 +409,7 @@ const projects = {
         title: "스킨드 메시 애니메이션과 인터랙션",
         summary: "모델의 본 계층과 키프레임을 계산하고 레이 판정 결과를 장면 반응으로 연결합니다.",
         emphasis: ["Assimp", "본 계층·키프레임·가중치", "최종 본 행렬", "레이와 AABB", "시각적 피드백"],
+        whyEmphasis: ["정적 메시", "본 계층", "키프레임", "화면 좌표", "월드 오브젝트"],
         why: "필드 캐릭터가 자연스럽게 움직이려면 정적 메시만 출력하는 것을 넘어 모델 파일의 본 계층과 시간별 키프레임을 해석해야 합니다. 사용자 입력 역시 화면 좌표에서 실제 월드 오브젝트까지 연결되어야 게임 장면의 상호작용으로 기능합니다.",
         how: "Assimp로 메시·재질·본 계층·키프레임·가중치를 읽고 시간에 따라 최종 본 행렬을 계산해 셰이더에 전달했습니다. 화면 좌표에서는 월드 공간 레이를 만들고 오브젝트의 AABB와 교차 여부를 판정했으며, 선택 결과를 조명 색 변화 같은 시각적 피드백으로 연결했습니다.",
         media: {
@@ -418,6 +422,7 @@ const projects = {
         title: "데이터 기반 반복 오브젝트 인스턴스 배치",
         summary: "동일한 나무 모델을 위치 데이터로 반복 생성하고 인스턴스별 변환을 일괄 관리합니다.",
         emphasis: ["위치 목록", "동일한 모델 리소스", "개별 인스턴스", "월드 행렬", "공통 렌더 루프"],
+        whyEmphasis: ["반복되는 오브젝트", "생성", "렌더링 코드", "중복 코드", "배치 수"],
         why: "필드에는 같은 종류의 나무처럼 반복되는 오브젝트가 많이 필요합니다. 오브젝트마다 생성과 렌더링 코드를 따로 작성하면 배치 수가 늘어날수록 중복 코드가 커지고, 위치를 수정하거나 개수를 확장하기도 어려워집니다.",
         how: "나무가 배치될 좌표를 위치 목록으로 분리하고, 목록을 순회하며 동일한 모델 리소스를 사용하는 개별 인스턴스를 생성했습니다. 각 인스턴스에는 자신의 위치만 보관하고 하나의 컨테이너에서 관리합니다. 렌더링 단계에서는 공통 렌더 루프가 인스턴스별 위치로 월드 행렬을 구성해 같은 모델을 여러 장소에 배치하도록 만들었습니다.",
         media: {
@@ -449,13 +454,6 @@ const projects = {
         emphasis: ["FBX", "Assimp", "본 계층", "가져오기 로그", "불필요한 본 정보", "최종 본 행렬"],
         problem: "FBX 애니메이션은 정상적으로 재생됐지만 인게임에서 캐릭터 메시가 꼬이거나 관절이 비정상적으로 늘어나는 현상이 발생했습니다. 애니메이션 계산식만 확인해서는 원인을 찾기 어려웠고, Assimp가 읽은 FBX 내부 본 계층에 실제 스키닝에 필요하지 않은 보조 정보가 함께 포함되어 최종 본 행렬에 영향을 주고 있었습니다.",
         solution: "가져오기 과정에서 본 이름과 계층 구조를 로그로 출력해 원본 FBX와 비교하고, 스키닝에 사용되지 않는 불필요한 본 정보를 식별했습니다. 해당 정보를 애니메이션 계층 구성에서 제외한 뒤 유효한 부모·자식 관계와 가중치만으로 최종 본 행렬을 계산하도록 수정해 메시 왜곡을 제거했습니다.",
-      },
-      {
-        title: "애니메이션 구조와 기존 렌더링 장치 관리의 충돌",
-        summary: "새 프레임워크를 그대로 병합하지 않고 장치 소유권과 생명주기를 기존 구조에 맞게 재정의했습니다.",
-        emphasis: ["애니메이션 프레임워크", "장치 소유권", "초기화 순서", "단일 접근 지점", "기존 생명주기"],
-        problem: "외부 애니메이션 프레임워크의 내부 구조를 기존 프로젝트에 옮기는 과정에서 렌더링 장치, 카메라와 입력 관리 방식이 서로 달랐습니다. 양쪽 구조를 그대로 유지하면 장치와 컨텍스트의 소유자가 중복되고 초기화·해제 순서가 불명확해져, 애니메이션만 추가하려던 변경이 전체 프레임워크의 생명주기 문제로 번질 수 있었습니다.",
-        solution: "새 구조 전체를 복사하는 대신 애니메이션에 필요한 데이터 처리만 기존 프레임워크에 맞춰 이식했습니다. 이미 사용 중인 카메라와 입력 관리 흐름은 유지하고, 렌더링 장치는 하나의 접근 지점에서 소유하도록 정리해 중복 생성을 제거했습니다. 덕분에 기존 갱신·렌더링 순서를 유지하면서 스킨드 메시 기능을 연결했습니다.",
       },
       {
         title: "카메라를 바라보는 빌보드 변환 실패 (미해결)",
@@ -1766,28 +1764,77 @@ serverDocument.diagram = {
   ],
 };
 
-databaseDocument.title = "MariaDB 월드 스폰 데이터";
-databaseDocument.summary = "플레이어와 몬스터의 스폰 기준을 MapInfo 중심으로 정의하고 서버 런타임 월드에 전달하는 경계를 정리했습니다.";
-databaseDocument.keywords = ["MapInfo", "Monster", "스폰 좌표", "최대 개체 수", "MapId"];
-databaseDocument.notes = [
-  ["모델 근거", "다이어그램은 Queries.cpp에서 확인한 MapInfo·Monster 조회 연결을 기준으로 정리한 논리 모델입니다."],
-];
-databaseDocument.tradeoff = "정적 월드 정의가 커지면 DB 조회와 런타임 상태의 변경 범위가 넓어집니다. 전용 콘텐츠 정의와 현재 개체 상태를 분리하고 맵 ID·몬스터 ID의 호환성을 검증하는 것이 개선 방향입니다.";
+databaseDocument.title = "MariaDB 전체 게임 상태 테이블";
+databaseDocument.summary = "계정·캐릭터·인벤토리·퀘스트 진행·맵·몬스터 정의를 서버 쿼리에서 확인되는 조회 연결을 기준으로 정리했습니다.";
+databaseDocument.keywords = ["UserAccount", "UserInfo", "Inventory", "UserQuest", "UserQuestProgress", "MapInfo", "Monster"];
+databaseDocument.architectureTitle = "전체 테이블 관계 구조";
+databaseDocument.notes = [];
+databaseDocument.tradeoff = "DDL이 없어 실제 PK·FK 제약과 SQL 자료형은 확정하지 않았습니다. 스키마와 마이그레이션을 함께 관리하고, 보상·제작·퀘스트 완료처럼 여러 테이블을 함께 갱신하는 작업에는 트랜잭션과 실패 복구 정책을 보강하는 것이 개선 방향입니다.";
 databaseDocument.diagram = {
-  title: "맵 스폰 정의와 서버 월드 등록",
+  kind: "er",
+  title: "전체 게임 상태 테이블 ERD",
+  caption: "Mermaid ERD · Queries.cpp 조회 컬럼과 JOIN 경로 기준 / 물리 제약 미확인",
   zoomable: true,
-  groups: [
-    { title: "DB Tables", nodes: ["MapInfo", "Monster"] },
-    { title: "Query Result", nodes: ["Queries", "MapInitialInfo"] },
-    { title: "Runtime World", nodes: ["MapData", "MapDataManager"] },
-  ],
-  relations: [
-    ["Queries", "data", "MapInfo", "스폰 좌표·최대 수"],
-    ["Queries", "data", "Monster", "MapId별 종류"],
-    ["Queries", "dependency", "MapInitialInfo", "맵별 조회 결과"],
-    ["MapInitialInfo", "data", "MapData", "초기 월드 정의"],
-    ["MapDataManager", "aggregation", "MapData", "MapId별 등록"],
-  ],
+  source: String.raw`erDiagram
+    direction LR
+    UserAccount {
+        key UserID PK "조회 기준"
+        value PasswordHash "인증 값"
+        value Salt "해시 솔트"
+    }
+    UserInfo {
+        key UserID PK "사용자 연결"
+        key MapId "현재 맵"
+        value PosX "위치 X"
+        value PosY "위치 Y"
+        value PosZ "위치 Z"
+        value TutorialStep "튜토리얼 단계"
+        value MaxHP "최대 체력"
+        value HP "현재 체력"
+        value AttackPower "공격력"
+        value DefencePower "방어력"
+        value Speed "이동 속도"
+    }
+    Inventory {
+        key UserID "사용자 연결"
+        key ItemID "아이템 정의"
+        value Amount "수량"
+        value SlotIndex "슬롯"
+        value IsEquipped "장착 여부"
+    }
+    UserQuest {
+        key UserID "사용자 연결"
+        key QuestId "퀘스트 정의"
+        value IsCompleted "완료 여부"
+        value RewardClaimed "보상 수령"
+    }
+    UserQuestProgress {
+        key UserID "사용자 연결"
+        key QuestId "퀘스트 정의"
+        key ConditionIndex "조건 순서"
+        value CurrentCount "현재 수치"
+    }
+    MapInfo {
+        key MapId PK "맵 정의"
+        value SpawnX "플레이어 X"
+        value SpawnY "플레이어 Y"
+        value SpawnZ "플레이어 Z"
+        value SpawnEnemyX "몬스터 X"
+        value SpawnEnemyY "몬스터 Y"
+        value SpawnEnemyZ "몬스터 Z"
+        value SpawnEnemyRadius "생성 반경"
+        value MaxEnemyCount "최대 개체 수"
+    }
+    Monster {
+        key MonsterId "몬스터 정의"
+        key MapId "맵 연결"
+    }
+    UserAccount ||--|| UserInfo : "UserID 조회"
+    UserAccount ||--o{ Inventory : "UserID 조회"
+    UserAccount ||--o{ UserQuest : "UserID 조회"
+    UserQuest ||--o{ UserQuestProgress : "UserID·QuestId JOIN"
+    UserInfo }o--|| MapInfo : "MapId JOIN"
+    MapInfo ||--o{ Monster : "MapId JOIN"`,
 };
 
 everwindDesignDocument.troubleshooting = [
@@ -1976,6 +2023,7 @@ everwindProject.designDocument = everwindDesignDocument;
 
 const littleSurvivalProject = projects["project-2"];
 const littleSurvivalDesignDocument = {
+  standalonePage: false,
   kicker: "LITTLE SURVIVAL PLANET 상세 기술 설계",
   title: "검증 가능한 개인 기여와 공동 작업의 구현 구조",
   summary: "Git 기여 기록으로 확인되는 tlsalstj7743의 개인 구현과 협업 구조 위에 추가한 개선만 정리했습니다. Core Feature의 구현은 ‘상세 구현 설명’, 문제 해결 과정은 ‘상세 해결 설명’에서 확인할 수 있습니다.",
@@ -3333,9 +3381,10 @@ const buildDesignDocument = (documentData) => {
     const title = document.createElement("h4");
     const summary = document.createElement("p");
     const architectureTitle = document.createElement("h5");
+    const architectureSection = document.createElement("section");
     const featureTitle = document.createElement("h5");
+    const featureSection = document.createElement("section");
     const featureList = document.createElement("div");
-    const noteTitle = document.createElement("h5");
     article.className = "technical-document";
     article.id = `design-doc-${documentItem.id}`;
     number.textContent = `01-${index + 1}`;
@@ -3348,23 +3397,17 @@ const buildDesignDocument = (documentData) => {
     architectureTitle.textContent = documentItem.architectureTitle
       || (documentItem.id === "database" ? "월드 스폰 데이터 경계" : "분야 전체 구조");
     featureTitle.textContent = "기능별 구현";
-    noteTitle.textContent = "공통 설계 판단";
+    architectureSection.className = "technical-document-section is-architecture";
+    featureSection.className = "technical-document-section is-features";
     featureList.className = "technical-feature-list";
     featureList.append(...(documentItem.features || []).map((feature, featureIndex) => makeImplementationSection(
       feature,
       `01-${index + 1}.${featureIndex + 1}`,
       `design-doc-${documentItem.id}-${featureIndex + 1}`,
     )));
-    article.append(
-      header,
-      makeKeywordList(documentItem.keywords),
-      architectureTitle,
-      makeUmlDiagram(documentItem.diagram),
-      featureTitle,
-      featureList,
-      noteTitle,
-      makeDecisionList(documentItem.notes, "technical-note-list"),
-    );
+    architectureSection.append(architectureTitle, makeUmlDiagram(documentItem.diagram));
+    featureSection.append(featureTitle, featureList);
+    article.append(header, makeKeywordList(documentItem.keywords), architectureSection, featureSection);
     if (documentItem.tradeoff) article.append(makeLimitations(documentItem.tradeoff));
     return article;
   }));
@@ -3465,7 +3508,8 @@ const buildProjectDetail = (project) => {
       const text = document.createElement("p");
       eyebrow.className = "eyebrow";
       eyebrow.textContent = label;
-      appendEmphasizedText(text, copy, feature.emphasis);
+      const emphasis = label === "WHY" ? (feature.whyEmphasis || feature.emphasis) : feature.emphasis;
+      appendEmphasizedText(text, copy, emphasis);
       const implementationIndex = project.designDocument?.coreFeatures.findIndex((item) => item.title === feature.title) ?? -1;
       if (label === "HOW" && implementationIndex >= 0) {
         const howHeader = document.createElement("div");
@@ -3530,11 +3574,12 @@ const openProject = (projectId) => {
   const project = projects[projectId];
   if (!project) return;
   const isCollection = Boolean(project.otherProjects?.length);
+  const hasDesignPage = Boolean(project.designDocument && project.designDocument.standalonePage !== false);
   activeProject = project;
 
   modal.classList.toggle("is-collection", isCollection);
-  modal.classList.toggle("has-design-document", Boolean(project.designDocument));
-  designOpenButton.hidden = !project.designDocument;
+  modal.classList.toggle("has-design-document", hasDesignPage);
+  designOpenButton.hidden = !hasDesignPage;
 
   modalFields.type.textContent = project.type;
   modalFields.title.textContent = project.title;
@@ -3665,7 +3710,7 @@ const scheduleDesignTocUpdate = () => {
 };
 
 designOpenButton.addEventListener("click", () => {
-  if (!activeProject?.designDocument) return;
+  if (!activeProject?.designDocument || activeProject.designDocument.standalonePage === false) return;
   designModalProjectType.textContent = activeProject.designDocument.kicker
     || `${activeProject.title.toUpperCase()} 상세 기술 설계`;
   buildDesignDocument(activeProject.designDocument);
