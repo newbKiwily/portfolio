@@ -385,6 +385,7 @@ const projects = {
       {
         title: "렌더링 파이프라인과 WVP 변환",
         summary: "로컬 좌표를 월드·카메라·클립 공간으로 변환해 오브젝트를 화면에 배치합니다.",
+        keywords: ["WVP 변환", "World·View·Projection", "직교 투영", "상수 버퍼"],
         emphasis: ["World·View·Projection", "World Matrix", "View Matrix", "Projection Matrix", "직교 투영"],
         whyEmphasis: ["로컬 좌표", "오브젝트 이동", "카메라 회전", "화면 투영"],
         why: "3D 오브젝트를 의도한 위치와 시점으로 화면에 표현하려면 로컬 좌표가 어떤 공간을 거쳐 변환되는지 이해해야 합니다. 변환 책임이 섞이면 오브젝트 이동, 카메라 회전과 화면 투영 중 어느 단계에서 문제가 생겼는지 추적하기 어렵습니다.",
@@ -393,6 +394,7 @@ const projects = {
       {
         title: "Phong 조명과 HLSL 데이터 바인딩",
         summary: "C++의 조명·카메라 데이터를 셰이더에 전달해 표면의 입체감과 재질감을 계산합니다.",
+        keywords: ["Phong Lighting", "Ambient·Diffuse·Specular", "HLSL", "Normal Mapping"],
         emphasis: ["Ambient·Diffuse·Specular", "상수 버퍼", "법선·빛·시선 방향", "텍스처 색상"],
         whyEmphasis: ["표면 법선", "빛 방향", "시선 방향", "CPU 데이터", "셰이더 계산"],
         why: "조명은 단순히 물체를 밝게 만드는 효과가 아니라 표면 법선, 빛 방향과 시선 방향의 관계를 계산해 형태와 재질을 드러내는 과정입니다. CPU 데이터와 셰이더 계산이 분리되어 있어 두 단계의 계약을 함께 이해해야 했습니다.",
@@ -407,6 +409,7 @@ const projects = {
       {
         title: "멀티 텍스처링과 환경 표현",
         summary: "Diffuse·Normal·Cube Map을 목적별로 샘플링해 표면과 주변 환경을 함께 표현합니다.",
+        keywords: ["Diffuse·Normal·Cube Map", "Texture Slot", "TextureCube", "Lerp"],
         emphasis: ["Diffuse Map", "Normal Map", "Cube Map", "텍스처 슬롯", "TextureCube"],
         whyEmphasis: ["표면의 색상", "미세 굴곡", "주변 환경", "텍스처"],
         why: "하나의 텍스처만으로는 표면의 색상, 미세 굴곡과 주변 환경을 모두 표현하기 어렵습니다. 각 텍스처가 어떤 정보를 담고 셰이더의 어느 계산에 쓰이는지 구분할 필요가 있었습니다.",
@@ -421,6 +424,7 @@ const projects = {
       {
         title: "스킨드 메시 애니메이션과 인터랙션",
         summary: "모델의 본 계층과 키프레임을 계산하고 레이 판정 결과를 장면 반응으로 연결합니다.",
+        keywords: ["Assimp", "Skinned Mesh", "Bone Matrix", "Ray·AABB"],
         emphasis: ["Assimp", "본 계층·키프레임·가중치", "최종 본 행렬", "레이와 AABB", "시각적 피드백"],
         whyEmphasis: ["정적 메시", "본 계층", "키프레임", "화면 좌표", "월드 오브젝트"],
         why: "필드 캐릭터가 자연스럽게 움직이려면 정적 메시만 출력하는 것을 넘어 모델 파일의 본 계층과 시간별 키프레임을 해석해야 합니다. 사용자 입력 역시 화면 좌표에서 실제 월드 오브젝트까지 연결되어야 게임 장면의 상호작용으로 기능합니다.",
@@ -434,6 +438,7 @@ const projects = {
       {
         title: "데이터 기반 반복 오브젝트 인스턴스 배치",
         summary: "동일한 나무 모델을 위치 데이터로 반복 생성하고 인스턴스별 변환을 일괄 관리합니다.",
+        keywords: ["위치 데이터", "모델 리소스 공유", "월드 행렬", "반복 배치"],
         emphasis: ["위치 목록", "동일한 모델 리소스", "개별 인스턴스", "월드 행렬", "공통 렌더 루프"],
         whyEmphasis: ["반복되는 오브젝트", "생성", "렌더링 코드", "중복 코드", "배치 수"],
         why: "필드에는 같은 종류의 나무처럼 반복되는 오브젝트가 많이 필요합니다. 오브젝트마다 생성과 렌더링 코드를 따로 작성하면 배치 수가 늘어날수록 중복 코드가 커지고, 위치를 수정하거나 개수를 확장하기도 어려워집니다.",
@@ -2089,7 +2094,6 @@ const littleSurvivalDesignDocument = {
         ["결과 연결", "제작 함수가 성공하면 사용한 재료를 정리하고 낚시·도끼 기능 해금 또는 양동이 생성으로 연결합니다."],
       ],
       result: "상호작용 가능 여부와 실제 제작 실행이 같은 아이템·대상 규칙을 사용하고, 재료 순서와 관계없이 레시피를 조회합니다.",
-      tradeoff: "대상 탐색은 현재 씬의 Transform을 순회하고 Comparer의 행동 분기는 코드에 고정되어 있습니다. Physics 기반 후보 조회와 데이터 중심 규칙 테이블로 바꾸면 오브젝트 수와 행동 종류가 늘어날 때 탐색·수정 범위를 줄일 수 있습니다.",
       diagram: {
         title: "아이템·대상 판정과 제작 결과 연결",
         zoomable: true,
@@ -2159,7 +2163,7 @@ const littleSurvivalDesignDocument = {
         ["시간에 따른 공급", "후보 가중치 누적으로 위치를 선택하고 생성 횟수에 따라 철·식물의 스폰 간격을 늘립니다."],
       ],
       result: "유효한 후보가 있을 때 지정 지면과 간격 조건을 통과한 위치를 가중 랜덤으로 선택합니다.",
-      tradeoff: "유효 후보가 없으면 해당 생성 주기가 취소되며 재시도와 최소 공급량이 보장되지 않습니다. 실패 원인 기록과 재시도 정책을 추가하는 것이 개선 방향입니다.",
+      tradeoff: "유효 후보가 없으면 해당 생성 주기가 취소되며 재시도와 최소 공급량이 보장되지 않습니다. 단계별 재시도 정책과 최소 공급량 보장을 추가하는 것이 개선 방향입니다.",
       diagram: {
         title: "검증 후보와 가중 랜덤 스폰",
         zoomable: true,
@@ -2519,7 +2523,6 @@ const littleSurvivalDesignDocument = {
         ["난이도 가중치", "Iron과 Plant가 로켓과의 거리에 따라 낮은 값에서 높은 값으로 스폰 가중치를 반환합니다."],
         ["시간 밸런스", "철과 식물의 생성 루틴을 분리하고 누적 생성 횟수에 따라 대기 시간을 늘립니다."],
       ],
-      tradeoff: "유효 후보를 찾지 못하면 해당 주기의 생성이 취소되고 별도 재시도 이유가 기록되지 않습니다. 실패 원인 로깅과 단계별 재시도, 최소 공급량 보장을 추가하면 진행 중 자원 고갈을 더 안정적으로 막을 수 있습니다.",
       diagram: {
         title: "랜덤 좌표에서 유효 스폰까지",
         groups: [
@@ -2547,7 +2550,6 @@ const littleSurvivalDesignDocument = {
         ["월드 표현", "빈 상태와 찬 상태에 맞는 머티리얼을 MeshRenderer 첫 슬롯에 적용합니다."],
         ["인벤토리 표현", "Pond와 Tree의 상호작용이 상태 변경 후 PlayerInventory.OnInventoryChanged를 발행해 InventoryUI가 현재 ItemSprite를 다시 읽습니다."],
       ],
-      tradeoff: "UI 변경 이벤트 발행을 Bucket 내부가 아니라 Pond와 Tree 호출자가 담당해 새 사용처에서 알림이 누락될 수 있습니다. Bucket이 상태 변경 이벤트를 직접 발행하도록 만들면 데이터와 표현 동기화 책임을 한곳에 둘 수 있습니다.",
       diagram: {
         title: "양동이 상태와 두 표현 계층 동기화",
         groups: [
