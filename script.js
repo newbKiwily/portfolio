@@ -583,7 +583,7 @@ const projects = {
 const everwindDesignDocument = {
   kicker: "EVERWIND / 상세 설계 기록",
   title: "확장되는 RPG를 지탱하는 책임과 데이터의 경계",
-  summary: "Unity 클라이언트, C++ IOCP 서버, MariaDB를 연결한 온라인 RPG 프로토타입의 구현과 설계 의도를 정리했습니다. 기능별 설명과 UML로 책임 관계를 보여주며, 각 설명 하단의 ‘한계점과 개선점’에 보완 방향을 정리했습니다.",
+  summary: "Unity 클라이언트, C++ IOCP 서버, MariaDB를 연결한 온라인 RPG 프로토타입의 구현과 설계 의도를 정리했습니다. 기능별 설명과 UML로 책임 관계를 보여주며, 필요한 항목은 설명 하단의 ‘한계점과 개선점’에 보완 방향을 정리했습니다.",
   keywords: ["확장성", "상태 패턴", "이벤트 기반", "스레드 경계", "맵 컨텍스트", "비동기 수명주기", "영속화"],
   systemFlow: ["Unity Client", "TCP Binary Protocol", "C++ IOCP Server", "Queries", "MariaDB"],
   coreFeatures: [
@@ -598,7 +598,6 @@ const everwindDesignDocument = {
         ["종류별 확장", "아이템은 IUsableItem, 스킬은 추상 Skill, 튜토리얼은 ITutorialStep을 사용합니다. 각 종류의 계약을 공유하는 파생 타입끼리 동작을 확장합니다."],
       ],
       result: "아이템 12종·레시피 8종·퀘스트 3종을 정의 자산으로 관리합니다. 새 아이템·레시피·퀘스트는 데이터와 필요한 처리기를, 새 스킬은 파생 코드와 프리팹·애니메이션 연결을 추가합니다.",
-      tradeoff: "콘텐츠 종류별 계약을 사용하므로 유형을 넘나드는 조합은 별도 연결이 필요합니다. 상속의 조합 축이 늘면 타입 수도 증가하므로 효과·타깃·비용·조건을 전략 객체로 나누는 방향을 검토합니다. 새 콘텐츠의 타입 등록·프리팹·데이터 연결과 튜토리얼 단계표·스킬별 애니메이션 분기는 함께 수정해야 하며, 저장된 단계 값과의 호환성도 확인해야 합니다. 인벤토리·장비 UI가 수량과 스탯 변경도 담당하므로, 상태 모델을 분리해 저장·테스트를 화면 수명과 독립시키는 것이 개선 방향입니다.",
       diagram: {
         title: "콘텐츠 정의와 실행 책임 UML",
         groups: [
@@ -633,7 +632,6 @@ const everwindDesignDocument = {
         ["판정 시점", "CombatManager의 전투 판단과 Animation Event의 유효 프레임을 연결했습니다."],
       ],
       result: "타깃 접근·공격·피격·사망의 동작을 별도 상태로 분리했습니다. 새 행동은 상태 클래스와 상태표 등록, 이를 호출하는 전이 조건을 함께 추가해야 합니다.",
-      tradeoff: "전이 조건이 여러 상태와 전투 로직에 분산되어 있어 조건이 겹칠 때의 판단을 추적하기 어렵습니다. 전이표와 우선순위 규칙, 경쟁 전이 검증을 추가해 판단 기준을 명시하고, 상태 변화와 전환 이유를 디버그 시각화로 확인하는 것이 개선 방향입니다.",
       diagram: {
         title: "플레이어 행동 상태 UML",
         groups: [
@@ -724,7 +722,6 @@ const everwindDesignDocument = {
         ["검증 범위", "일부 몬스터 이동·공격·사망 요청에는 Owner 검증을 적용합니다."],
       ],
       result: "맵 전환을 기준으로 이전 월드가 정리되고 새 컨텍스트의 플레이어와 몬스터만 다시 구성됩니다.",
-      tradeoff: "클라이언트 권위형 구조로 피해량은 클라이언트 값이며 일부 플레이어 동기화는 패킷의 UserDBID를 그대로 전달합니다. 피해량·사용자 식별을 세션 기준으로 재검증하고 AI·전투 판정을 서버로 이전하는 것이 개선 방향입니다. 맵 목록의 잠금 밖 읽기는 스냅샷이나 동일 잠금 범위로 보완해야 합니다.",
       diagram: {
         title: "맵 컨텍스트 동기화 UML",
         groups: [
@@ -1455,7 +1452,7 @@ const everwindDesignDocument = {
             ["테이블 경계", "MapInfo는 플레이어·몬스터 스폰 좌표와 최대 개체 수를, Monster는 맵에서 생성할 몬스터 종류를 가리킵니다."],
             ["서버 연결", "서버 시작 시 전체 맵의 스폰 기준을 조회해 MapData를 등록합니다. 맵 진입·이동 시에는 등록된 맵을 조회하고 세션의 현재 맵과 위치를 갱신합니다."],
           ],
-          tradeoff: "정적 월드 정의가 커지면 DB 조회와 런타임 스폰 상태의 변경 범위가 넓어집니다. 전용 콘텐츠 정의와 현재 개체 상태를 분리하고 맵 ID·몬스터 ID의 호환성을 검증하는 것이 개선 방향입니다.",
+          tradeoff: "정적 월드 정의가 커지면 DB 조회와 런타임 스폰 상태의 변경 범위가 넓어집니다. 몬스터 스폰을 담당하는 소형 풀을 모듈화하고, 각 풀의 범위 안에서 몬스터 무리가 자동으로 생성되도록 확장하는 것이 개선 방향입니다.",
           diagram: {
             title: "맵 정의 조회와 서버 월드 등록",
             zoomable: true,
@@ -1857,7 +1854,6 @@ everwindDesignDocument.troubleshooting = [
       ["수명 정리", "IsPersistent인 인스턴스만 DontDestroyOnLoad로 유지하고 중복 인스턴스는 제거합니다. 기존 인스턴스가 파괴될 때 등록 목록과 정적 참조를 해제해 새 씬에서 이전 참조를 사용하지 않게 합니다."],
       ["추가 시스템", startupImplementation.details[2][1]],
     ],
-    tradeoff: "우선순위는 실행 순서를 명시하지만 의존 관계를 자동 검증하지는 않습니다. 새 매니저는 등록 시점과 Priority를 확인해야 하며, 향후 의존성 주입과 명시적 부트스트랩으로 개선할 수 있습니다.",
     diagram: startupImplementation.diagram,
   },
   {
@@ -1867,7 +1863,7 @@ everwindDesignDocument.troubleshooting = [
       ["타입별 구현", "SingletonBase<T>는 공통 베이스를 상속하면서 T별 정적 인스턴스 접근, 기존 객체 검색·생성, 중복 제거와 파괴 시 해제를 맡습니다. 개별 매니저는 이 제네릭 베이스를 상속합니다."],
       ["등록과 조회", "등록 딕셔너리는 실제 Type을 키로 사용하고 공통 베이스를 값으로 보관합니다. 조회 시 요청한 매니저 타입으로 돌려주므로, 초기화는 공통 계약으로 처리하면서 사용 측의 타입별 접근은 유지합니다."],
     ],
-    tradeoff: "전역 접근점은 호출 측의 의존성을 숨길 수 있습니다. 공통 베이스의 초기화 계약은 유지하면서 의존성 주입과 명시적 서비스 참조로 연결 관계를 드러내는 것이 개선 방향입니다.",
+    tradeoff: "서로 다른 싱글톤 스크립트를 공통 타입으로 관리하기 위해 SingletonBasest를 추가했지만, SingletonBase와 공통 책임이 분리되어 상속 구조가 복잡해졌습니다. 두 스크립트를 통합해 공통 책임과 역할을 하나의 베이스 구조로 정리하고 상속 계층을 보완하는 것이 개선 방향입니다.",
     diagram: {
       title: "싱글톤 공통 계약과 타입별 접근",
       direction: "TB", zoomable: true,
@@ -1890,7 +1886,6 @@ everwindDesignDocument.troubleshooting = [
       ["좌표 반영", "새 맵과 원격 객체를 구성한 후 로컬 플레이어를 스폰 좌표로 이동합니다. CharacterController를 잠시 끄고 위치를 반영한 뒤 다시 켜, 이동 컴포넌트가 이전 위치를 기준으로 좌표를 보정하지 않게 합니다."],
       ["표현 자원", mapCleanupDetail[1]],
     ],
-    tradeoff: "로딩 실패 시 이전 월드로 복귀하는 절차와 연속 전환 요청을 정리하는 상태 관리가 필요합니다. 피해 숫자는 고정 풀이 소진되면 표시를 생략하므로 동시 타격 규모를 측정해 풀 크기를 조정하고, 전환 중 실패·재요청·연속 이동을 포함한 시나리오를 검증하는 것이 개선 방향입니다.",
     diagram: {
       title: "맵 전환 시 월드·전투·UI 정리 책임",
       direction: "TB", zoomable: true,
@@ -1917,7 +1912,7 @@ everwindDesignDocument.troubleshooting = [
       ["요청 검증", "서버의 이동·공격 처리기는 요청 세션이 현재 Owner인지 확인합니다. 사망 요청은 Owner가 지정되어 있으면 해당 사용자만 허용하고, 서버 맵에서 몬스터를 제거한 뒤 사망 확인 패킷을 전파합니다."],
       ["중복 방지", "클라이언트는 HP와 사망·요청 전송 플래그를 확인해 사망 요청을 한 번만 보냅니다. 서버에서 이미 제거된 인스턴스는 후속 요청에서 조회되지 않아 다시 제거하거나 확인 응답을 생성하지 않습니다."],
     ],
-    tradeoff: "Owner 검증은 일부 몬스터 요청에만 적용되며 피해량과 일부 UserDBID는 클라이언트 값에 의존합니다. 세션 기준 사용자 식별·피해량 재검증과 서버 권위 판정을 추가하고, 맵 목록의 잠금 밖 읽기는 스냅샷이나 동일 잠금 범위로 보강하는 것이 개선 방향입니다.",
+    tradeoff: "Owner 검증은 일부 몬스터 요청에만 적용되며 피해량과 일부 UserDBID는 클라이언트 값에 의존합니다. 세션 기준 사용자 식별·피해량 재검증과 서버 권위 판정을 추가하는 것이 개선 방향입니다.",
     diagram: {
       title: "서버의 몬스터 소유자 검증과 제거",
       direction: "TB", zoomable: true,
@@ -1970,7 +1965,6 @@ everwindDesignDocument.troubleshooting = [
       ["실행 순서", "클립을 교체한 뒤 isMove Bool이나 toAttack·toDamaged Trigger를 설정합니다. 공격 종류에 따라 SkillSpeed도 함께 변경해 공통 공격 전이와 서로 다른 기술 속도를 연결합니다."],
       ["적용 범위", "상호작용은 isInteract와 상태 직접 재생, 사망은 isDie 파라미터로 처리합니다. 모든 동작을 Override로 대체하지 않고 기존 상태 호출을 사용하는 부분을 구분했습니다."],
     ],
-    tradeoff: "현재 공격·피격 클립 선택에는 인덱스 분기가 남아 있습니다. 새 기술은 애니메이션 세트의 클립과 선택 분기를 함께 연결해야 하며, 키 클립 누락 검증도 보완 지점입니다.",
     diagram: {
       title: "행동 판단과 Animator 클립 교체의 경계",
       direction: "TB", zoomable: true,
@@ -3411,8 +3405,8 @@ const makeFeatureImplementation = (feature, index) => {
     makeKeywordList(feature.keywords),
     context,
     implementationBlocks,
-    makeLimitations(feature.tradeoff),
   );
+  if (feature.tradeoff) article.append(makeLimitations(feature.tradeoff));
   return article;
 };
 
