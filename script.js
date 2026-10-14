@@ -17,7 +17,7 @@ const setActiveLink = () => {
 document.addEventListener("scroll", setActiveLink, { passive: true });
 setActiveLink();
 
-const worldScenes = [...document.querySelectorAll(".hero, .about-section, .skills-section, .projects-section")];
+const worldScenes = [...document.querySelectorAll(".hero, .about-section, .projects-section")];
 const aboutSection = document.querySelector(".about-section");
 const resumePanel = document.querySelector(".profile-resume");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");

@@ -10,7 +10,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2313192b'/%3E%3Cpath fill='%23ff9635' d='M8 8h16v4H8zM8 12h4v12H8zM20 12h4v12h-4zM12 20h8v4h-8z'/%3E%3Cpath fill='%23ffe18c' d='M12 12h8v4h-8z'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261010-02" />
+    <link rel="stylesheet" href="styles.css?v=20261014-01" />
   </head>
   <body>
     <div class="scanline" aria-hidden="true"></div>
@@ -85,7 +85,6 @@
           <div class="profile-resume" id="resume" aria-labelledby="resume-title">
             <header class="profile-resume-heading">
               <div>
-                <p class="eyebrow">ADVENTURE LOG</p>
                 <h2 id="resume-title">Resume</h2>
               </div>
             </header>
@@ -144,48 +143,54 @@
                 </div>
               </article>
             </div>
+
+            <article class="resume-group skills-group" id="skills" aria-labelledby="skills-title">
+                <p class="resume-label" id="skills-title">Skills</p>
+                <div class="resume-items skill-categories">
+                <section class="skill-category" aria-labelledby="language-title">
+                  <header><span>01</span><h3 id="language-title">Language</h3></header>
+                  <ul class="skill-list">
+                    <li class="skill-item is-focus" aria-label="C 및 C++ · 주력 기술" title="C / C++ · 주력 기술">
+                      <span class="skill-icon-set" aria-hidden="true"><img src="assets/icons/c.svg?v=2" alt="" /><img src="assets/icons/cplusplus.svg" alt="" /></span>
+                      <span class="skill-focus" aria-hidden="true">★</span>
+                    </li>
+                    <li class="skill-item is-focus" aria-label="Unity C# · 주력 기술" title="Unity C# · 주력 기술">
+                      <span class="skill-icon-set" aria-hidden="true"><span class="skill-reference-icon is-unity"><img src="assets/icons/unity-reference.png" alt="" /></span><img src="assets/icons/csharp.svg" alt="" /></span>
+                      <span class="skill-focus" aria-hidden="true">★</span>
+                    </li>
+                    <li class="skill-item" aria-label="Python" title="Python"><span class="skill-icon-set" aria-hidden="true"><img src="assets/icons/python.svg" alt="" /></span></li>
+                  </ul>
+                </section>
+
+                <section class="skill-category" aria-labelledby="engine-title">
+                  <header><span>02</span><h3 id="engine-title">Engine / Graphics</h3></header>
+                  <ul class="skill-list">
+                    <li class="skill-item" aria-label="Unity Engine" title="Unity Engine"><span class="skill-icon-set" aria-hidden="true"><span class="skill-reference-icon is-unity"><img src="assets/icons/unity-reference.png" alt="" /></span></span></li>
+                    <li class="skill-item" aria-label="DirectX 11 Graphics API" title="DirectX 11 Graphics API">
+                      <span class="skill-reference-icon is-directx" aria-hidden="true"><img src="assets/icons/directx11-reference.png" alt="" /></span>
+                    </li>
+                  </ul>
+                </section>
+
+                <section class="skill-category" aria-labelledby="backend-title">
+                  <header><span>03</span><h3 id="backend-title">Backend / DB</h3></header>
+                  <ul class="skill-list">
+                    <li class="skill-item" aria-label="Windows C++ Server" title="Windows C++ Server">
+                      <span class="skill-role-icon is-server" aria-hidden="true"><span><img src="assets/icons/cplusplus.svg" alt="" /><img src="assets/icons/windows.svg" alt="" /></span><strong>C++ SERVER</strong></span>
+                    </li>
+                    <li class="skill-item" aria-label="MySQL MariaDB" title="MySQL / MariaDB"><span class="skill-icon-set skill-icon-vivid" aria-hidden="true"><img src="assets/icons/mysql.svg" alt="" /></span></li>
+                  </ul>
+                </section>
+                </div>
+            </article>
           </div>
-        </div>
-      </section>
-
-      <section class="section skills-section" id="skills" aria-labelledby="skills-title">
-        <div class="world-fade-overlay" aria-hidden="true"></div>
-        <div class="section-heading">
-          <p class="eyebrow">SKILL INVENTORY</p>
-          <h2 id="skills-title">기술 스택</h2>
-        </div>
-        <div class="skill-categories">
-          <section class="skill-category" aria-labelledby="language-title">
-            <header><span>01</span><h3 id="language-title">Language</h3></header>
-            <ul class="skill-list">
-              <li class="skill-item is-focus"><strong>C / C++</strong><span class="skill-focus"><span aria-hidden="true">★</span> 주력</span></li>
-              <li class="skill-item is-focus"><strong>Unity C#</strong><span class="skill-focus"><span aria-hidden="true">★</span> 주력</span></li>
-              <li class="skill-item"><strong>Python</strong></li>
-            </ul>
-          </section>
-
-          <section class="skill-category" aria-labelledby="engine-title">
-            <header><span>02</span><h3 id="engine-title">Engine / Graphics</h3></header>
-            <ul class="skill-list">
-              <li class="skill-item"><strong>Unity (Engine)</strong></li>
-              <li class="skill-item"><strong>DirectX11 (Graphics API)</strong></li>
-            </ul>
-          </section>
-
-          <section class="skill-category" aria-labelledby="backend-title">
-            <header><span>03</span><h3 id="backend-title">Backend / DB</h3></header>
-            <ul class="skill-list">
-              <li class="skill-item"><strong>C++ Server (Windows)</strong></li>
-              <li class="skill-item"><strong>MySQL (MariaDB)</strong></li>
-            </ul>
-          </section>
         </div>
       </section>
 
       <section class="section projects-section" id="projects" aria-labelledby="projects-title">
         <div class="world-fade-overlay" aria-hidden="true"></div>
         <div class="section-heading project-heading">
-          <div><p class="eyebrow">PROJECT RAID LOG</p><h2 id="projects-title">프로젝트</h2></div>
+          <div><h2 id="projects-title">프로젝트</h2></div>
           <p>카드에서는 핵심만 보여주고, 자세한 기능과 문제 해결 과정은 프로젝트 상세에서 확인할 수 있습니다.</p>
         </div>
         <div class="project-grid">
@@ -456,6 +461,6 @@
         </div>
       </div>
     </dialog>
-    <script src="script.js?v=20261010-02"></script>
+    <script src="script.js?v=20261014-01"></script>
   </body>
 </html>
