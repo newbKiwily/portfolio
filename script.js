@@ -92,6 +92,8 @@ const projects = {
     overview: "Unity C# 클라이언트와 C++20 IOCP 서버를 연결한 개인 온라인 액션 RPG 프로토타입입니다. TCP 커스텀 패킷, 맵 단위 동기화, 서버 타이머 기반 몬스터 보충과 MariaDB 조회·저장 경로를 구현했습니다. 콘텐츠 종류별 확장 계약과 행동 상태를 분리해 클라이언트·서버·데이터베이스의 흐름을 연결했습니다.",
     motivationTitle: "클라이언트·서버·데이터베이스 지식을 하나의 MMORPG 흐름으로 연결",
     motivation: "학교에서 배운 클라이언트, 서버, 데이터베이스 지식을 바탕으로 각 영역을 하나의 시스템으로 융합하고, MMORPG 전반의 내부 시스템과 데이터 흐름을 직접 실습하기 위해 개발했습니다.",
+    reflectionTitle: "분리된 지식을 하나의 플레이 흐름으로 연결한 경험",
+    reflection: "평소 즐겨 온 MMORPG의 기초 기능을 직접 구현하며 기능이 동작하기까지 발생하는 문제와 해결 과정을 경험했습니다. 학교에서 분야별로 배운 클라이언트, 서버, 데이터베이스 지식을 하나의 프로젝트로 연결하면서 게임 개발은 여러 기술을 통합해 하나의 플레이 경험으로 만드는 작업이라는 점을 이해했습니다. 실제 RPG의 기능이 어떤 구조로 동작하는지 분석하고 제 방식으로 구현한 과정은 이후 프로젝트에서 문제를 바라보는 기준과 구현 방향을 세우는 데 도움이 되었습니다.",
     info: [
       ["개발 기간", "2025.09.01 - 2026.06.01"],
       ["구성", "개인 프로젝트"],
@@ -105,7 +107,7 @@ const projects = {
         title: "데이터 중심 RPG 콘텐츠 확장",
         summary: "아이템·레시피·퀘스트는 정의와 상태를 분리하고, 스킬은 추상 타입과 파생 클래스로 확장합니다.",
         emphasis: ["ScriptableObject", "런타임 상태", "추상 스킬", "종류별 계약", "파생 클래스"],
-        why: "온라인 RPG는 스킬·아이템·퀘스트가 계속 늘어나는 장르입니다. 유형별 조건문을 한곳에 쌓거나 변하지 않는 정의와 수량·쿨다운 같은 실행 상태를 섞으면, 콘텐츠 하나를 추가할 때 기존 로직과 저장 데이터까지 함께 수정해야 합니다.",
+        why: "온라인 RPG는 스킬·아이템·퀘스트가 계속 늘어나는 장르입니다. 유형별 조건문을 한 곳에 쌓거나 변하지 않는 정의와 수량·쿨다운 같은 실행 상태를 섞으면, 콘텐츠 하나를 추가할 때 기존 로직과 저장 데이터까지 함께 수정해야 합니다.",
         how: "아이템·레시피·퀘스트는 ScriptableObject 정의와 수량·진행도 같은 런타임 상태를 분리했습니다. 스킬은 MonoBehaviour 기반 추상 스킬과 파생 클래스로 공격 방식을 확장하며, 수치와 쿨다운은 코드·초기화에서 설정합니다. 아이템 사용, 스킬 실행, 튜토리얼은 각각 종류별 계약을 사용해 해당 유형의 동작을 확장합니다.",
         video: {
           src: "assets/videos/everwind-content-crafting-equipment.mp4",
@@ -230,7 +232,6 @@ const projects = {
     challenge: "",
     solution: "",
     tags: [],
-    notion: "https://app.notion.com/p/3dfe8789789b81b6a85ae3bb0f99b11e",
     images: [
       { src: "assets/everwind-login.png", alt: "EverWind 로그인 화면", label: "LOGIN SCREEN" },
       { src: "assets/everwind-combat.png", alt: "EverWind 전투 화면", label: "COMBAT" },
@@ -245,6 +246,8 @@ const projects = {
     overview: "2인 협업으로 제작한 생존 게임입니다. 아이템 조합·상호작용 판정과 랜덤 자원 스폰을 직접 구현하고, 협업자의 행동 상태와 전방 탐색 구조에는 잠금 규칙과 자기 아이템 제외 조건을 추가했습니다. HUD 수치 표시와 양동이 상태·표현 동기화도 담당했습니다.",
     motivationTitle: "구현과 플레이 테스트 개선을 함께 경험한 협업 프로젝트",
     motivation: "생존·크래프팅 플레이 흐름을 팀과 함께 구현하고 플레이 테스트에서 확인한 상호작용, 중간 입력과 표현 불일치 문제를 개선했습니다. 자원 배치와 행동 흐름의 밸런스 조정은 팀 공동 작업으로 진행했으며, 기획·제작·테스트·수정으로 이어지는 개발 과정을 경험했습니다.",
+    reflectionTitle: "협업과 반복 개선을 경험한 제작 과정",
+    reflection: "이 프로젝트를 통해 기획, 개발, 사용자 피드백, 밸런싱으로 이어지는 게임 제작 흐름을 경험했습니다. 이전 프로젝트에서 쌓은 전공 지식과 Unity 활용 경험을 바탕으로 필요한 기능을 빠르게 구현하고, 플레이 테스트 결과를 반영해 동작을 구체적으로 조정했습니다. 또한 팀원과 작업 범위를 나누고 GitHub의 commit, push, merge를 사용하면서 공동 코드의 변경 이력을 관리하고 통합하는 과정을 익혔습니다.",
     info: [
       ["개발 기간", "2026.04.28 - 2026.06.09"],
       ["구성", "협업 프로젝트 (소프트웨어 2명)"],
@@ -254,7 +257,7 @@ const projects = {
       ["클라이언트", "C#"],
     ],
     principles: [
-      ["아이템·대상 조합 판정", "현재 아이템의 종류와 상호작용 대상을 함께 확인해 가능한 행동을 한곳에서 일관되게 판정했습니다."],
+      ["아이템·대상 조합 판정", "현재 아이템의 종류와 상호작용 대상을 함께 확인해 가능한 행동을 한 곳에서 일관되게 판정했습니다."],
       ["순서 독립 제작 레시피", "재료를 선택한 순서가 달라도 같은 조합으로 인식하도록 제작 규칙을 구성했습니다."],
       ["제작 결과와 기능 해금 연결", "제작 성공을 낚시 해금, 벌목 효율 개선, 도구 생성처럼 실제 플레이 규칙의 변화로 연결했습니다."],
       ["검증 기반 월드 스폰", "지형 판정, 오브젝트 겹침 검사와 가중치 선택을 거쳐 자원이 플레이 가능한 공간에 생성되도록 했습니다."],
@@ -358,7 +361,6 @@ const projects = {
     challenge: "",
     solution: "",
     tags: [],
-    notion: "https://app.notion.com/p/3e4e8789789b811d8a95e6cb5a666e91",
     images: [
       { src: "assets/gep/gep-cover.png", alt: "Little Survival Planet 타이틀 화면", label: "TITLE SCREEN", background: "blur" },
       { src: "assets/gep/gep-gameplay.png", alt: "Little Survival Planet 인게임 화면", label: "GAMEPLAY", background: "blur" },
@@ -373,6 +375,8 @@ const projects = {
     overview: "Rastertek DirectX11 기본 구조를 분석한 뒤 렌더링 파이프라인, Phong 조명, 멀티 텍스처링, 스킨드 메시 애니메이션과 화면 공간 UI를 RPG 필드 장면에 확장·통합한 그래픽스 실습 프로젝트입니다.",
     motivationTitle: "그래픽스 이론과 셰이더 데이터 흐름을 하나의 장면으로 연결",
     motivation: "행렬 변환과 조명 공식을 학습하는 데 그치지 않고, C++에서 구성한 데이터가 HLSL 셰이더와 GPU 렌더링 결과로 이어지는 과정을 직접 확인하기 위해 개발했습니다. 기존 프레임워크의 실행 흐름을 이해하고 필요한 기능을 단계적으로 확장하며 엔진 내부 동작을 익히는 데 집중했습니다.",
+    reflectionTitle: "렌더링 원리를 구현하며 익힌 문제 분석 방식",
+    reflection: "상용 게임 엔진이 제공하는 렌더링 기능의 내부 구조와 로우레벨 원리를 학습하고, 이를 DirectX11로 직접 구현했습니다. 좌표 변환, 조명, 텍스처와 애니메이션을 연결하는 과정에서 발생한 문제는 수학적 계산과 렌더링 파이프라인의 데이터 흐름을 함께 확인해야 해결할 수 있었습니다. 이 과정을 통해 수학, C++와 그래픽스 지식을 실제 문제 분석에 적용했으며, 이후 상용 엔진이나 자체 엔진을 다룰 때도 내부 아키텍처를 기준으로 기능을 파악하고 익힐 수 있다는 점을 배웠습니다.",
     info: [
       ["개발 기간", "2025.03.01 - 2025.12.01"],
       ["구성", "개인 프로젝트"],
@@ -486,7 +490,6 @@ const projects = {
     challenge: "",
     solution: "",
     tags: [],
-    notion: "https://app.notion.com/p/3e8e8789789b817c987ccd7dff729e0d",
     images: [
       { src: "assets/rpg-field-scene-01.png", alt: "RPG Field Scene 조작 안내 화면", label: "SCENE GUIDE", background: "blur" },
       { src: "assets/rpg-field-scene-02.png", alt: "RPG Field Scene 모닥불 상호작용 화면", label: "INTERACTION", background: "blur" },
@@ -504,7 +507,7 @@ const projects = {
         eyebrow: "개인 프로젝트",
         title: "Server Racing",
         genre: "4P 2D Racing Game",
-        summary: "서버 기초 이론과 EventAsyncSelected 모델을 사용하여 만들었습니다.",
+        summary: "서버 기초 이론과 WSAEventSelect 모델을 사용하여 만들었습니다.",
         image: "assets/side-project-server-racing.png",
         alt: "Server Racing 로고",
         screenshots: [
@@ -2665,6 +2668,10 @@ const modalFields = {
   troubleshootingSection: modal.querySelector("#modal-troubleshooting"),
   troubleshootingIndex: modal.querySelector("#modal-troubleshooting-index"),
   troubleshooting: modal.querySelector("#modal-troubleshooting-list"),
+  reflectionSection: modal.querySelector("#modal-reflection"),
+  reflectionIndex: modal.querySelector("#modal-reflection-index"),
+  reflectionTitle: modal.querySelector("#modal-reflection-title"),
+  reflectionCopy: modal.querySelector("#modal-reflection-copy"),
   story: modal.querySelector(".modal-story"),
   footer: modal.querySelector(".modal-footer"),
 };
@@ -3490,7 +3497,8 @@ const buildProjectDetail = (project) => {
   const coreFeatures = project.coreFeatures || [];
   const otherFeatures = project.otherFeatures || [];
   const troubleshooting = project.troubleshooting || [];
-  const hasDetail = Boolean(principles.length || coreFeatures.length || otherFeatures.length || troubleshooting.length);
+  const hasReflection = Boolean(project.reflectionTitle || project.reflection);
+  const hasDetail = Boolean(principles.length || coreFeatures.length || otherFeatures.length || troubleshooting.length || hasReflection);
   modalFields.detail.hidden = !hasDetail;
   overviewJumpButton.hidden = !hasDetail;
   modalFields.outline.replaceChildren();
@@ -3504,6 +3512,9 @@ const buildProjectDetail = (project) => {
   modalFields.othersToggle.setAttribute("aria-expanded", "false");
   modalFields.others.hidden = true;
   modalFields.troubleshootingSection.hidden = troubleshooting.length === 0;
+  modalFields.reflectionSection.hidden = !hasReflection;
+  modalFields.reflectionTitle.textContent = project.reflectionTitle || "";
+  modalFields.reflectionCopy.textContent = project.reflection || "";
   if (!hasDetail) return;
 
   let sectionIndex = 3;
@@ -3593,6 +3604,20 @@ const buildProjectDetail = (project) => {
     });
     troubleshootingOutline.append(nestedList);
     modalFields.outline.append(troubleshootingOutline);
+    sectionIndex += 1;
+  }
+
+  if (hasReflection) {
+    const index = String(sectionIndex).padStart(2, "0");
+    const reflectionOutline = document.createElement("li");
+    const reflectionNumber = document.createElement("span");
+    reflectionNumber.textContent = index;
+    modalFields.reflectionIndex.textContent = index;
+    reflectionOutline.append(
+      reflectionNumber,
+      makeOutlineButton("Reflection", "modal-reflection", project.reflectionTitle || "개발 후 느낀 점"),
+    );
+    modalFields.outline.append(reflectionOutline);
   }
 
   principles.forEach(([title, copy]) => {

@@ -10,7 +10,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2313192b'/%3E%3Cpath fill='%23ff9635' d='M8 8h16v4H8zM8 12h4v12H8zM20 12h4v12h-4zM12 20h8v4h-8z'/%3E%3Cpath fill='%23ffe18c' d='M12 12h8v4h-8z'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261014-01" />
+    <link rel="stylesheet" href="styles.css?v=20261017-01" />
   </head>
   <body>
     <div class="scanline" aria-hidden="true"></div>
@@ -22,7 +22,7 @@
       <nav class="main-nav" aria-label="주요 섹션">
         <a href="#about">About</a>
         <a href="#resume">Resume</a>
-        <a href="#projects">Projects</a>
+        <a href="#projects">Project</a>
       </nav>
     </header>
 
@@ -143,7 +143,10 @@
             </div>
 
             <article class="resume-group skills-group" id="skills" aria-labelledby="skills-title">
-                <p class="resume-label" id="skills-title">Skills</p>
+                <p class="resume-label" id="skills-title">
+                  <span>Skills</span>
+                  <small class="skill-legend"><span aria-hidden="true">★</span> 주력 기술</small>
+                </p>
                 <div class="resume-items skill-categories">
                 <section class="skill-category" aria-labelledby="language-title">
                   <header><span>01</span><h3 id="language-title">Language</h3></header>
@@ -221,9 +224,6 @@
                 <p><span>개발 기간</span><strong>2026.04 - 2026.06</strong></p>
                 <p><span>구성</span><strong>2인 협업</strong></p>
                 <div class="project-source-links" aria-label="Little Survival Planet 관련 링크">
-                  <a href="https://github.com/dlwjdeo/GEP" target="_blank" rel="noreferrer" aria-label="Little Survival Planet GitHub로 이동" title="GitHub">
-                    <img src="assets/icons/github.svg" alt="" />
-                  </a>
                   <a href="https://www.youtube.com/watch?v=TCckxH_BnCQ" target="_blank" rel="noreferrer" aria-label="Little Survival Planet YouTube 영상으로 이동" title="YouTube">
                     <img src="assets/icons/youtube.svg" alt="" />
                   </a>
@@ -366,6 +366,13 @@
             <div class="modal-section-title"><span id="modal-troubleshooting-index">05</span><h3 id="modal-troubleshooting-title">Troubleshooting</h3></div>
             <div class="troubleshooting-list" id="modal-troubleshooting-list"></div>
           </section>
+          <section class="modal-reflection" id="modal-reflection" aria-labelledby="modal-reflection-heading" hidden>
+            <div class="modal-section-title"><span id="modal-reflection-index">06</span><h3 id="modal-reflection-heading">Reflection</h3></div>
+            <article class="modal-reflection-card">
+              <h4 id="modal-reflection-title"></h4>
+              <p id="modal-reflection-copy"></p>
+            </article>
+          </section>
         </section>
         <section class="modal-story" aria-label="프로젝트 핵심 내용">
           <article><span class="modal-index">02</span><h3>핵심 기능</h3><p id="modal-feature"></p></article>
@@ -459,6 +466,6 @@
         </div>
       </div>
     </dialog>
-    <script src="script.js?v=20261014-01"></script>
+    <script src="script.js?v=20261017-01"></script>
   </body>
 </html>
