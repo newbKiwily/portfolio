@@ -1,0 +1,379 @@
+{
+  "project": "EverWind",
+  "created": "2026-10-27",
+  "mode": "built-in image_gen",
+  "purpose": "Local illustration archive for later manual portfolio insertion",
+  "appliedToWebsite": false,
+  "repositoryArchiveAuthorized": true,
+  "count": 19,
+  "style": "Pixel Portfolio Explainers",
+  "promptSet": "generation-plan.json",
+  "notice": "Conceptual illustrations; characters, monsters, item icons, counts, damage values and maps are explanatory examples rather than game screenshots or balance data.",
+  "assets": [
+    {
+      "id": 1,
+      "category": "core-features",
+      "title": "데이터 중심 RPG 콘텐츠 확장",
+      "path": "core-features/01-content-extension.png",
+      "bytes": 1690228,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "551D42D30323371AAABE7432F86BFA1FC0BE79A15DC0B3E53FC622707AB4EA18",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed",
+      "sources": [
+        "Assets/Scripts/Item",
+        "Assets/Scripts/Skill",
+        "Assets/Scripts/Quest",
+        "Assets/Scripts/Tutorial"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-4d85b37e-8889-4f6a-9e9c-80ec1f06aead.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-4d85b37e-8889-4f6a-9e9c-80ec1f06aead.png"
+    },
+    {
+      "id": 2,
+      "category": "core-features",
+      "title": "IOCP 비동기 세션과 패킷 수명주기",
+      "path": "core-features/02-iocp-packet-lifetime.png",
+      "bytes": 1694577,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "60B93587CB0ACDC7D48FFA936B02B3820843FD1AB02B969FC123FAE835C3E2EE",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; corrected active packet number 1 to 2",
+      "sources": [
+        "EverWindServer/LoginServer/Network/Session.h",
+        "EverWindServer/LoginServer/Network/Session.cpp",
+        "EverWindServer/LoginServer/MapData.h"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-3adb21ab-47fa-44b9-8228-c1b28a81c39a.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-e5edd357-0467-485c-bfba-140c0a7bfed6.png"
+    },
+    {
+      "id": 3,
+      "category": "core-features",
+      "title": "맵 단위 멀티플레이 동기화",
+      "path": "core-features/03-map-multiplayer.png",
+      "bytes": 1705502,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "34AFBB13B0E333A9CB84AD8F86B46D45F543F4E292416B881F1F666501FDFC46",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed",
+      "sources": [
+        "EverWindServer/LoginServer/MapData.cpp",
+        "EverWindServer/LoginServer/MapDataManager.cpp",
+        "Assets/Scripts/Server/OtherPlayer",
+        "Assets/Scripts/Enemy/EnemyNetworkSync.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-b959b0e9-6b75-4021-98f4-8ce228ac0cb8.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-b959b0e9-6b75-4021-98f4-8ce228ac0cb8.png"
+    },
+    {
+      "id": 4,
+      "category": "core-features",
+      "title": "재접속 가능한 게임 상태 영속화",
+      "path": "core-features/04-persistence.png",
+      "bytes": 1650823,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "689E5A11565302B3715D598F63E45A5D16AC1594A02E1FF8EDA0F16BB388EEC1",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed",
+      "sources": [
+        "Assets/Scripts/Server/NetworkClient.cs",
+        "EverWindServer/LoginServer/Network/Session.cpp",
+        "EverWindServer/LoginServer/DB/Queries.cpp"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-caa47a6d-7983-4c16-8ae7-de1bd5371c90.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-caa47a6d-7983-4c16-8ae7-de1bd5371c90.png"
+    },
+    {
+      "id": 5,
+      "category": "core-features",
+      "title": "상태 머신 기반 전투 흐름",
+      "path": "core-features/05-combat-state-flow.png",
+      "bytes": 1629773,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "4576855A4C5D79D9E204E05EE595EDD0E7A69B937CF679E20774ADD86FF883F6",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed",
+      "sources": [
+        "Assets/Scripts/States/PlayerStateContexter.cs",
+        "Assets/Scripts/Skill/CombatManager.cs",
+        "Assets/Scripts/States/AttackState.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-b8687b65-ee5f-4f4d-b68f-421036f50b67.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-b8687b65-ee5f-4f4d-b68f-421036f50b67.png"
+    },
+    {
+      "id": 6,
+      "category": "core-features",
+      "title": "이벤트 기반 퀘스트·튜토리얼",
+      "path": "core-features/06-quest-tutorial-events.png",
+      "bytes": 1664453,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "9C4E97395FD42FE5AE86465892BE13F52F547902BFA5C1E89607ED9BA9DF0597",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; item icons illustrate events rather than exact game assets",
+      "sources": [
+        "Assets/Scripts/PlayEvents.cs",
+        "Assets/Scripts/Quest/QuestManager.cs",
+        "Assets/Scripts/Tutorial"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-6a399b95-9e0c-46ab-a2d0-049de8aaa1de.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-6a399b95-9e0c-46ab-a2d0-049de8aaa1de.png"
+    },
+    {
+      "id": 7,
+      "category": "core-features",
+      "title": "서버 타이머와 맵별 몬스터 보충",
+      "path": "core-features/07-server-timer-refill.png",
+      "bytes": 1705968,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "4531632AABAF7570B18EDF0C41785C621C1538202711B2ECAC63321695B507EC",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed",
+      "sources": [
+        "EverWindServer/LoginServer/TimerManager.cpp",
+        "EverWindServer/LoginServer/Timer.cpp",
+        "EverWindServer/LoginServer/main.cpp",
+        "EverWindServer/LoginServer/MapDataManager.cpp"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-97704bb5-aeb9-4371-80f0-134a75b932f5.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-97704bb5-aeb9-4371-80f0-134a75b932f5.png"
+    },
+    {
+      "id": 8,
+      "category": "troubleshooting",
+      "title": "싱글톤 매니저의 초기화 순서와 씬 수명 분리",
+      "path": "troubleshooting/01-singleton-initialization.png",
+      "bytes": 2072732,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "DEC54F7850DC78A86EE83546A00F7CE0BB39EC7E0C97E85041D4362A085627B6",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; service labels are illustrative examples",
+      "sources": [
+        "Assets/Scripts/SingletonManager.cs",
+        "Assets/Scripts/SingletonBase.cs",
+        "Assets/Scripts/Server/Loader/SceneLoader.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-49be9acf-f430-4ec7-81b1-dfed7f036c36.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-49be9acf-f430-4ec7-81b1-dfed7f036c36.png"
+    },
+    {
+      "id": 9,
+      "category": "troubleshooting",
+      "title": "싱글톤 공통 베이스로 서로 다른 매니저 묶기",
+      "path": "troubleshooting/02-singleton-common-base.png",
+      "bytes": 1682479,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "C62E47578AFA872F4FBB744DCCBE4EEC27C0644C4766285451D71233AA90D4A6",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; exact SingletonBasest spelling and inheritance verified",
+      "sources": [
+        "Assets/Scripts/SingletonBasest.cs",
+        "Assets/Scripts/SingletonBase.cs",
+        "Assets/Scripts/SingletonManager.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-b77bff6a-4d5d-4993-a5c5-9d5d338d6201.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-b77bff6a-4d5d-4993-a5c5-9d5d338d6201.png"
+    },
+    {
+      "id": 10,
+      "category": "troubleshooting",
+      "title": "맵 전환 후 이전 월드 상태가 남는 문제",
+      "path": "troubleshooting/03-world-transition-cleanup.png",
+      "bytes": 1816907,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "5C09DCEF50C0ACA45DB5F85B88FCBB87EDC75A4C9DC78A5898A770F02DFDF985",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed",
+      "sources": [
+        "Assets/Scripts/Server/Loader/WorldLoader.cs",
+        "Assets/Scripts/UI/DisplayUI/EnemyHpUIManager.cs",
+        "EverWindServer/LoginServer/MapDataManager.cpp"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-9c0e050b-b36c-4cf6-8aa2-855d1811c63f.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-9c0e050b-b36c-4cf6-8aa2-855d1811c63f.png"
+    },
+    {
+      "id": 11,
+      "category": "troubleshooting",
+      "title": "몬스터 제어권과 사망 요청 충돌",
+      "path": "troubleshooting/04-monster-ownership.png",
+      "bytes": 1688806,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "44F3852E1A0B86077CBF26781BEC0F7D9819592B7BE14C880504A93DDBF8CABB",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; corrected Owner title and server-to-client ACK arrow",
+      "sources": [
+        "Assets/Scripts/Enemy/EnemyNetworkSync.cs",
+        "EverWindServer/LoginServer/Logic/PacketMethod.cpp"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-c47733af-1014-435d-b7a5-b6892438981e.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-04eec9b5-b989-4434-a734-1cf8657d74cd.png"
+    },
+    {
+      "id": 12,
+      "category": "troubleshooting",
+      "title": "몬스터 리필 시 중복 생성과 지형 이탈",
+      "path": "troubleshooting/05-refill-ground-height.png",
+      "bytes": 1843694,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "685CF0D4D9DFEDC17D2BE97F6325030D94E3A3B55C03507F97A16972F616EFF7",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; corrected current count to three sprites",
+      "sources": [
+        "EverWindServer/LoginServer/MapData.cpp",
+        "EverWindServer/LoginServer/MapDataManager.cpp",
+        "Assets/Scripts/Server/Loader/WorldLoader.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-6f7bd1f2-f8c2-4219-a05b-6b6bca0450aa.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-60f516c3-4f67-42a6-9dd3-fc2a9495937f.png"
+    },
+    {
+      "id": 13,
+      "category": "troubleshooting",
+      "title": "Animator 상태 증가와 클립 교체의 분리",
+      "path": "troubleshooting/06-animator-overrides.png",
+      "bytes": 1629911,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "21242EA699E4BFB65CDB853A0E5D7F0F17193888AD5F624AE0F354CCF888EDF9",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; Animator state row is simplified conceptual example",
+      "sources": [
+        "Assets/Scripts/States/AnimationContexter.cs",
+        "Assets/Scripts/States/AnimationSet.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-cc031fc2-c97c-4f87-8b54-2812b887f074.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-cc031fc2-c97c-4f87-8b54-2812b887f074.png"
+    },
+    {
+      "id": 14,
+      "category": "troubleshooting",
+      "title": "맵 전환 후 미니맵 좌표가 어긋나는 문제",
+      "path": "troubleshooting/07-minimap-alignment.png",
+      "bytes": 1843718,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "2D435B6117FCC8053FEFFB229891566E77C4D88197EB3918E5D4229FCA387A00",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; corrected HUD Start path to shared handler without emitting UIEvents",
+      "sources": [
+        "Assets/Scripts/Server/Loader/WorldLoader.cs",
+        "Assets/Scripts/UI/DisplayUI/DisplayUIManager.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-5442f9fd-ab9a-48b2-ba48-3d26e5ec1f2d.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-1f6e9a78-2093-44ed-84b8-a22ee34551f8.png"
+    },
+    {
+      "id": 15,
+      "category": "other-functions",
+      "title": "Unity 메인 스레드와 지연 데이터 조립",
+      "path": "other-functions/01-main-thread-assembly.png",
+      "bytes": 1721902,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "94CBF64C36AB85F888CC701EEA0C8F1CE7EBD15FCA41823232CBC608918697C5",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; thread and arrived-data boundaries retained",
+      "sources": [
+        "Assets/Scripts/Server/NetworkClient.cs",
+        "Assets/Scripts/Server/PacketMethod.cs",
+        "Assets/Scripts/Server/UnityMainThreadDispatcher.cs",
+        "Assets/Scripts/Server/Loader/SceneLoader.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-509ef8e9-358b-43df-bf45-e4ef1cc6e5f7.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-509ef8e9-358b-43df-bf45-e4ef1cc6e5f7.png"
+    },
+    {
+      "id": 16,
+      "category": "other-functions",
+      "title": "UI 이벤트와 HUD·전투 피드백",
+      "path": "other-functions/02-hud-combat-feedback.png",
+      "bytes": 1832192,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "4A6C884960ECD83899EBC26ED5583F28AE856D7B4CCE2D2A7928CA2BD85B8B14",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; damage numbers are illustrative values",
+      "sources": [
+        "Assets/Scripts/UI/DisplayUI/DisplayUIManager.cs",
+        "Assets/Scripts/UI/DisplayUI/EnemyHpUIManager.cs",
+        "Assets/Scripts/UI/UIEvents.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-81854af9-e13a-443a-b6c9-66f1e9625a64.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-81854af9-e13a-443a-b6c9-66f1e9625a64.png"
+    },
+    {
+      "id": 17,
+      "category": "other-functions",
+      "title": "퀘스트 목록·팝업 입력·사망 UI",
+      "path": "other-functions/03-quest-popup-death-ui.png",
+      "bytes": 1662088,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "628BC3D5E3ABF051228BB5D1E76FC186B282E8C97EB720B33F1B2448779C9966",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; quest items and rewards are illustrative examples; 15s enables button before click",
+      "sources": [
+        "Assets/Scripts/UI/QuestUI/QuestUI.cs",
+        "Assets/Scripts/UI/QuestUI/QuestContentUI.cs",
+        "Assets/Scripts/UI/PopUpUIManager.cs",
+        "Assets/Scripts/UI/DeadUI.cs"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-491aa726-d717-4acd-a8da-aff1fc75665a.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-491aa726-d717-4acd-a8da-aff1fc75665a.png"
+    },
+    {
+      "id": 18,
+      "category": "other-functions",
+      "title": "패킷 라우팅과 DB 접근 경계",
+      "path": "other-functions/04-routing-db-boundary.png",
+      "bytes": 1703013,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "6E9EAE4E5DAC9D4A7BD7EC09ACC15D38FEBBAF95D680FF5238D4945B0356D733",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; synchronous IOCP-worker database wait shown",
+      "sources": [
+        "EverWindServer/LoginServer/Network/Session.cpp",
+        "EverWindServer/LoginServer/Network/IOCPServer.cpp",
+        "EverWindServer/LoginServer/Logic/PacketMethod.cpp",
+        "EverWindServer/LoginServer/DB/Queries.cpp"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-fa1c0bd1-dc9d-4781-9ed2-d97d80da6644.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-fa1c0bd1-dc9d-4781-9ed2-d97d80da6644.png"
+    },
+    {
+      "id": 19,
+      "category": "other-functions",
+      "title": "맵·몬스터 스폰 기준",
+      "path": "other-functions/05-map-spawn-definitions.png",
+      "bytes": 1806038,
+      "width": 1536,
+      "height": 1024,
+      "sha256": "AF631C5188F959CDBC230C3C7A7A24EC072B3AB69AE2CFDB483387D13C4E0AD2",
+      "status": "generated-and-visually-reviewed",
+      "review": "passed; maps, IDs, species and counts are illustrative examples",
+      "sources": [
+        "EverWindServer/LoginServer/DB/Queries.cpp",
+        "EverWindServer/LoginServer/main.cpp",
+        "EverWindServer/LoginServer/MapData.cpp",
+        "EverWindServer/LoginServer/MapDataManager.cpp"
+      ],
+      "originalGeneration": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-2345ae67-52c9-4af1-bfbb-14da8f4a9824.png",
+      "finalGeneratedSource": "C:\\Users\\tlsal\\.codex\\generated_images\\01a0e7ad-52d3-7e70-b262-2c8291b30357\\exec-2345ae67-52c9-4af1-bfbb-14da8f4a9824.png"
+    }
+  ]
+}

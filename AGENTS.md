@@ -8,3 +8,8 @@ Use actual project code as evidence; do not invent implementation details.
 
 The reusable personal image template is
 `artifact-template-pixel-portfolio-explainers`.
+
+## Git workflow
+
+Keep changes local. Do not create commits or push changes until the user explicitly
+requests committing or pushing the current work.
