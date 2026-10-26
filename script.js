@@ -1739,12 +1739,52 @@ clientDocument.notes = [
   ["반영 경계", "네트워크 데이터는 DataCenter에 보관하고 Unity 객체와 UI 변경은 메인 스레드 작업으로 전달합니다."],
 ];
 clientDocument.tradeoff = "네트워크 데이터의 도착 완료와 씬 준비를 구분하는 명시적 배리어가 필요합니다. UI 구독 해제와 월드 재조립 실패 경로도 자동 검증할 수 있도록 초기화 상태와 테스트를 보강하는 것이 개선 방향입니다.";
+clientDocument.architectureTitle = "클라이언트 모듈 책임 오버뷰";
+clientDocument.diagram = {
+  title: "클라이언트 모듈 단위 구조 UML",
+  zoomable: true,
+  direction: "LR",
+  routing: "elk",
+  groups: [
+    { title: "Lifecycle", nodes: ["SingletonManager", "SceneLoader", "WorldLoader"] },
+    { title: "Network Boundary", nodes: ["NetworkClient", "PacketMethod", "DataCenter", "UnityMainThreadDispatcher"] },
+    { title: "Gameplay", nodes: ["Player", "PlayerStateContexter", "CombatManager", "EnemySpawner"] },
+    { title: "Content", nodes: ["ItemMediator", "QuestManager", "TutorialGuide"] },
+    { title: "Presentation", nodes: ["UIEvents", "PopUpUIManager", "DisplayUIManager", "AnimationContexter"] },
+  ],
+  relations: [
+    ["SingletonManager", "dependency", "NetworkClient", "서비스 초기화"],
+    ["SingletonManager", "dependency", "SceneLoader", "씬 수명 조정"],
+    ["SceneLoader", "dependency", "WorldLoader", "씬 완료 후 월드 조립"],
+    ["WorldLoader", "dependency", "DataCenter", "도착 데이터 조회"],
+    ["NetworkClient", "dependency", "PacketMethod", "패킷 분리·처리"],
+    ["PacketMethod", "data", "DataCenter", "수신 상태 보관"],
+    ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Unity 반영 작업"],
+    ["UnityMainThreadDispatcher", "dependency", "WorldLoader", "메인 스레드 조립"],
+    ["Player", "composition", "PlayerStateContexter", "행동 상태"],
+    ["Player", "composition", "CombatManager", "전투 판단"],
+    ["CombatManager", "event", "UIEvents", "쿨다운·피드백"],
+    ["ItemMediator", "event", "QuestManager", "획득·제작 진행"],
+    ["QuestManager", "event", "UIEvents", "진행 상태"],
+    ["UIEvents", "event", "DisplayUIManager", "HUD 반영"],
+    ["PopUpUIManager", "dependency", "ItemMediator", "인벤토리·제작"],
+    ["PlayerStateContexter", "dependency", "AnimationContexter", "상태 표현"],
+  ],
+};
+clientDocument.architectureDetails = clientDocument.features
+  .filter((feature) => feature.diagram)
+  .map((feature) => ({
+    title: feature.title,
+    summary: feature.summary,
+    diagram: feature.diagram,
+  }));
 serverDocument.summary = "IOCP 입출력과 세션 수명, 맵별 플레이어·몬스터 상태, 반복 타이머와 동기 DB 접근을 연결한 전체 구조입니다. 타이머의 맵 보충 콜백은 서버 시작 시 등록합니다.";
 serverDocument.keywords = ["IOCP", "Session", "IOContext", "MapData", "Timer", "Queries", "DBManager"];
 serverDocument.notes = [
   ["레이어 경계", "IOCP 완료 처리는 PacketMethod에 요청을 넘기고, 게임 규칙과 SQL 실행은 각각 월드 객체와 Queries 경계에서 처리합니다."],
 ];
 serverDocument.tradeoff = "현재 DB 쿼리는 네트워크 워커에서 동기 실행됩니다. DB 작업 큐와 커넥션 풀, 실패·타임아웃·재시도 정책을 추가해 패킷 처리와 저장 대기를 분리하는 것이 개선 방향입니다.";
+serverDocument.architectureTitle = "서버 계층별 책임 오버뷰";
 serverDocument.diagram = {
   title: "서버 전체 구조 UML",
   zoomable: true,
@@ -1778,6 +1818,74 @@ serverDocument.diagram = {
     ["Queries", "dependency", "DBManager", "연결·쿼리 잠금"],
   ],
 };
+serverDocument.architectureDetails = [
+  {
+    title: "실제 요청 처리 순서",
+    summary: "IOCP 완료 통지부터 패킷 복원·라우팅·월드 또는 DB 처리·응답 송신까지의 실행 순서입니다.",
+    diagram: {
+      title: "IOCP 요청 처리 시퀀스",
+      zoomable: true,
+      source: String.raw`sequenceDiagram
+    participant C as Unity Client
+    participant W as IOCP Worker
+    participant I as IOCPServer
+    participant S as Session
+    participant P as PacketMethod
+    participant M as MapDataManager
+    participant Q as Queries
+    C->>S: TCP 요청 바이트
+    W->>I: 완료 통지 수신
+    I->>S: OnRecvCompleted(bytes)
+    S->>S: 누적 버퍼에 추가
+    S->>S: PacketHeader·길이 검증
+    S->>I: 완성 패킷 전달
+    I->>P: PacketId별 라우팅
+    alt 월드 상태 요청
+        P->>M: 맵·세션·몬스터 상태 처리
+        M-->>P: 처리 결과
+    else 조회·저장 요청
+        P->>Q: Prepared Statement 실행
+        Q-->>P: 조회·저장 결과
+    end
+    P->>S: 응답 패킷 Send
+    S->>S: 세션별 송신 큐 직렬화
+    S-->>W: WSASend 등록
+    W-->>I: Send 완료 통지
+    I-->>S: 다음 송신 진행`,
+    },
+  },
+  {
+    title: "스레드와 소유권 경계",
+    summary: "Accept·IOCP·Timer 실행 경계와 shared_ptr·weak_ptr·월드 객체 소유 책임을 함께 표시합니다.",
+    diagram: {
+      title: "서버 스레드·소유권 UML",
+      zoomable: true,
+      direction: "LR",
+      routing: "elk",
+      groups: [
+        { title: "Execution", nodes: ["AcceptThread", "IOCPWorker", "TimerThread"] },
+        { title: "Transport Ownership", nodes: ["IOCPServer", "SessionManager", "Session", "IOContext"] },
+        { title: "World Ownership", nodes: ["MapDataManager", "MapData", "Enemy"] },
+        { title: "Application", nodes: ["PacketMethod", "TimerManager", "Queries", "DBManager"] },
+      ],
+      relations: [
+        ["AcceptThread", "dependency", "IOCPServer", "접속 수락"],
+        ["IOCPWorker", "dependency", "IOCPServer", "Recv·Send 완료 처리"],
+        ["IOCPWorker", "dependency", "PacketMethod", "요청 처리"],
+        ["TimerThread", "dependency", "TimerManager", "condition_variable 대기"],
+        ["TimerManager", "dependency", "MapDataManager", "반복 월드 작업"],
+        ["SessionManager", "aggregation", "Session", "shared_ptr 소유"],
+        ["Session", "dependency", "IOContext", "비동기 작업 생성"],
+        ["IOContext", "aggregation", "Session", "shared_ptr owner"],
+        ["MapDataManager", "aggregation", "MapData", "맵 ID별 보관"],
+        ["MapData", "aggregation", "Session", "weak_ptr 소속"],
+        ["MapData", "aggregation", "Enemy", "shared_ptr 소유"],
+        ["PacketMethod", "dependency", "Queries", "워커에서 동기 호출"],
+        ["Queries", "dependency", "DBManager", "연결·쿼리 mutex"],
+      ],
+    },
+  },
+];
 
 databaseDocument.title = "MariaDB 전체 게임 상태 테이블";
 databaseDocument.summary = "계정·캐릭터·인벤토리·퀘스트 진행·맵·몬스터 정의를 서버 쿼리에서 확인되는 조회 연결을 기준으로 정리했습니다.";
@@ -2072,6 +2180,13 @@ everwindDesignDocument.diagram = {
     ["DBManager", "data", "MariaDB", "게임 상태 영속화"],
   ],
 };
+everwindProject.architectureOverview = {
+  title: "전체 시스템 흐름과 책임 경계",
+  flow: [...everwindDesignDocument.systemFlow],
+  diagram: everwindDesignDocument.diagram,
+};
+everwindDesignDocument.systemFlow = [];
+everwindDesignDocument.diagram = null;
 everwindProject.designDocument = everwindDesignDocument;
 
 const littleSurvivalProject = projects["project-2"];
@@ -2643,16 +2758,22 @@ const modalFields = {
   solution: modal.querySelector("#modal-solution"),
   tags: modal.querySelector("#modal-tags"),
   gallerySection: modal.querySelector(".modal-gallery"),
+  galleryIndex: modal.querySelector("#modal-gallery-index"),
   gallery: modal.querySelector("#modal-gallery-images"),
   otherProjectsSection: modal.querySelector("#modal-other-projects"),
   otherProjects: modal.querySelector("#modal-other-project-list"),
   overview: modal.querySelector("#modal-overview"),
+  overviewIndex: modal.querySelector("#modal-overview-index"),
   overviewTitle: modal.querySelector("#modal-overview-title"),
   overviewCopy: modal.querySelector("#modal-overview-copy"),
   motivation: modal.querySelector("#modal-motivation"),
   motivationTitle: modal.querySelector("#modal-motivation-title"),
   motivationCopy: modal.querySelector("#modal-motivation-copy"),
   info: modal.querySelector("#modal-info"),
+  architectureSummary: modal.querySelector("#modal-architecture-summary"),
+  architectureTitle: modal.querySelector("#modal-architecture-title"),
+  architectureFlow: modal.querySelector("#modal-architecture-flow"),
+  architectureDiagram: modal.querySelector("#modal-architecture-diagram"),
   detail: modal.querySelector("#modal-detail"),
   outline: modal.querySelector("#modal-outline-list"),
   principles: modal.querySelector("#modal-principle-list"),
@@ -2952,8 +3073,8 @@ const makeMermaidSource = (diagram) => {
     const label = note ? ` : ${note.replaceAll(":", "·")}` : "";
     if (type === "inheritance") lines.push(`${to} <|-- ${from}${label}`);
     else if (type === "implementation") lines.push(`${to} <|.. ${from}${label}`);
-    else if (type === "composition") lines.push(`${from} *-- ${to}${label}`);
-    else if (type === "aggregation") lines.push(`${from} o-- ${to}${label}`);
+    else if (type === "composition") lines.push(`${from} --> ${to} : 포함${note ? ` · ${note.replaceAll(":", "·")}` : ""}`);
+    else if (type === "aggregation") lines.push(`${from} --> ${to} : 집합${note ? ` · ${note.replaceAll(":", "·")}` : ""}`);
     else if (["dependency", "event", "data"].includes(type)) lines.push(`${from} ..> ${to}${label}`);
     else lines.push(`${from} --> ${to}${label}`);
   });
@@ -3044,12 +3165,11 @@ const renderMermaidCanvas = async (canvas) => {
       label.setAttribute("transform", `translate(${x}, ${y})`);
     });
     const diagram = canvas.querySelector("svg");
-    if (canvas.dataset.routing === "elk") roundMermaidEdges(diagram);
-    else straightenMermaidEdges(diagram);
+    // Keep Mermaid's native edge geometry so markers remain attached to nodes.
     const bounds = diagram.getBBox();
     // Mermaid can place edge markers and HTML labels just outside getBBox().
     // A generous viewBox gutter keeps those details visible at every scale.
-    const padding = 36;
+    const padding = 64;
     diagram.setAttribute("viewBox", `${bounds.x - padding} ${bounds.y - padding} ${bounds.width + padding * 2} ${bounds.height + padding * 2}`);
     diagram.setAttribute("width", bounds.width + padding * 2);
     diagram.setAttribute("height", bounds.height + padding * 2);
@@ -3436,12 +3556,45 @@ const makeFeatureImplementation = (feature, index) => {
   return article;
 };
 
+const makeArchitectureDetailList = (items = []) => {
+  if (!items.length) return null;
+  const list = document.createElement("div");
+  const heading = document.createElement("h6");
+  list.className = "architecture-detail-list";
+  heading.textContent = "기능별 상세 UML";
+  list.append(heading);
+  items.forEach((item, index) => {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    const number = document.createElement("span");
+    const copy = document.createElement("span");
+    const title = document.createElement("strong");
+    const description = document.createElement("small");
+    const panel = document.createElement("div");
+    details.className = "architecture-detail";
+    number.textContent = String(index + 1).padStart(2, "0");
+    title.textContent = item.title;
+    description.textContent = item.summary || "구현 구조를 UML로 확인합니다.";
+    copy.append(title, description);
+    summary.append(number, copy);
+    panel.className = "architecture-detail-panel";
+    panel.append(makeUmlDiagram(item.diagram));
+    details.append(summary, panel);
+    details.addEventListener("toggle", () => {
+      if (details.open) details.querySelectorAll(".mermaid-canvas").forEach(queueMermaidRender);
+    });
+    list.append(details);
+  });
+  return list;
+};
+
 const buildDesignDocument = (documentData) => {
   designFields.kicker.textContent = documentData.kicker;
   designFields.title.textContent = documentData.title;
   designFields.summary.textContent = documentData.summary;
   designFields.keywords.replaceChildren(...makeKeywordList(documentData.keywords).children);
   designFields.systemFlow.replaceChildren(...makeSystemFlow(documentData.systemFlow).children);
+  designFields.systemFlow.hidden = !(documentData.systemFlow || []).length;
   designFields.overallDiagram.replaceChildren();
   if (documentData.diagram) designFields.overallDiagram.append(makeUmlDiagram(documentData.diagram));
   designFields.overallDiagram.hidden = !documentData.diagram;
@@ -3499,6 +3652,8 @@ const buildDesignDocument = (documentData) => {
       `design-doc-${documentItem.id}-${featureIndex + 1}`,
     )));
     architectureSection.append(architectureTitle, makeUmlDiagram(documentItem.diagram));
+    const architectureDetails = makeArchitectureDetailList(documentItem.architectureDetails);
+    if (architectureDetails) architectureSection.append(architectureDetails);
     featureSection.append(featureTitle, featureList);
     article.append(header, makeKeywordList(documentItem.keywords), architectureSection);
     if (!architectureOnly) {
@@ -3826,6 +3981,18 @@ const openProject = (projectId) => {
       return [term, description];
     }),
   );
+  const architectureOverview = project.architectureOverview;
+  modalFields.gallerySection.after(modalFields.overview);
+  modalFields.galleryIndex.textContent = "01";
+  modalFields.overviewIndex.textContent = "02";
+  modalFields.architectureSummary.hidden = !architectureOverview;
+  modalFields.architectureFlow.replaceChildren();
+  modalFields.architectureDiagram.replaceChildren();
+  if (architectureOverview) {
+    modalFields.architectureTitle.textContent = architectureOverview.title || "전체 시스템 흐름";
+    modalFields.architectureFlow.append(makeSystemFlow(architectureOverview.flow || []));
+    if (architectureOverview.diagram) modalFields.architectureDiagram.append(makeUmlDiagram(architectureOverview.diagram));
+  }
   modalFields.story.hidden = isCollection || !(project.feature || project.challenge || project.solution);
   modalFields.tags.replaceChildren(
     ...(project.tags || []).map((tag) => {
@@ -3841,6 +4008,7 @@ const openProject = (projectId) => {
   modal.showModal();
   modal.scrollTop = 0;
   document.body.classList.add("modal-open");
+  if (architectureOverview?.diagram) observeMermaidDiagrams(modal);
   closeButton.focus();
 };
 

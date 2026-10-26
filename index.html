@@ -10,7 +10,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2313192b'/%3E%3Cpath fill='%23ff9635' d='M8 8h16v4H8zM8 12h4v12H8zM20 12h4v12h-4zM12 20h8v4h-8z'/%3E%3Cpath fill='%23ffe18c' d='M12 12h8v4h-8z'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261026-01" />
+    <link rel="stylesheet" href="styles.css?v=20261026-04" />
   </head>
   <body>
     <div class="scanline" aria-hidden="true"></div>
@@ -320,11 +320,19 @@
           <div class="other-project-grid" id="modal-other-project-list"></div>
         </section>
         <section class="modal-gallery" aria-labelledby="gallery-title">
-          <div class="modal-section-title"><span>01</span><h3 id="gallery-title">In-game Screens</h3></div>
+          <div class="modal-section-title"><span id="modal-gallery-index">01</span><h3 id="gallery-title">In-game Screens</h3></div>
           <div class="shot-grid" id="modal-gallery-images"></div>
         </section>
         <section class="modal-overview" id="modal-overview" aria-labelledby="modal-overview-heading" hidden>
-          <div class="modal-section-title"><span>02</span><h3 id="modal-overview-heading">Information</h3></div>
+          <div class="modal-section-title"><span id="modal-overview-index">02</span><h3 id="modal-overview-heading">Information</h3></div>
+          <section class="modal-architecture-summary" id="modal-architecture-summary" aria-labelledby="modal-architecture-title" hidden>
+            <div class="modal-architecture-heading">
+              <p class="eyebrow">System Architecture</p>
+              <h3 id="modal-architecture-title">전체 시스템 흐름</h3>
+            </div>
+            <div id="modal-architecture-flow"></div>
+            <div id="modal-architecture-diagram"></div>
+          </section>
           <div class="modal-overview-grid">
             <article class="modal-concept">
               <div class="modal-concept-block">
@@ -469,6 +477,6 @@
         </div>
       </div>
     </dialog>
-    <script src="script.js?v=20261026-01"></script>
+    <script src="script.js?v=20261026-04"></script>
   </body>
 </html>
