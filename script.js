@@ -2973,6 +2973,21 @@ lspFeedbackImplementation.diagram = {
   contributionNote: "개인: 판정·갱신 연결·제작 효과. 팀원 기반: 입력·UI·전방 탐색. 클래스 사이의 현재 호출을 표시했습니다.",
 };
 
+const lspRemovedFeatureTitle = "협업 상태 구조의 행동 잠금 확장";
+littleSurvivalProject.coreFeatures = littleSurvivalProject.coreFeatures.filter((feature) => feature.title !== lspRemovedFeatureTitle);
+littleSurvivalDesignDocument.coreFeatures = littleSurvivalDesignDocument.coreFeatures.filter((feature) => feature.title !== lspRemovedFeatureTitle);
+// Ownership remains in the color legend; stereotypes describe actual code types only.
+[...littleSurvivalDesignDocument.coreFeatures, ...littleSurvivalDesignDocument.troubleshooting].forEach((feature) => {
+  if (!feature.diagram) return;
+  const nodes = new Set(feature.diagram.groups.flatMap((group) => group.nodes));
+  feature.diagram.stereotypes = [
+    ["IInteractable", "interface"],
+    ["Item", "abstract"],
+    ["SpawnCandidate", "struct"],
+  ].filter(([node]) => nodes.has(node));
+  feature.diagram.contributionNote = "";
+});
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
@@ -3340,11 +3355,12 @@ const makeMermaidSource = (diagram) => {
     else lines.push(`${from} --> ${to}${label}`);
   });
   const contributionColors = { personal: "#79dfba", shared: "#ffd578", existing: "#8fa8c4", engine: "#68778b" };
-  const contributionTags = { personal: "Personal", shared: "Shared", existing: "TeamBase", engine: "UnityReference" };
   (diagram.contributions || []).forEach(({ type, nodes }) => {
     lines.push(`classDef lsp_${type} fill:#101a28,stroke:${contributionColors[type]},color:#f1f5ff,stroke-width:2px`);
-    nodes.forEach((node) => lines.push(`<<${contributionTags[type]}>> ${node}`));
     lines.push(`cssClass "${nodes.join(",")}" lsp_${type}`);
+  });
+  (diagram.stereotypes || []).forEach(([node, stereotype]) => {
+    lines.push(`<<${stereotype}>> ${node}`);
   });
   if (diagram.routing === "elk") {
     lines.unshift("---", "config:", "  layout: elk", "  elk:", "    mergeEdges: false", "    nodePlacementStrategy: NETWORK_SIMPLEX", "    considerModelOrder: NONE", "    cycleBreakingStrategy: GREEDY", "---");
@@ -3545,14 +3561,16 @@ const makeUmlDiagram = (diagram) => {
     diagram.contributions.forEach(({ type, label }) => {
       const item = document.createElement("li");
       item.dataset.contribution = type;
-      item.textContent = `${label} · ${{ personal: "Personal", shared: "Shared", existing: "TeamBase", engine: "UnityReference" }[type]}`;
+      item.textContent = label;
       legend.append(item);
     });
     figure.insertBefore(legend, canvas);
-    const note = document.createElement("p");
-    note.className = "uml-contribution-note";
-    note.textContent = diagram.contributionNote || "개인 구현은 신민서(tlsalstj7743) 기준입니다.";
-    figure.append(note);
+    if (diagram.contributionNote) {
+      const note = document.createElement("p");
+      note.className = "uml-contribution-note";
+      note.textContent = diagram.contributionNote;
+      figure.append(note);
+    }
   }
   if (diagram.zoomable) {
     const footer = document.createElement("div");
@@ -4010,21 +4028,6 @@ const makeLspInlineExplanation = (feature, implementation) => {
     video.setAttribute("aria-label", media.title || `${feature.title} 결과 영상`);
     result.append(title, video);
     content.append(result);
-  }
-  const sources = visual.sources || implementation?.sources;
-  if (sources?.length) {
-    const nav = document.createElement("nav");
-    nav.className = "implementation-sources";
-    nav.setAttribute("aria-label", "구현 근거 커밋");
-    sources.forEach(({ label, url }) => {
-      const link = document.createElement("a");
-      link.textContent = label;
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      nav.append(link);
-    });
-    content.append(nav);
   }
   return content;
 };

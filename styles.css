@@ -531,7 +531,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .lsp-feature-points dt { color: var(--yellow); font-weight: 850; }
 .lsp-feature-points dd { min-width: 0; color: var(--muted); }
 .lsp-visual-pair { display: grid; gap: 1.25rem; min-width: 0; }
-.lsp-summary-figure { min-width: 0; margin: 0; border: 1px solid #dddccf; border-radius: 5px; overflow: hidden; background: #fbfaf5; }
+.lsp-summary-figure { width: 65%; min-width: 0; margin: 0 auto; border: 1px solid #dddccf; border-radius: 5px; overflow: hidden; background: #fbfaf5; }
 .lsp-summary-figure img { display: block; width: 100%; height: auto; object-fit: contain; image-rendering: auto; }
 .lsp-summary-figure figcaption { border-top: 1px solid #e5e2d5; padding: .55rem .8rem; color: #63665f; font-size: .68rem; }
 .lsp-visual-pair > .uml-diagram { margin: 0; }
