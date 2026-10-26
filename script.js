@@ -1295,16 +1295,22 @@ const everwindDesignDocument = {
           ],
           diagram: {
             title: "반복 타이머와 맵별 몬스터 보충",
+            caption: "Mermaid UML · ServerMain은 main 함수, RefillCallback은 main에서 등록한 lambda 표기",
             zoomable: true,
             groups: [
+              { title: "Bootstrap", nodes: ["ServerMain", "RefillCallback", "SessionManager"] },
               { title: "Schedule", nodes: ["TimerManager", "Timer"] },
               { title: "World", nodes: ["MapDataManager", "MapData", "Enemy", "PacketMethod"] },
             ],
             relations: [
               ["TimerManager", "aggregation", "Timer", "우선순위 큐"],
-              ["Timer", "dependency", "MapDataManager", "main에서 등록한 반복 콜백"],
-              ["MapDataManager", "aggregation", "MapData", "모든 맵 순회"],
-              ["MapData", "aggregation", "Enemy", "최대 수까지 생성"],
+              ["ServerMain", "dependency", "TimerManager", "Start·AddRepeat"],
+              ["ServerMain", "dependency", "RefillCallback", "main의 lambda 등록"],
+              ["Timer", "dependency", "RefillCallback", "보관한 callback 실행"],
+              ["RefillCallback", "dependency", "SessionManager", "캡처한 포인터 사용"],
+              ["SessionManager", "composition", "MapDataManager", "unique_ptr·GetMapDataManager"],
+              ["MapDataManager", "data", "MapData", "raw pointer mapTable 순회"],
+              ["MapData", "aggregation", "Enemy", "shared_ptr·부족 수량 생성"],
               ["MapDataManager", "dependency", "PacketMethod", "생성 패킷 구성"],
             ],
           },
@@ -1733,7 +1739,7 @@ clientDocument.features = clientDocument.features.filter((item) => !coreFeatureI
 serverDocument.features = serverDocument.features.filter((item) => !coreFeatureImplementationTitles.server.has(item.title));
 databaseDocument.features = databaseDocument.features.filter((item) => !coreFeatureImplementationTitles.database.has(item.title));
 
-clientDocument.summary = "초기화·네트워크·플레이어 상태·전투·아이템·퀘스트·튜토리얼·UI를 함께 배치한 전체 구조입니다. 각 영역의 상속·구현 관계와 영역 사이의 참조·이벤트 흐름을 보여줍니다.";
+clientDocument.summary = "현재 Unity 코드에서 확인되는 직접 참조, GetComponent·싱글톤 조회, 이벤트 구독 흐름을 모듈 단위로 정리했습니다. 이상적인 계층이 아니라 실제 호출 방향을 기준으로 표시합니다.";
 clientDocument.keywords = ["초기화", "네트워크", "상태 머신", "전투·스킬", "아이템", "퀘스트·튜토리얼", "UI"];
 clientDocument.notes = [
   ["반영 경계", "네트워크 데이터는 DataCenter에 보관하고 Unity 객체와 UI 변경은 메인 스레드 작업으로 전달합니다."],
@@ -1746,28 +1752,34 @@ clientDocument.diagram = {
   direction: "LR",
   routing: "elk",
   groups: [
-    { title: "Lifecycle", nodes: ["SingletonManager", "SceneLoader", "WorldLoader"] },
+    { title: "Lifecycle", nodes: ["SingletonManager", "SingletonBasest", "SceneLoader", "WorldLoader"] },
     { title: "Network Boundary", nodes: ["NetworkClient", "PacketMethod", "DataCenter", "UnityMainThreadDispatcher"] },
-    { title: "Gameplay", nodes: ["Player", "PlayerStateContexter", "CombatManager", "EnemySpawner"] },
-    { title: "Content", nodes: ["ItemMediator", "QuestManager", "TutorialGuide"] },
+    { title: "Gameplay", nodes: ["Player", "PlayerStateContexter", "CombatManager", "EnemySpawner", "OtherPlayerManager"] },
+    { title: "Content", nodes: ["ItemMediator", "QuestManager", "TutorialGuide", "PlayEvents"] },
     { title: "Presentation", nodes: ["UIEvents", "PopUpUIManager", "DisplayUIManager", "AnimationContexter"] },
   ],
   relations: [
-    ["SingletonManager", "dependency", "NetworkClient", "서비스 초기화"],
-    ["SingletonManager", "dependency", "SceneLoader", "씬 수명 조정"],
-    ["SceneLoader", "dependency", "WorldLoader", "씬 완료 후 월드 조립"],
-    ["WorldLoader", "dependency", "DataCenter", "도착 데이터 조회"],
-    ["NetworkClient", "dependency", "PacketMethod", "패킷 분리·처리"],
-    ["PacketMethod", "data", "DataCenter", "수신 상태 보관"],
-    ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Unity 반영 작업"],
-    ["UnityMainThreadDispatcher", "dependency", "WorldLoader", "메인 스레드 조립"],
-    ["Player", "composition", "PlayerStateContexter", "행동 상태"],
-    ["Player", "composition", "CombatManager", "전투 판단"],
+    ["SingletonManager", "aggregation", "SingletonBasest", "등록 목록·우선순위 Init"],
+    ["SceneLoader", "dependency", "SingletonManager", "씬 로드 후 InitializeIngame"],
+    ["SceneLoader", "dependency", "DataCenter", "loginData·대기 큐 조회"],
+    ["SceneLoader", "dependency", "WorldLoader", "InitializeWorld 호출"],
+    ["WorldLoader", "dependency", "DataCenter", "MapTable·MonsterTable 조회"],
+    ["WorldLoader", "dependency", "OtherPlayerManager", "원격 플레이어 등록·정리"],
+    ["WorldLoader", "dependency", "EnemySpawner", "몬스터 등록·정리"],
+    ["NetworkClient", "dependency", "PacketMethod", "PacketType별 정적 처리 호출"],
+    ["PacketMethod", "data", "DataCenter", "수신 데이터 기록"],
+    ["PacketMethod", "dependency", "UnityMainThreadDispatcher", "Action Enqueue"],
+    ["PacketMethod", "dependency", "WorldLoader", "큐 Action에서 월드 갱신"],
+    ["Player", "dependency", "PlayerStateContexter", "GetComponent·상태 조회"],
+    ["Player", "dependency", "CombatManager", "GetComponent·전투 호출"],
     ["CombatManager", "event", "UIEvents", "쿨다운·피드백"],
-    ["ItemMediator", "event", "QuestManager", "획득·제작 진행"],
+    ["PlayEvents", "event", "QuestManager", "처치·채집·제작 구독"],
     ["QuestManager", "event", "UIEvents", "진행 상태"],
     ["UIEvents", "event", "DisplayUIManager", "HUD 반영"],
-    ["PopUpUIManager", "dependency", "ItemMediator", "인벤토리·제작"],
+    ["UIEvents", "event", "PopUpUIManager", "사망 UI 열기·닫기"],
+    ["PopUpUIManager", "data", "UIEvents", "팝업 상태 기록"],
+    ["ItemMediator", "dependency", "PopUpUIManager", "Inventory.PutItem 호출"],
+    ["TutorialGuide", "data", "DataCenter", "TutorialStep 읽기·쓰기"],
     ["PlayerStateContexter", "dependency", "AnimationContexter", "상태 표현"],
   ],
 };
@@ -1778,7 +1790,7 @@ clientDocument.architectureDetails = clientDocument.features
     summary: feature.summary,
     diagram: feature.diagram,
   }));
-serverDocument.summary = "IOCP 입출력과 세션 수명, 맵별 플레이어·몬스터 상태, 반복 타이머와 동기 DB 접근을 연결한 전체 구조입니다. 타이머의 맵 보충 콜백은 서버 시작 시 등록합니다.";
+serverDocument.summary = "현재 C++ 서버 코드의 포인터·스마트 포인터 멤버와 직접 호출 경로를 기준으로 정리했습니다. main에서 생성·연결하는 객체와 IOCP·Timer 실행 경계를 구현 상태 그대로 표시합니다.";
 serverDocument.keywords = ["IOCP", "Session", "IOContext", "MapData", "Timer", "Queries", "DBManager"];
 serverDocument.notes = [
   ["레이어 경계", "IOCP 완료 처리는 PacketMethod에 요청을 넘기고, 게임 규칙과 SQL 실행은 각각 월드 객체와 Queries 경계에서 처리합니다."],
@@ -1791,6 +1803,7 @@ serverDocument.diagram = {
   direction: "LR",
   routing: "elk",
   groups: [
+    { title: "Bootstrap", nodes: ["ServerMain"] },
     { title: "Transport", nodes: ["IOCPServer", "IOContext", "PacketHeader"] },
     { title: "Sessions", nodes: ["SessionManager", "Session"] },
     { title: "Application", nodes: ["PacketMethod"] },
@@ -1799,23 +1812,29 @@ serverDocument.diagram = {
     { title: "Persistence", nodes: ["Queries", "DBManager"] },
   ],
   relations: [
-    ["IOCPServer", "dependency", "SessionManager", "세션 등록·조회"],
-    ["IOCPServer", "dependency", "IOContext", "완료된 I/O 작업"],
-    ["SessionManager", "aggregation", "Session", "연결 관리"],
-    ["Session", "dependency", "IOContext", "비동기 작업 생성"],
-    ["IOContext", "aggregation", "Session", "완료 전 공유 수명"],
+    ["ServerMain", "dependency", "DBManager", "stack 생성·Connect"],
+    ["ServerMain", "dependency", "IOCPServer", "new·Initialize"],
+    ["ServerMain", "dependency", "PacketMethod", "new(db, server)"],
+    ["ServerMain", "dependency", "SessionManager", "new(packetMethod)"],
+    ["ServerMain", "dependency", "TimerManager", "new·Start·AddRepeat"],
+    ["ServerMain", "dependency", "MapDataManager", "맵 등록·10초 리필 콜백"],
+    ["IOCPServer", "dependency", "SessionManager", "raw pointer·세션 등록"],
+    ["IOCPServer", "dependency", "PacketMethod", "raw pointer·HandlePacket"],
+    ["IOCPServer", "dependency", "Session", "AcceptLoop에서 make_shared"],
+    ["SessionManager", "aggregation", "Session", "unordered_map shared_ptr"],
+    ["Session", "dependency", "IOContext", "PostRecv·PostSend에서 new"],
+    ["IOContext", "aggregation", "Session", "owner shared_ptr"],
     ["Session", "dependency", "PacketHeader", "수신 패킷 프레이밍"],
-    ["IOCPServer", "dependency", "PacketMethod", "Packet ID별 전달"],
-    ["SessionManager", "composition", "MapDataManager", "월드 관리"],
-    ["MapDataManager", "aggregation", "MapData", "맵 ID별 등록"],
-    ["MapData", "aggregation", "Session", "같은 맵 전파 대상"],
-    ["MapData", "aggregation", "Enemy", "몬스터 상태"],
-    ["PacketMethod", "dependency", "MapDataManager", "월드 상태 요청"],
-    ["TimerManager", "aggregation", "Timer", "실행 시각 순 작업 큐"],
-    ["Timer", "dependency", "MapDataManager", "등록된 반복 콜백"],
-    ["PacketMethod", "aggregation", "Queries", "조회·저장 호출"],
-    ["Session", "dependency", "Queries", "연결 종료 시 위치·맵 저장"],
-    ["Queries", "dependency", "DBManager", "연결·쿼리 잠금"],
+    ["Session", "dependency", "IOCPServer", "OnPacketReceived·Close 정리"],
+    ["SessionManager", "composition", "MapDataManager", "unique_ptr"],
+    ["MapDataManager", "data", "MapData", "raw pointer mapTable"],
+    ["MapData", "data", "Session", "vector weak_ptr"],
+    ["MapData", "aggregation", "Enemy", "unordered_map shared_ptr"],
+    ["PacketMethod", "dependency", "MapDataManager", "server 경유 월드 처리"],
+    ["TimerManager", "aggregation", "Timer", "priority_queue shared_ptr"],
+    ["PacketMethod", "composition", "Queries", "constructor new·destructor delete"],
+    ["Session", "dependency", "Queries", "Close에서 위치·맵 저장"],
+    ["Queries", "dependency", "DBManager", "reference·connection·mutex"],
   ],
 };
 serverDocument.architectureDetails = [
@@ -1827,19 +1846,17 @@ serverDocument.architectureDetails = [
       zoomable: true,
       source: String.raw`sequenceDiagram
     participant C as Unity Client
-    participant W as IOCP Worker
-    participant I as IOCPServer
+    participant I as IOCPServer::WorkerLoop
     participant S as Session
     participant P as PacketMethod
     participant M as MapDataManager
     participant Q as Queries
-    C->>S: TCP 요청 바이트
-    W->>I: 완료 통지 수신
-    I->>S: OnRecvCompleted(bytes)
+    C->>S: TCP 요청 바이트·WSARecv 완료
+    I->>S: GetQueuedCompletionStatus 후 OnRecvCompleted
     S->>S: 누적 버퍼에 추가
     S->>S: PacketHeader·길이 검증
-    S->>I: 완성 패킷 전달
-    I->>P: PacketId별 라우팅
+    S->>I: ProcessPacket → OnPacketReceived
+    I->>P: HandlePacket(PacketId)
     alt 월드 상태 요청
         P->>M: 맵·세션·몬스터 상태 처리
         M-->>P: 처리 결과
@@ -1849,39 +1866,44 @@ serverDocument.architectureDetails = [
     end
     P->>S: 응답 패킷 Send
     S->>S: 세션별 송신 큐 직렬화
-    S-->>W: WSASend 등록
-    W-->>I: Send 완료 통지
-    I-->>S: 다음 송신 진행`,
+    S->>S: WSASend 등록
+    I-->>S: Send 완료 통지 → OnSendCompleted
+    S->>S: 큐 pop 후 다음 WSASend`,
     },
   },
   {
     title: "스레드와 소유권 경계",
-    summary: "Accept·IOCP·Timer 실행 경계와 shared_ptr·weak_ptr·월드 객체 소유 책임을 함께 표시합니다.",
+    summary: "실제 std::thread 멤버와 shared_ptr·weak_ptr·unique_ptr·raw pointer 보관 위치를 코드 기준으로 표시합니다.",
     diagram: {
       title: "서버 스레드·소유권 UML",
       zoomable: true,
       direction: "LR",
       routing: "elk",
       groups: [
-        { title: "Execution", nodes: ["AcceptThread", "IOCPWorker", "TimerThread"] },
+        { title: "Bootstrap", nodes: ["ServerMain"] },
+        { title: "Execution", nodes: ["AcceptThread", "IOCPWorkers", "TimerThread"] },
         { title: "Transport Ownership", nodes: ["IOCPServer", "SessionManager", "Session", "IOContext"] },
         { title: "World Ownership", nodes: ["MapDataManager", "MapData", "Enemy"] },
         { title: "Application", nodes: ["PacketMethod", "TimerManager", "Queries", "DBManager"] },
       ],
       relations: [
-        ["AcceptThread", "dependency", "IOCPServer", "접속 수락"],
-        ["IOCPWorker", "dependency", "IOCPServer", "Recv·Send 완료 처리"],
-        ["IOCPWorker", "dependency", "PacketMethod", "요청 처리"],
-        ["TimerThread", "dependency", "TimerManager", "condition_variable 대기"],
-        ["TimerManager", "dependency", "MapDataManager", "반복 월드 작업"],
-        ["SessionManager", "aggregation", "Session", "shared_ptr 소유"],
-        ["Session", "dependency", "IOContext", "비동기 작업 생성"],
+        ["IOCPServer", "composition", "AcceptThread", "std::thread acceptThread_"],
+        ["IOCPServer", "composition", "IOCPWorkers", "vector std::thread workerThreads_"],
+        ["TimerManager", "composition", "TimerThread", "std::thread timerThread"],
+        ["AcceptThread", "dependency", "Session", "accept 후 make_shared"],
+        ["IOCPWorkers", "dependency", "IOContext", "완료 통지에서 context 복원"],
+        ["IOCPWorkers", "dependency", "Session", "context owner로 콜백"],
+        ["SessionManager", "aggregation", "Session", "unordered_map shared_ptr"],
+        ["Session", "dependency", "IOContext", "Recv·Send마다 new·완료 워커에서 delete"],
         ["IOContext", "aggregation", "Session", "shared_ptr owner"],
-        ["MapDataManager", "aggregation", "MapData", "맵 ID별 보관"],
-        ["MapData", "aggregation", "Session", "weak_ptr 소속"],
-        ["MapData", "aggregation", "Enemy", "shared_ptr 소유"],
-        ["PacketMethod", "dependency", "Queries", "워커에서 동기 호출"],
-        ["Queries", "dependency", "DBManager", "연결·쿼리 mutex"],
+        ["SessionManager", "composition", "MapDataManager", "unique_ptr"],
+        ["MapDataManager", "data", "MapData", "raw pointer mapTable"],
+        ["MapData", "data", "Session", "vector weak_ptr"],
+        ["MapData", "aggregation", "Enemy", "unordered_map shared_ptr"],
+        ["ServerMain", "dependency", "TimerManager", "Start·AddRepeat"],
+        ["ServerMain", "dependency", "MapDataManager", "lambda에서 RefillEnemyAllMap"],
+        ["PacketMethod", "composition", "Queries", "new·delete"],
+        ["Queries", "dependency", "DBManager", "reference·mutex"],
       ],
     },
   },
@@ -2156,28 +2178,34 @@ everwindDesignDocument.modalLabel = "EVERWIND / SYSTEM ARCHITECTURE";
 everwindDesignDocument.modalTitle = "시스템 아키텍처";
 everwindDesignDocument.kicker = "EVERWIND / SYSTEM ARCHITECTURE";
 everwindDesignDocument.title = "Client·Server·Database를 연결하는 전체 시스템 구조";
-everwindDesignDocument.summary = "Unity 클라이언트의 입력과 표현, TCP 패킷 경계, C++ IOCP 서버의 요청 처리, MariaDB 영속화가 연결되는 책임과 데이터 흐름을 정리했습니다. 개별 기능 구현은 프로젝트 상세보기의 Core Features와 Other Functions에서 확인할 수 있습니다.";
-everwindDesignDocument.keywords = ["Client", "TCP Protocol", "IOCP Server", "World State", "Queries", "MariaDB"];
+everwindDesignDocument.summary = "현재 코드에서 확인되는 클래스와 직접 호출 경로를 기준으로 Unity 클라이언트의 수신 처리, TCP 패킷 경계, C++ IOCP 서버의 요청 처리, MariaDB 영속화 흐름을 정리했습니다. 이상적인 계층 구조가 아니라 실제 구현 상태를 표시하며, 개별 기능 구현은 프로젝트 상세보기의 Core Features와 Other Functions에서 확인할 수 있습니다.";
+everwindDesignDocument.keywords = ["NetworkClient", "PacketHeader", "IOCPServer", "PacketMethod", "Queries", "MariaDB"];
 everwindDesignDocument.diagram = {
   title: "EVERWIND 전체 시스템 아키텍처",
+  caption: "Mermaid UML · ClientPacketMethod와 ServerPacketMethod는 각 프로젝트의 PacketMethod 구분 표기",
   direction: "LR",
   zoomable: true,
   groups: [
-    { title: "Unity Client", nodes: ["InputAndUI", "GameplaySystems", "NetworkClient"] },
+    { title: "Unity Client", nodes: ["SceneLoader", "WorldLoader", "NetworkClient", "ClientPacketMethod", "DataCenter", "UnityMainThreadDispatcher"] },
     { title: "TCP Protocol", nodes: ["PacketHeader"] },
-    { title: "C++ IOCP Server", nodes: ["IOCPServer", "PacketMethod", "MapDataManager", "Queries"] },
+    { title: "C++ IOCP Server", nodes: ["IOCPServer", "Session", "ServerPacketMethod", "MapDataManager", "Queries"] },
     { title: "Database", nodes: ["DBManager", "MariaDB"] },
   ],
   relations: [
-    ["InputAndUI", "dependency", "GameplaySystems", "입력·표현"],
-    ["GameplaySystems", "dependency", "NetworkClient", "게임 요청"],
-    ["NetworkClient", "data", "PacketHeader", "TCP binary packet"],
-    ["PacketHeader", "data", "IOCPServer", "완료 통지"],
-    ["IOCPServer", "dependency", "PacketMethod", "Packet ID 라우팅"],
-    ["PacketMethod", "dependency", "MapDataManager", "월드 상태"],
-    ["PacketMethod", "dependency", "Queries", "조회·저장"],
-    ["Queries", "dependency", "DBManager", "쿼리 실행"],
-    ["DBManager", "data", "MariaDB", "게임 상태 영속화"],
+    ["SceneLoader", "dependency", "WorldLoader", "InitializeWorld 호출"],
+    ["WorldLoader", "data", "DataCenter", "수신 월드 데이터 조회"],
+    ["NetworkClient", "dependency", "ClientPacketMethod", "PacketType별 정적 처리 호출"],
+    ["ClientPacketMethod", "data", "DataCenter", "수신 데이터 기록"],
+    ["ClientPacketMethod", "dependency", "UnityMainThreadDispatcher", "Unity 작업 Action Enqueue"],
+    ["ClientPacketMethod", "dependency", "WorldLoader", "큐 Action에서 월드 갱신"],
+    ["NetworkClient", "data", "PacketHeader", "NetworkStream 송수신"],
+    ["PacketHeader", "data", "Session", "TCP 누적 버퍼에서 복원"],
+    ["Session", "dependency", "IOCPServer", "OnPacketReceived 호출"],
+    ["IOCPServer", "dependency", "ServerPacketMethod", "HandlePacket 호출"],
+    ["ServerPacketMethod", "dependency", "MapDataManager", "server 경유 월드 처리"],
+    ["ServerPacketMethod", "composition", "Queries", "constructor new·destructor delete"],
+    ["Queries", "dependency", "DBManager", "DBManager 참조로 쿼리 실행"],
+    ["DBManager", "data", "MariaDB", "MySQL Connector 연결"],
   ],
 };
 everwindProject.architectureOverview = {
