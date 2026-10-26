@@ -3047,7 +3047,9 @@ const renderMermaidCanvas = async (canvas) => {
     if (canvas.dataset.routing === "elk") roundMermaidEdges(diagram);
     else straightenMermaidEdges(diagram);
     const bounds = diagram.getBBox();
-    const padding = 16;
+    // Mermaid can place edge markers and HTML labels just outside getBBox().
+    // A generous viewBox gutter keeps those details visible at every scale.
+    const padding = 36;
     diagram.setAttribute("viewBox", `${bounds.x - padding} ${bounds.y - padding} ${bounds.width + padding * 2} ${bounds.height + padding * 2}`);
     diagram.setAttribute("width", bounds.width + padding * 2);
     diagram.setAttribute("height", bounds.height + padding * 2);
@@ -3165,24 +3167,28 @@ const makeUmlDiagram = (diagram) => {
 };
 
 let umlZoomIndex = 0;
-let umlZoomRenderedScale = 100;
+let umlZoomFitScale = 1;
+let umlZoomRenderedScale = 1;
 let umlZoomPan = { x: 0, y: 0 };
 let umlZoomDrag;
+
+const getUmlZoomScale = () => umlZoomFitScale * (2 ** (Number(umlZoomScale.value) / 100));
 
 const renderUmlZoomView = () => {
   const diagram = umlZoomCanvas.querySelector("svg");
   if (!diagram) return;
-  const scale = Number(umlZoomScale.value) / 100;
+  const scale = getUmlZoomScale();
   const { width, height } = diagram.viewBox.baseVal;
   diagram.style.setProperty("--uml-width", `${width * scale}px`);
   diagram.style.setProperty("--uml-height", `${height * scale}px`);
   umlZoomCanvas.style.transform = `translate(${umlZoomPan.x}px, ${umlZoomPan.y}px)`;
-  umlZoomRenderedScale = Number(umlZoomScale.value);
-  umlZoomValue.value = `${umlZoomScale.value}%`;
+  umlZoomRenderedScale = scale;
+  const level = Number(umlZoomScale.value);
+  umlZoomValue.value = level === 0 ? "0% · 전체" : `${level > 0 ? "+" : ""}${level}%`;
 };
 
 const updateUmlZoomScale = (anchor = { x: umlZoomViewport.clientWidth / 2, y: umlZoomViewport.clientHeight / 2 }) => {
-  const ratio = Number(umlZoomScale.value) / umlZoomRenderedScale;
+  const ratio = getUmlZoomScale() / umlZoomRenderedScale;
   // Keep the diagram point under the cursor fixed while changing scale.
   umlZoomPan.x = anchor.x - (anchor.x - umlZoomPan.x) * ratio;
   umlZoomPan.y = anchor.y - (anchor.y - umlZoomPan.y) * ratio;
@@ -3206,10 +3212,17 @@ const fitUmlZoom = () => {
   const diagram = umlZoomCanvas.querySelector("svg");
   if (!diagram) return;
   const { width, height } = diagram.viewBox.baseVal;
-  const scale = Math.min((umlZoomViewport.clientWidth - 32) / width, (umlZoomViewport.clientHeight - 32) / height);
-  umlZoomScale.value = String(Math.max(1, Math.min(200, Math.floor(scale * 100))));
-  const fittedScale = Number(umlZoomScale.value) / 100;
-  umlZoomPan = { x: (umlZoomViewport.clientWidth - width * fittedScale) / 2, y: (umlZoomViewport.clientHeight - height * fittedScale) / 2 };
+  const gutter = Math.max(24, Math.min(56, umlZoomViewport.clientWidth * .035));
+  umlZoomFitScale = Math.max(.001, Math.min(
+    (umlZoomViewport.clientWidth - gutter * 2) / width,
+    (umlZoomViewport.clientHeight - gutter * 2) / height,
+  ));
+  umlZoomScale.value = "0";
+  umlZoomRenderedScale = umlZoomFitScale;
+  umlZoomPan = {
+    x: (umlZoomViewport.clientWidth - width * umlZoomFitScale) / 2,
+    y: (umlZoomViewport.clientHeight - height * umlZoomFitScale) / 2,
+  };
   renderUmlZoomView();
 };
 
@@ -3239,11 +3252,12 @@ document.addEventListener("click", (event) => {
   });
   umlZoomModal.querySelector("#uml-zoom-title").textContent = source.getAttribute("aria-label");
   umlZoomCanvas.replaceChildren(diagram);
-  umlZoomScale.value = "100";
+  umlZoomScale.value = "0";
+  umlZoomFitScale = 1;
+  umlZoomRenderedScale = 1;
   umlZoomPan = { x: 0, y: 0 };
-  renderUmlZoomView();
   umlZoomModal.showModal();
-  fitUmlZoom();
+  window.requestAnimationFrame(fitUmlZoom);
   umlZoomClose.focus();
 });
 
@@ -3255,7 +3269,7 @@ umlZoomViewport.addEventListener("wheel", (event) => {
   const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? umlZoomViewport.clientHeight : 1;
   const delta = Math.max(-240, Math.min(240, event.deltaY * unit));
   const current = Number(umlZoomScale.value);
-  let next = Math.round(current * Math.exp(-delta * .0025));
+  let next = current + Math.round(-delta * .22);
   if (next === current && delta) next += delta < 0 ? 1 : -1;
   umlZoomScale.value = String(Math.max(Number(umlZoomScale.min), Math.min(Number(umlZoomScale.max), next)));
   updateUmlZoomScale({ x: event.clientX - bounds.left, y: event.clientY - bounds.top });
@@ -3288,6 +3302,9 @@ umlZoomViewport.addEventListener("keydown", (event) => {
   renderUmlZoomView();
 });
 umlZoomModal.querySelector("#uml-zoom-fit").addEventListener("click", fitUmlZoom);
+window.addEventListener("resize", () => {
+  if (umlZoomModal.open && Number(umlZoomScale.value) === 0) window.requestAnimationFrame(fitUmlZoom);
+});
 umlZoomClose.addEventListener("click", closeUmlZoom);
 umlZoomModal.addEventListener("click", (event) => {
   if (event.target === umlZoomModal) closeUmlZoom();
