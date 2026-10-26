@@ -2740,6 +2740,134 @@ littleSurvivalDesignDocument.troubleshooting = littleSurvivalDesignDocument.trou
 });
 littleSurvivalProject.designDocument = littleSurvivalDesignDocument;
 
+// Attribute changes at responsibility level: a shared file is not wholly personal work.
+const lspCommit = (sha, label) => ({ label, url: `https://github.com/dlwjdeo/GEP/commit/${sha}` });
+const lspContributions = (personal, shared, existing, engine = []) => [
+  { type: "personal", label: "개인 구현", nodes: personal },
+  { type: "shared", label: "공동 수정", nodes: shared },
+  { type: "existing", label: "팀원 기반", nodes: existing },
+  { type: "engine", label: "Unity·참조 대상", nodes: engine },
+].filter((item) => item.nodes.length);
+const [lspCraft, lspLock, lspSpawn] = littleSurvivalDesignDocument.coreFeatures;
+lspCraft.diagram.contributions = lspContributions(
+  ["RecipeItemTypeComparer"],
+  ["Comparer", "Player", "PlayerInventory", "CraftManager", "Pond", "Campfire", "Tree", "Rocket", "Item"],
+  ["IInteractable", "InventoryUI", "SystemMessageUI"],
+);
+lspCraft.diagram.contributionNote = "개인 구현은 신민서(tlsalstj7743) 기준입니다. 공동 수정은 양쪽의 변경이 있는 스크립트입니다. CraftManager의 레시피·대칭 비교는 직접 구현했고, 해금 UI 이벤트는 팀원이 추가했습니다. Player의 전방 탐색과 SystemMessageUI는 팀원 기반이며 판정·갱신 연결과 자기 아이템 제외를 보완했습니다.";
+lspCraft.diagram.relations[0] = ["Player", "dependency", "PlayerInventory", "GetComponent·보유 아이템 조회"];
+lspLock.diagram.contributions = lspContributions([], ["Player", "PlayerStateMachine", "LoggingState", "EatingState", "CookingState", "RepairState", "PlayerInventory"], ["IState", "IdleState", "MoveState", "FishingState"]);
+lspLock.diagram.contributionNote = "상태 머신과 기본 행동은 팀원 구현입니다. 개인 추가 기여는 isStateLocked 전환 검사, 벌목·섭취·요리·수리의 잠금 설정·해제와 줍기·버리기 제한입니다. 공동 수정 색상은 해당 클래스 전체를 개인 구현했다는 의미가 아닙니다.";
+lspLock.diagram.groups = [
+  { title: "공동 수정 입력·상태 머신", nodes: ["Player", "PlayerStateMachine"] },
+  { title: "팀원 기반 계약·행동", nodes: ["IState", "IdleState", "MoveState", "FishingState"] },
+  { title: "개인 잠금 추가·공동 수정", nodes: ["LoggingState", "EatingState", "CookingState", "RepairState"] },
+  { title: "공동 수정 보유 상태", nodes: ["PlayerInventory"] },
+];
+lspSpawn.diagram.contributions = lspContributions(["SpawnCandidate"], ["SpawnManager", "Item", "Iron", "Plant"], [], ["Rocket", "BoxCollider", "MeshCollider", "Physics"]);
+lspSpawn.diagram.contributionNote = "후보 생성·지면/겹침 검사·가중 추첨과 Item·Iron·Plant의 GetSpawnWeight 추가는 개인 구현(cf58cbd)입니다. 철·식물별 코루틴 분리와 생성 시도 횟수별 간격 증가는 팀원 변경(ec8ce91·32d47be·fd8dd82)입니다.";
+lspSpawn.decisions[3] = ["공동 밸런싱", "개인 구현한 후보 검증·가중치 선택 위에 팀원이 자원별 생성 루틴과 시도 횟수별 대기 시간 증가를 추가했습니다. 카운터는 실제 생성 성공이 아니라 생성 시도마다 증가합니다."];
+lspSpawn.sources = [lspCommit("cf58cbd", "개인 · 검증·거리 가중치"), lspCommit("fd8dd82", "팀원 · 공급 간격 조정")];
+
+const lspMergedTitles = new Set(["행동 중복 입력으로 보상 흐름이 깨지는 문제", "랜덤 자원이 지형 밖과 오브젝트 위에 생성되는 문제"]);
+littleSurvivalProject.coreFeatures[1].flow = [
+  ["기능", "벌목·섭취·요리·수리처럼 완료까지 시간이 필요한 행동을 상태별로 실행합니다."],
+  ["문제", "행동 도중 상태 전환이나 줍기·버리기 입력이 끼어들어 완료 처리와 대상 참조가 어긋날 수 있었습니다."],
+  ["해결", "팀원 상태 머신에 isStateLocked 검사와 일부 행동의 잠금·해제를 추가했습니다. 낚시·벌목의 이동 중단 경로도 수정했습니다."],
+  ["결과", "적용한 상태의 중간 전환과 줍기·버리기를 제한했습니다. 낚시와 X·C 입력은 공통 잠금으로 보호되지 않아 후속 개선 범위로 남았습니다."],
+];
+littleSurvivalProject.coreFeatures[1].summary = "팀원 상태 구조에 행동 잠금을 추가한 문제·해결·결과를 함께 정리했습니다.";
+littleSurvivalProject.coreFeatures[1].why = littleSurvivalProject.coreFeatures[1].flow[1][1];
+littleSurvivalProject.coreFeatures[1].how = littleSurvivalProject.coreFeatures[1].flow[2][1];
+littleSurvivalProject.coreFeatures[1].emphasis = ["isStateLocked", "상태 전환", "줍기·버리기", "낚시·벌목", "X·C 입력", "벌목·섭취·요리·수리"];
+lspLock.problem = littleSurvivalProject.coreFeatures[1].flow[1][1];
+lspLock.result = littleSurvivalProject.coreFeatures[1].flow[3][1];
+lspLock.sources = [lspCommit("5b14fab", "개인 · 상태 잠금 추가"), lspCommit("ada3987", "개인 · 낚시·벌목 이동 전환 수정")];
+littleSurvivalProject.coreFeatures[2].flow = [
+  ["기능", "지면·겹침 검증을 통과한 후보 중 로켓 거리 가중치에 따라 철광석과 식물을 배치합니다."],
+  ["문제", "자원이 공중·지형 밖·기존 오브젝트 위에 생기거나 한곳에 몰리면 접근성과 수집 난이도가 흔들립니다."],
+  ["해결", "개인 구현한 Raycast·CheckSphere·가중치 선택으로 후보를 거릅니다. 자원별 공급 주기와 단계별 간격 조정은 팀원 작업으로 결합했습니다."],
+  ["결과", "유효 후보가 있을 때 지정 지면과 간격 조건을 통과한 위치를 선택합니다. 공급 주기를 조절했지만 후속 테스트의 자원 부족·반복 플레이 의견까지 해결된 것은 아닙니다."],
+];
+littleSurvivalProject.coreFeatures[2].summary = "개인 구현한 스폰 검증과 공동 조정한 자원 공급을 문제·해결·결과로 설명합니다.";
+littleSurvivalProject.coreFeatures[2].why = littleSurvivalProject.coreFeatures[2].flow[1][1];
+littleSurvivalProject.coreFeatures[2].how = littleSurvivalProject.coreFeatures[2].flow[2][1];
+littleSurvivalProject.coreFeatures[2].emphasis = ["지면·겹침 검증", "로켓 거리 가중치", "Raycast", "CheckSphere", "팀원 작업", "유효 후보", "자원 부족·반복 플레이"];
+littleSurvivalProject.troubleshooting = littleSurvivalProject.troubleshooting.filter((item) => !lspMergedTitles.has(item.title));
+littleSurvivalDesignDocument.troubleshooting = littleSurvivalDesignDocument.troubleshooting.filter((item) => !lspMergedTitles.has(item.title));
+const [lspTargetFix, lspRecipeFix, lspBucketFix] = littleSurvivalDesignDocument.troubleshooting;
+lspTargetFix.diagram.contributions = lspContributions([], ["Comparer", "Player", "PlayerInventory", "CraftManager"], ["SystemMessageUI"], ["ItemLayer", "HeldItem", "TargetObject"]);
+lspTargetFix.diagram.contributionNote = "전방 45도·거리 우선 탐색은 팀원 구현(130ee15), 현재 아이템·자식 제외와 Comparer 재검사는 개인 기여(7eb871b)입니다. ItemLayer·HeldItem·TargetObject는 필터/객체 역할이며 별도 스크립트가 아닙니다.";
+lspRecipeFix.diagram.contributions = lspContributions(["RecipeItemTypeComparer"], ["CraftManager"], [], ["HoldItem", "TargetItem", "RecipeTable", "UnlockFishing", "UnlockAxe", "CraftBucket"]);
+lspRecipeFix.diagram.contributionNote = "대칭 Equals·XOR 해시와 레시피 조회는 개인 구현입니다. HoldItem·TargetItem·RecipeTable·Unlock 계열은 값/필드/처리 흐름 표기입니다. CraftManager의 도구 해금 UI 이벤트는 팀원이 추가했습니다.";
+lspBucketFix.diagram.relations = [
+  ["Pond", "dependency", "Bucket", "Fill 호출"], ["Tree", "dependency", "Bucket", "Empty 호출"],
+  ["Bucket", "dependency", "MeshRenderer", "상태별 머티리얼"],
+  ["Pond", "event", "PlayerInventory", "OnInventoryChanged 발행"],
+  ["Tree", "event", "PlayerInventory", "OnInventoryChanged 발행"],
+  ["PlayerInventory", "event", "InventoryUI", "현재 ItemSprite 다시 읽기"],
+];
+lspBucketFix.diagram.contributions = lspContributions([], ["Bucket", "Pond", "Tree", "PlayerInventory"], ["InventoryUI"], ["MeshRenderer"]);
+lspBucketFix.diagram.contributionNote = "Bucket.Fill/Empty의 기초 상태·머티리얼 전환은 팀원 구현(ec8ce91)입니다. 개인 기여는 스프라이트·월드 머티리얼 보완과 Pond·Tree의 인벤토리 갱신 연결입니다. InventoryUI 자체는 팀원 기반입니다.";
+
+littleSurvivalProject.coreFeatures.push({
+  title: "플레이 테스트 기반 상호작용·제작 개선",
+  summary: "플레이 방법·대상 선택·자원 운용 피드백을 코드 변경과 후속 평가로 연결했습니다.",
+  keywords: ["상황별 안내", "자기 아이템 제외", "제작 효과", "공동 개선", "후속 평가"],
+  whyEmphasis: ["조작법과 목표", "무엇과 상호작용", "자원 소모", "진행 방법"],
+  emphasis: ["Comparer", "RefreshForwardTarget", "자기 아이템", "팀원", "후속 평가", "반복 플레이"],
+  why: "초기 테스트에서 조작법과 목표를 모르겠고 무엇과 상호작용하는지 직관적이지 않다는 의견이 반복됐습니다. 자원 소모와 긴 행동 시간도 진행을 어렵게 했습니다.",
+  how: "Comparer의 상황별 판정과 RefreshForwardTarget 연결을 보완하고, 팀원이 넓힌 탐색에서 자기 아이템을 제외했습니다. 제작 효과와 공급 주기를 함께 조정했으며 후속 평가의 개선 의견과 남은 반복 플레이 문제를 구분했습니다.",
+});
+littleSurvivalDesignDocument.coreFeatures.push({
+  title: "플레이 테스트 기반 상호작용·제작 개선",
+  intent: "테스트 의견 → 구현 변경 → 후속 평가를 연결하고 개인 수정과 팀원 작업을 구분한다.",
+  keywords: ["상황별 안내", "RefreshForwardTarget", "자기 아이템 제외", "제작 효과", "공동 밸런싱"],
+  problemLabel: "초기 플레이 테스트",
+  problem: "초기 기록에는 조작법·목표를 알 수 없고 상호작용 대상을 판단하기 어렵다는 의견이 반복됩니다. 긴 모션, 자원 수급과 불 유지의 부담도 지적됐습니다.",
+  resultLabel: "후속 평가와 남은 문제",
+  result: "후속 평가에서 튜토리얼 오류 개선, 진행 방법 이해와 목표 달성 가능성을 확인했습니다. 자원 부족·반복 플레이와 낚시·양동이의 낮은 필요성을 지적한 평가도 남았습니다. 수치 측정 결과가 아닌 팀 전체 개선에 대한 정성 피드백입니다.",
+  decisions: [
+    ["검증 근거", "초기·후속 플레이 테스트 의견과 Git 변경 이력을 함께 확인했습니다. 아래 사례마다 개인 수정과 팀원의 기반 구현을 구분하고 관련 커밋을 연결했습니다."],
+    ["개선 범위", "상황별 안내·대상 선택·제작 효과·자원 운용을 보완했습니다. 튜토리얼과 전체 UI 개선은 팀 단위 결과입니다."],
+  ],
+  implementationSections: [
+    {
+      title: "행동·대상이 불명확 → 상황별 행동 안내",
+      emphasis: ["Comparer", "RefreshForwardTarget", "팀원", "자기 아이템", "현재 아이템"],
+      details: [
+        ["피드백", "조작법을 알기 어렵고 무엇과 상호작용하는지 직관적이지 않다는 의견이 나왔습니다."],
+        ["개인 수정", "29e64b7에서 이동·보유 아이템 변경 시 RefreshForwardTarget을 호출하고 Comparer의 행동 판정 결과를 전달했습니다. 7eb871b에서는 현재 아이템과 플레이어 자식을 탐색에서 제외하고 제작 판정도 재검사했습니다."],
+        ["팀원 기반", "전방 45도·거리 우선 탐색(130ee15)과 SystemMessageUI는 팀원 기반입니다. 개인 기여는 판정·갱신 연결과 잘못 선택되는 대상의 제외입니다."],
+        ["결과", "선택 대상과 보유 아이템에 맞춰 행동 메시지를 갱신하고 자기 아이템이 제작 대상이 되는 경로를 제외했습니다. 후속 평가에는 전체 UI·설명 개선 뒤 진행을 파악할 수 있다는 의견이 있습니다."],
+      ],
+      sources: [lspCommit("29e64b7", "개인 · 상황별 갱신"), lspCommit("130ee15", "팀원 · 탐색 범위"), lspCommit("7eb871b", "개인 · 자기 아이템 제외")],
+    },
+    {
+      title: "긴 벌목·도구 효과 불명확 → 제작에 따른 행동 변화",
+      emphasis: ["40%", "60%", "팀원", "필수", "7초"],
+      details: [
+        ["피드백", "도끼 제작의 이점을 모르겠다는 의견과 긴 모션·상호작용 대기 시간에 대한 지적이 있었습니다."],
+        ["개인 구현", "CraftManager의 도끼 제작은 현재 벌목 시간을 60%로 줄입니다. 제작 1회 기준 대기 시간이 40% 감소하며 최종 코드의 기본 7초에서는 4.2초가 됩니다. 제작 레시피와 이 효과는 개인 구현입니다."],
+        ["공동 조정", "해금 아이콘 이벤트(fd8dd82), 기본 벌목 시간 3→7초와 나무 성장 시간 5→10초 변경(67c6ca6)은 팀원 작업입니다."],
+        ["결과와 한계", "제작이 행동 시간·기능 해금으로 이어지게 했습니다. 후속 평가에서는 도구의 차별점은 보이지만 낚시·양동이를 만들지 않아도 클리어할 수 있다고 지적했습니다. 도구 활용을 유도하는 레벨 설계는 남은 과제입니다."],
+      ],
+      sources: [lspCommit("29e64b7", "개인 · 제작 효과"), lspCommit("fd8dd82", "팀원 · 해금 UI"), lspCommit("67c6ca6", "팀원 · 행동·성장 시간")],
+    },
+    {
+      title: "자원 운용 부담 → 연료 선택·공급 주기 조정",
+      emphasis: ["식물", "나무", "팀원", "공급 주기", "남은 과제"],
+      details: [
+        ["피드백", "재료에 비해 불이 빨리 줄어든다는 의견과 채집·이동 시간 대비 자원이 부족하다는 평가가 있습니다."],
+        ["개인 수정", "d8fb4e2에서 나무 외에 식물도 연료로 판정하는 경로를 추가했습니다. 최종 Comparer는 두 재료 모두 모닥불 대상을 확인합니다. 후보 검증·거리 가중치 스폰은 cf58cbd에서 직접 구현했습니다."],
+        ["공동 조정", "자원별 공급 루틴 분리와 대기 시간 증가(ec8ce91·32d47be·fd8dd82)는 팀원 작업입니다. 간격 증가는 공급량을 줄이므로 자원 부족을 해결했다고 표현하지 않았습니다."],
+        ["결과와 남은 과제", "사용 가능한 연료와 자원 배치 규칙은 늘어났습니다. 밸런스가 나아졌다는 후속 의견과 자원 부담·단조로운 반복이 남았다는 의견이 함께 있어 자원 수급과 행동 동선을 더 조정할 필요가 있습니다."],
+      ],
+      sources: [lspCommit("d8fb4e2", "개인 · 식물 연료 판정"), lspCommit("cf58cbd", "개인 · 검증·가중 스폰"), lspCommit("ec8ce91", "팀원 · 공급 루틴")],
+    },
+  ],
+});
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
@@ -3106,6 +3234,13 @@ const makeMermaidSource = (diagram) => {
     else if (["dependency", "event", "data"].includes(type)) lines.push(`${from} ..> ${to}${label}`);
     else lines.push(`${from} --> ${to}${label}`);
   });
+  const contributionColors = { personal: "#79dfba", shared: "#ffd578", existing: "#8fa8c4", engine: "#68778b" };
+  const contributionTags = { personal: "Personal", shared: "Shared", existing: "TeamBase", engine: "UnityReference" };
+  (diagram.contributions || []).forEach(({ type, nodes }) => {
+    lines.push(`classDef lsp_${type} fill:#101a28,stroke:${contributionColors[type]},color:#f1f5ff,stroke-width:2px`);
+    nodes.forEach((node) => lines.push(`<<${contributionTags[type]}>> ${node}`));
+    lines.push(`cssClass "${nodes.join(",")}" lsp_${type}`);
+  });
   if (diagram.routing === "elk") {
     lines.unshift("---", "config:", "  layout: elk", "  elk:", "    mergeEdges: false", "    nodePlacementStrategy: NETWORK_SIMPLEX", "    considerModelOrder: NONE", "    cycleBreakingStrategy: GREEDY", "---");
   }
@@ -3299,6 +3434,21 @@ const makeUmlDiagram = (diagram) => {
   loading.textContent = "다이어그램 준비 중";
   canvas.append(loading);
   figure.append(caption, canvas);
+  if (diagram.contributions?.length) {
+    const legend = document.createElement("ul");
+    legend.className = "uml-contribution-legend";
+    diagram.contributions.forEach(({ type, label }) => {
+      const item = document.createElement("li");
+      item.dataset.contribution = type;
+      item.textContent = `${label} · ${{ personal: "Personal", shared: "Shared", existing: "TeamBase", engine: "UnityReference" }[type]}`;
+      legend.append(item);
+    });
+    figure.insertBefore(legend, canvas);
+    const note = document.createElement("p");
+    note.className = "uml-contribution-note";
+    note.textContent = diagram.contributionNote || "개인 구현은 신민서(tlsalstj7743) 기준입니다.";
+    figure.append(note);
+  }
   if (diagram.zoomable) {
     const footer = document.createElement("div");
     const trigger = document.createElement("button");
@@ -3523,6 +3673,20 @@ const makeImplementationSection = (feature, number, id) => {
   }
   header.append(featureNumber, headingGroup);
   section.append(header, makeDecisionList(feature.details, "design-decision-list", feature.emphasis));
+  if (feature.sources?.length) {
+    const sources = document.createElement("nav");
+    sources.className = "implementation-sources";
+    sources.setAttribute("aria-label", "구현 근거 커밋");
+    feature.sources.forEach(({ label, url }) => {
+      const link = document.createElement("a");
+      link.textContent = label;
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      sources.append(link);
+    });
+    section.append(sources);
+  }
   if (feature.media) section.append(makeResultMediaButton(feature.media));
   if (feature.diagram) section.append(makeUmlDiagram(feature.diagram));
   if (feature.tradeoff) section.append(makeLimitations(feature.tradeoff));
@@ -3568,6 +3732,7 @@ const makeFeatureImplementation = (feature, index) => {
       details: feature.decisions,
       diagram: feature.diagram,
       emphasis: feature.keywords,
+      sources: feature.sources,
     }, ...(feature.implementationSections || [])].map((section, sectionIndex) => makeImplementationSection(
       section,
       `${String(index + 1).padStart(2, "0")}.${sectionIndex + 1}`,
@@ -3844,7 +4009,11 @@ const buildProjectDetail = (project) => {
 
     const explanation = document.createElement("div");
     explanation.className = "feature-explanation";
-    [["WHY", feature.why, null], ["HOW", feature.how, feature.media || feature.video]].forEach(([label, copy, media]) => {
+    if (feature.flow) explanation.classList.add("feature-flow");
+    const explanationRows = feature.flow
+      ? feature.flow.map(([label, copy]) => [label, copy, label === "결과" ? feature.media || feature.video : null])
+      : [["WHY", feature.why, null], ["HOW", feature.how, feature.media || feature.video]];
+    explanationRows.forEach(([label, copy, media]) => {
       const block = document.createElement("section");
       const eyebrow = document.createElement("p");
       const text = document.createElement("p");
@@ -3853,7 +4022,7 @@ const buildProjectDetail = (project) => {
       const emphasis = label === "WHY" ? (feature.whyEmphasis || feature.emphasis) : feature.emphasis;
       appendEmphasizedText(text, copy, emphasis);
       const implementationIndex = project.designDocument?.coreFeatures.findIndex((item) => item.title === feature.title) ?? -1;
-      if (label === "HOW" && implementationIndex >= 0) {
+      if (["HOW", "해결"].includes(label) && implementationIndex >= 0) {
         const howHeader = document.createElement("div");
         howHeader.className = "feature-how-header";
         howHeader.append(eyebrow, makeImplementationButton(implementationIndex));
