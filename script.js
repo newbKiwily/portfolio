@@ -2868,6 +2868,111 @@ littleSurvivalDesignDocument.coreFeatures.push({
   ],
 });
 
+// LSP presents the explanation, diagram, and result in the main detail page.
+littleSurvivalProject.inlineVisuals = true;
+const lspPersonalCraftNodes = new Set(["Comparer", "CraftManager", "RecipeItemTypeComparer"]);
+[lspCraft, lspLock, lspSpawn, ...littleSurvivalDesignDocument.troubleshooting].forEach((item) => {
+  const diagram = item.diagram;
+  if (!diagram?.contributions) return;
+  diagram.zoomable = true;
+  const nodes = diagram.contributions.flatMap((entry) => entry.nodes);
+  const personal = nodes.filter((node) => lspPersonalCraftNodes.has(node));
+  diagram.contributions = diagram.contributions.map((entry) => ({
+    ...entry,
+    nodes: entry.type === "personal"
+      ? [...new Set([...entry.nodes, ...personal])]
+      : entry.nodes.filter((node) => !lspPersonalCraftNodes.has(node)),
+  })).filter((entry) => entry.nodes.length);
+  if (personal.length && !diagram.contributions.some((entry) => entry.type === "personal")) {
+    diagram.contributions.unshift({ type: "personal", label: "개인 구현", nodes: personal });
+  }
+});
+lspCraft.diagram.contributionNote = "개인 구현: Comparer · CraftManager · RecipeItemTypeComparer. 팀원 기반: 상태·입력·UI. 보유 아이템·대상 연결은 공동 수정했습니다.";
+lspCraft.diagram.groups = [
+  { title: "입력·보유 상태", nodes: ["Player", "PlayerInventory"] },
+  { title: "개인 판정·제작", nodes: ["Comparer", "CraftManager", "RecipeItemTypeComparer"] },
+  { title: "아이템·대상 계약", nodes: ["Item", "IInteractable"] },
+];
+lspCraft.diagram.relations = [
+  ["Player", "dependency", "PlayerInventory", "보유 아이템 조회"],
+  ["Player", "dependency", "Comparer", "아이템·대상 판정"],
+  ["Player", "dependency", "IInteractable", "X 입력 실행"],
+  ["Comparer", "dependency", "Item", "유형·역할 조회"],
+  ["Comparer", "dependency", "CraftManager", "IsCraft 조회"],
+  ["CraftManager", "aggregation", "RecipeItemTypeComparer", "레시피 키 비교"],
+  ["CraftManager", "dependency", "PlayerInventory", "성공 시 재료 제거"],
+];
+lspCraft.diagram.contributions = lspContributions(["Comparer", "CraftManager", "RecipeItemTypeComparer"], ["Player", "PlayerInventory", "Item"], ["IInteractable"]);
+lspRecipeFix.diagram.contributionNote = "제작 규칙·순서 독립 비교는 개인 구현입니다. 값·Dictionary·결과 동작은 구조 이해를 위한 역할 표기입니다.";
+lspTargetFix.diagram.contributionNote = "개인: Comparer·자기 아이템 제외 조건. 팀원: 전방 45도 탐색·SystemMessageUI. Player·PlayerInventory는 공동 수정입니다.";
+lspLock.diagram.contributionNote = "개인 추가: isStateLocked 검사와 일부 시간 행동의 잠금·해제. 상태 머신·기본 행동은 팀원 기반입니다.";
+lspSpawn.diagram.contributionNote = "개인: 후보 검증·거리 가중치·추첨. 팀원: 철·식물 공급 주기 조정. Unity 물리·Collider는 엔진 기능입니다.";
+lspBucketFix.diagram.contributionNote = "개인: 상태별 표현 보완·호출부의 UI 갱신 연결. 팀원 기반: Bucket 기초 상태 전환·InventoryUI.";
+
+const lspVisualCore = [
+  {
+    key: "craft", alt: "나무·식물은 낚시 해금, 나무·철은 도끼, 철·철은 양동이로 연결되며 재료 순서가 바뀌어도 같은 레시피를 조회하는 개념도",
+    brief: "보유 아이템과 대상을 함께 판정하고, 재료 순서와 관계없이 같은 제작 결과로 연결합니다.",
+    points: [["개인 구현", "Comparer · CraftManager · RecipeItemTypeComparer"], ["결과", "낚시 해금 · 도끼의 벌목 시간 ×0.6 · 양동이 생성"]],
+    sources: [lspCommit("29e64b7", "제작 결과 연결")],
+  },
+  {
+    key: "action-lock", alt: "시간 행동 시작 시 잠그고 완료 처리 뒤 해제하는 흐름과 벌목·섭취·요리·수리의 적용 범위 개념도",
+    brief: "팀원 상태 구조에 잠금을 더해 시간 행동 중 상태 전환과 줍기·버리기를 제한했습니다.",
+    points: [["개인 추가", "잠금 검사 → 완료 처리 → 해제"], ["적용 범위", "벌목 · 섭취 · 요리 · 수리. 낚시·X/C의 공통 잠금은 미적용"]],
+  },
+  {
+    key: "spawn", alt: "후보 생성, 지면·겹침 검사, 로켓 거리 가중치, 유효 후보 선택의 네 단계와 후보가 없으면 생성을 취소하는 흐름",
+    brief: "지면·겹침 검증을 통과한 후보에서 거리 가중치로 자원 위치를 선택합니다.",
+    points: [["개인 구현", "후보 검증 · 가중 선택"], ["공동 조정", "자원별 공급 주기. 유효 후보가 없으면 해당 생성은 취소"]],
+  },
+  {
+    key: "playtest", alt: "행동 안내, 도끼 제작으로 벌목 시간 7초에서 4.2초로 변화, 연료 선택 확장과 정성 피드백을 비교하는 개념도",
+    brief: "진행 방법·긴 행동 시간·자원 운용 피드백을 판정·제작·공급 규칙에 반영했습니다.",
+    points: [["구현 변화", "상황별 안내 · 자기 아이템 제외 · 도끼 1회 제작 시 벌목 시간 40% 감소(코드 기준)"], ["후속 평가", "진행 이해·목표 달성 가능 의견. 도구 필요성·반복 플레이는 남은 과제"]],
+    sources: [lspCommit("29e64b7", "개인 · 판정 갱신·제작"), lspCommit("7eb871b", "개인 · 대상 제외"), lspCommit("fd8dd82", "팀원 · 공급·해금 UI")],
+  },
+];
+const lspVisualTroubleshooting = [
+  {
+    key: "target-filter", alt: "손에 든 아이템이 잘못 선택되는 경우와 이를 탐색·제작 판정 두 단계에서 제외해 지면의 대상을 선택하는 비교 개념도",
+    brief: "현재 아이템과 플레이어 자식을 탐색에서 제외하고, 제작 판정에서도 자기 조합을 재검사했습니다.",
+    points: [["문제", "범위를 넓힌 탐색이 손에 든 아이템까지 선택"], ["해결·결과", "후보 제외 + Comparer 재검사 → 자기 아이템을 제작 대상으로 선택하는 경로 차단"]],
+    sources: [lspCommit("7eb871b", "개인 · 자기 아이템 제외")],
+  },
+  {
+    key: "recipe-order", alt: "Wood와 Iron을 잡는 순서가 바뀌어도 대칭 Equals와 XOR 해시를 거쳐 하나의 레시피에서 같은 도끼 결과를 찾는 개념도",
+    brief: "(A, B)와 (B, A)에 같은 비교·해시 규칙을 적용해 레시피를 한 번만 등록합니다.",
+    points: [["개인 구현", "CraftManager · RecipeItemTypeComparer"], ["해결·결과", "대칭 Equals + XOR 해시 → 선택 순서와 무관한 조회"]],
+  },
+  {
+    key: "bucket-sync", alt: "양동이 내부 상태와 화면의 불일치를 Pond·Tree에서 상태 변경과 인벤토리 갱신 이벤트를 각각 호출해 맞추는 개념도",
+    brief: "양동이 상태·월드 표현을 갱신하고, Pond·Tree에서 인벤토리 갱신 이벤트를 발행합니다.",
+    points: [["문제", "물은 찼지만 월드·인벤토리에는 빈 양동이로 표시"], ["개인 보완", "스프라이트·머티리얼 + 호출부의 UI 갱신 연결"]],
+  },
+];
+littleSurvivalProject.coreFeatures.forEach((feature, index) => { feature.visual = lspVisualCore[index]; });
+littleSurvivalProject.troubleshooting.forEach((feature, index) => { feature.visual = lspVisualTroubleshooting[index]; });
+
+const lspFeedbackImplementation = littleSurvivalDesignDocument.coreFeatures[3];
+lspFeedbackImplementation.diagram = {
+  title: "피드백을 반영한 판정·제작 연결", zoomable: true, direction: "LR",
+  groups: [
+    { title: "공동 수정 입력·보유 상태", nodes: ["Player", "PlayerInventory"] },
+    { title: "개인 판정·제작", nodes: ["Comparer", "CraftManager"] },
+    { title: "팀원 안내 UI", nodes: ["SystemMessageUI"] },
+  ],
+  relations: [
+    ["PlayerInventory", "dependency", "Player", "RefreshForwardTarget 호출"],
+    ["Player", "dependency", "Comparer", "보유 아이템·대상 판정"],
+    ["Comparer", "dependency", "CraftManager", "조합 가능 여부 조회"],
+    ["Player", "event", "SystemMessageUI", "OnChangeForwardGameObject"],
+    ["CraftManager", "dependency", "Player", "벌목 시간 ×0.6"],
+  ],
+  contributions: lspContributions(["Comparer", "CraftManager"], ["Player", "PlayerInventory"], ["SystemMessageUI"]),
+  contributionNote: "개인: 판정·갱신 연결·제작 효과. 팀원 기반: 입력·UI·전방 탐색. 클래스 사이의 현재 호출을 표시했습니다.",
+};
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
@@ -3857,6 +3962,73 @@ const buildDesignDocument = (documentData) => {
   }));
 };
 
+const makeLspInlineExplanation = (feature, implementation) => {
+  const visual = feature.visual;
+  const content = document.createElement("div");
+  const brief = document.createElement("p");
+  const pair = document.createElement("div");
+  const summary = document.createElement("figure");
+  const image = document.createElement("img");
+  const caption = document.createElement("figcaption");
+  content.className = "lsp-inline-explanation";
+  brief.className = "lsp-feature-brief";
+  brief.textContent = visual.brief;
+  pair.className = "lsp-visual-pair";
+  summary.className = "lsp-summary-figure";
+  image.src = `assets/gep/explainers/${visual.key}.png`;
+  image.alt = visual.alt;
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.width = 1536;
+  image.height = 1024;
+  caption.textContent = "구현 흐름 요약 · 이해를 돕는 개념 그림";
+  summary.append(image, caption);
+  pair.append(summary);
+  if (implementation?.diagram) pair.append(makeUmlDiagram(implementation.diagram));
+  const points = document.createElement("dl");
+  points.className = "lsp-feature-points";
+  visual.points.forEach(([label, copy]) => {
+    const term = document.createElement("dt");
+    const description = document.createElement("dd");
+    term.textContent = label;
+    description.textContent = copy;
+    points.append(term, description);
+  });
+  content.append(brief, points, pair);
+  const media = feature.media || feature.video;
+  if (media?.src) {
+    const result = document.createElement("figure");
+    const video = document.createElement("video");
+    const title = document.createElement("figcaption");
+    result.className = "lsp-inline-result";
+    title.textContent = "구현 결과 · 바로 재생";
+    video.src = media.src;
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "none";
+    video.poster = "assets/gep/gep-gameplay.png";
+    video.setAttribute("aria-label", media.title || `${feature.title} 결과 영상`);
+    result.append(title, video);
+    content.append(result);
+  }
+  const sources = visual.sources || implementation?.sources;
+  if (sources?.length) {
+    const nav = document.createElement("nav");
+    nav.className = "implementation-sources";
+    nav.setAttribute("aria-label", "구현 근거 커밋");
+    sources.forEach(({ label, url }) => {
+      const link = document.createElement("a");
+      link.textContent = label;
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      nav.append(link);
+    });
+    content.append(nav);
+  }
+  return content;
+};
+
 const buildProjectDetail = (project) => {
   const principles = project.principles || [];
   const coreFeatures = project.coreFeatures || [];
@@ -4007,6 +4179,14 @@ const buildProjectDetail = (project) => {
     title.textContent = feature.title;
     header.append(number, title);
 
+    if (project.inlineVisuals && feature.visual) {
+      const implementation = project.designDocument.coreFeatures.find((item) => item.title === feature.title);
+      article.classList.add("lsp-visual-detail");
+      article.append(header, makeFeatureKeywords(feature.keywords), makeLspInlineExplanation(feature, implementation));
+      modalFields.features.append(article);
+      return;
+    }
+
     const explanation = document.createElement("div");
     explanation.className = "feature-explanation";
     if (feature.flow) explanation.classList.add("feature-flow");
@@ -4107,6 +4287,13 @@ const buildProjectDetail = (project) => {
     title.textContent = item.title;
     header.append(number, title);
 
+    if (project.inlineVisuals && item.visual) {
+      article.classList.add("lsp-visual-detail");
+      article.append(header, makeLspInlineExplanation(item, project.designDocument.troubleshooting[index]));
+      modalFields.troubleshooting.append(article);
+      return;
+    }
+
     const explanation = document.createElement("div");
     explanation.className = "feature-explanation troubleshooting-explanation";
     [["문제 상황", item.problem], [item.solutionLabel || "해결 방안", item.solution]].forEach(([label, copy]) => {
@@ -4146,6 +4333,7 @@ const openProject = (projectId) => {
   activeProject = project;
 
   modal.classList.toggle("is-collection", isCollection);
+  modal.classList.toggle("has-inline-visuals", Boolean(project.inlineVisuals));
   modal.classList.toggle("has-design-document", hasDesignPage);
   designOpenButton.hidden = !hasDesignPage;
   designOpenButton.textContent = project.designDocument?.buttonLabel || "상세 설계 페이지";
@@ -4205,7 +4393,7 @@ const openProject = (projectId) => {
   modal.showModal();
   modal.scrollTop = 0;
   document.body.classList.add("modal-open");
-  if (architectureOverview?.diagram) observeMermaidDiagrams(modal);
+  if (architectureOverview?.diagram || project.inlineVisuals) observeMermaidDiagrams(modal);
   closeButton.focus();
 };
 
@@ -4549,6 +4737,7 @@ modal.addEventListener("click", (event) => {
   if (event.target === modal) modal.close();
 });
 modal.addEventListener("close", () => {
+  modal.querySelectorAll(".lsp-inline-result video").forEach((video) => video.pause());
   closeDesignDocument();
   closeFeatureImplementation();
   activeProject = null;
