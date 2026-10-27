@@ -17,6 +17,58 @@ const setActiveLink = () => {
 document.addEventListener("scroll", setActiveLink, { passive: true });
 setActiveLink();
 
+const certificatePreview = document.querySelector("#resume-certificate-preview");
+let activeCertificate;
+if (certificatePreview) {
+  const image = certificatePreview.querySelector("img");
+  const title = certificatePreview.querySelector("strong");
+  const period = certificatePreview.querySelector("figcaption span");
+  const positionPreview = () => {
+    if (!activeCertificate || certificatePreview.hidden) return;
+    const anchor = activeCertificate.getBoundingClientRect();
+    if (anchor.bottom < 0 || anchor.top > window.innerHeight) {
+      certificatePreview.hidden = true;
+      return;
+    }
+    const width = certificatePreview.offsetWidth;
+    const height = certificatePreview.offsetHeight;
+    let left = anchor.right + 12;
+    if (left + width > window.innerWidth - 12) left = anchor.left - width - 12;
+    certificatePreview.style.left = `${Math.max(12, Math.min(left, window.innerWidth - width - 12))}px`;
+    certificatePreview.style.top = `${Math.max(12, Math.min(anchor.top + anchor.height / 2 - height / 2, window.innerHeight - height - 12))}px`;
+  };
+  const closePreview = () => {
+    certificatePreview.hidden = true;
+    activeCertificate = undefined;
+  };
+  image.addEventListener("load", positionPreview);
+  document.querySelectorAll("[data-certificate-preview]").forEach((trigger) => {
+    const openPreview = () => {
+      activeCertificate = trigger;
+      image.src = trigger.dataset.certificatePreview;
+      image.alt = `${trigger.dataset.certificateTitle} 수료증`;
+      title.textContent = trigger.dataset.certificateTitle;
+      period.textContent = trigger.dataset.certificatePeriod;
+      certificatePreview.hidden = false;
+      positionPreview();
+    };
+    trigger.addEventListener("pointerenter", openPreview);
+    trigger.addEventListener("focus", () => {
+      trigger.scrollIntoView({ block: "nearest", behavior: "instant" });
+      openPreview();
+    });
+    trigger.addEventListener("pointerleave", () => {
+      if (document.activeElement !== trigger) closePreview();
+    });
+    trigger.addEventListener("blur", closePreview);
+  });
+  window.addEventListener("resize", positionPreview, { passive: true });
+  document.addEventListener("scroll", positionPreview, { passive: true, capture: true });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closePreview();
+  });
+}
+
 const worldScenes = [...document.querySelectorAll(".hero, .about-section, .projects-section")];
 const aboutSection = document.querySelector(".about-section");
 const resumePanel = document.querySelector(".profile-resume");

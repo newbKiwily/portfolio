@@ -228,6 +228,27 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .resume-entry h3 { margin-bottom: .2rem; font-size: 1rem; }
 .resume-entry p { margin-bottom: 0; color: var(--muted); }
 .resume-entry .resume-activity-copy { min-height: 1.65rem; font-size: .7rem; line-height: 1.15; }
+.resume-entry.has-certificates { display: grid; grid-template-columns: minmax(0,1fr) 4.6rem; gap: .65rem; align-items: start; }
+.has-certificates .resume-experience-copy { grid-column: 1; grid-row: 1; }
+.has-certificates .resume-certificates { grid-column: 2; grid-row: 1; }
+.resume-experience-copy { min-width: 0; container-type: inline-size; }
+@container (max-width: 220px) {
+  .has-certificates .resume-activity-copy { font-size: .62rem; }
+}
+.has-certificates .resume-experience-copy time { font-size: .66rem; line-height: 1.9; white-space: nowrap; }
+.resume-certificates { display: grid; align-content: start; gap: .15rem; }
+.resume-certificate { display: flex; align-items: center; gap: .3rem; min-width: 0; border: 1px solid var(--line); border-radius: 3px; padding: .08rem .2rem; background: rgba(7,12,24,.65); }
+.resume-certificate > img { flex: 0 0 auto; width: .85rem; height: 1.2rem; border: 1px solid rgba(255,255,255,.25); background: #fff; object-fit: contain; }
+.resume-certificate > span { display: grid; line-height: 1.1; }
+.resume-certificate strong { color: var(--yellow); font-size: .51rem; }
+.resume-certificate small { color: var(--muted); font-size: .47rem; }
+.resume-certificate:hover, .resume-certificate:focus-visible { border-color: var(--orange); background: rgba(255,150,53,.1); outline: none; }
+.resume-certificate-preview { position: fixed; z-index: 100; width: 300px; max-width: calc(100vw - 24px); margin: 0; overflow: hidden; border: 2px solid var(--orange); border-radius: 4px; background: #080d18; box-shadow: 0 12px 36px rgba(0,0,0,.6); pointer-events: none; }
+.resume-certificate-preview[hidden] { display: none; }
+.resume-certificate-preview > img { display: block; width: 100%; height: auto; max-height: min(56vh,420px); background: #fff; object-fit: contain; }
+.resume-certificate-preview figcaption { display: grid; gap: .2rem; border-top: 1px solid var(--line); padding: .5rem .65rem; line-height: 1.4; }
+.resume-certificate-preview strong { color: var(--yellow); font-size: .73rem; }
+.resume-certificate-preview figcaption span { color: var(--muted); font-size: .65rem; }
 .resume-entry .resume-award-copy { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .9rem; min-height: 1.65rem; }
 .resume-award-summary { display: block; font-size: .82rem; line-height: 1.4; }
 .resume-award-projects { display: flex; flex-wrap: wrap; gap: 0 .75rem; font-size: .78rem; line-height: 1.4; }
