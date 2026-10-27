@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-27",
+  "tool": "built-in image_gen",
+  "output": "assets/everwind/explainers/other-functions/04-routing-db-boundary.png",
+  "prompts": [
+    "Edit the attached EverWind technical infographic. Keep the SAME landscape 1536x1024 format, warm off-white background, mint/amber rounded panels, navy Korean typography, polished crisp pixel art, layout hierarchy. Replace EVERY game character, adventurer, wizard, archer, creature, grass, fantasy scenery and weapon with technical pixel art: server racks, processor chips, packet envelopes, application modules, database cylinders, query documents, clock/hourglass icons. NO people, no faces or anthropomorphic objects anywhere. Preserve factual implementation, not an ideal architecture. Title '패킷 라우팅과 동기 DB 접근'. Five readable sections: 1 '완성 패킷 전달': Session server chip -> IOCPServer rack, small header/length checklist. 2 'PacketId별 처리 분기': IOCPServer -> PacketMethod routing chip, label 'PacketId'. 3 '게임 처리와 저장 책임 분리': PacketMethod branches to '세션·월드 상태 처리' represented by interconnected module blocks, and 'Queries → DBManager → MariaDB' represented by query document, connector gear and database cylinder. 4 '현재: 워커에서 동기 쿼리': worker processor sends query -> hourglass labeled '쿼리 완료 대기' -> MariaDB -> response packet; be very clear worker waits synchronously, do NOT imply background DB queue or async DB. 5 'SQL과 값 바인딩 분리': document 'SQL 템플릿' showing '?' + colored data blocks '바인딩 값' -> 'Prepared Statement'. Footer '게임 처리와 SQL 코드의 책임 구분' with processor/module icon vs query/database icon. Short Korean text, ample clean spacing, arrows accurate and clear. No unimplemented connection pool, job queue or transaction guarantees. Only change illustration actors to technical objects and improve readability; maintain same approved pixel infographic visual identity.",
+    null
+  ],
+  "constraints": [
+    "No game characters",
+    "Retain pixel-art style and mint/amber palette",
+    "Keep DB access synchronous as implemented"
+  ]
+}

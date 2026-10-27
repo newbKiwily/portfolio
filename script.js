@@ -3189,6 +3189,242 @@ useLspOrthogonalRouting(littleSurvivalProject.architectureOverview.diagram);
   (feature.implementationSections || []).forEach((section) => useLspOrthogonalRouting(section.diagram));
 });
 
+// Reuse the approved inline illustration layout without changing existing Other Functions.
+const everwindVisualRoot = "assets/everwind/explainers";
+const everwindCoreVisuals = [
+  {
+    key: "everwind-content", file: "core-features/01-content-extension.png",
+    brief: "아이템·레시피·퀘스트의 정의와 실행 상태를 분리하고, 스킬은 추상 타입과 파생 클래스로 확장합니다.",
+    keywords: ["정의와 실행 상태", "추상 타입", "파생 클래스"],
+  },
+  {
+    key: "everwind-iocp", file: "core-features/02-iocp-packet-lifetime.png",
+    brief: "shared_ptr·weak_ptr로 세션 소유권과 참조를 구분합니다. 누적 버퍼로 패킷을 분리하고 송신 큐에서 한 건씩 전송합니다.",
+    keywords: ["shared_ptr", "weak_ptr", "누적 버퍼", "송신 큐"],
+  },
+  {
+    key: "everwind-multiplayer", file: "core-features/03-map-multiplayer.png",
+    brief: "세션을 맵별로 구분하고 같은 맵 사용자에게만 입장·이동·퇴장을 전달합니다. 맵 이동 시 이전 맵에서 빠지고 새 맵에 등록됩니다.",
+    keywords: ["맵별로 구분", "같은 맵 사용자", "입장·이동·퇴장", "새 맵에 등록"],
+  },
+];
+const everwindTroubleshootingVisuals = [
+  {
+    key: "everwind-initialization", file: "troubleshooting/01-singleton-initialization.png",
+    problem: "매니저 생성만으로 초기화 완료를 보장할 수 없어, 씬 전환 중 준비되지 않은 참조를 사용했습니다.",
+    solution: "등록과 초기화를 분리하고 우선순위로 실행합니다. 서비스는 먼저, 인게임 매니저는 월드 조립 후 준비합니다.",
+    keywords: ["초기화 완료", "준비되지 않은 참조", "등록과 초기화", "우선순위", "월드 조립 후"],
+  },
+  {
+    key: "everwind-singleton-base", file: "troubleshooting/02-singleton-common-base.png",
+    problem: "서로 다른 제네릭 싱글톤을 하나의 목록으로 초기화하기 어려웠습니다.",
+    solution: "비제네릭 공통 베이스로 등록·초기화하고, 제네릭 베이스는 타입별 접근과 인스턴스 수명을 맡깁니다.",
+    keywords: ["제네릭 싱글톤", "비제네릭 공통 베이스", "타입별 접근", "인스턴스 수명"],
+  },
+  {
+    key: "everwind-world-transition", file: "troubleshooting/03-world-transition-cleanup.png",
+    problem: "맵 이동 후 이전 오브젝트·전투 상태·타깃 UI가 남고, 위치 보정이 새 좌표와 충돌했습니다.",
+    solution: "이전 맵 소속과 월드 상태를 정리한 뒤 새 월드를 조립합니다. 좌표 적용 중에는 CharacterController를 잠시 끕니다.",
+    keywords: ["전투 상태", "타깃 UI", "위치 보정", "월드 상태를 정리", "CharacterController"],
+  },
+  {
+    key: "everwind-ownership", file: "troubleshooting/04-monster-ownership.png",
+    problem: "여러 클라이언트의 몬스터 제어와 중복 사망 요청으로 위치·공격·사망 상태가 엇갈렸습니다.",
+    solution: "소유자만 계산하고 나머지는 보간합니다. 일부 이동·공격·사망 요청에 Owner 검증과 중복 요청 제한을 적용했습니다.",
+    keywords: ["몬스터 제어", "중복 사망 요청", "보간", "Owner 검증", "중복 요청 제한"],
+  },
+  {
+    key: "everwind-refill", file: "troubleshooting/05-refill-ground-height.png",
+    problem: "클라이언트별 리젠과 전체 목록 재전송으로 중복 생성이 발생하고, 스폰 좌표가 경사진 지형 높이와 맞지 않았습니다.",
+    solution: "서버가 부족한 수량만 보충해 신규 개체를 전송합니다. 클라이언트는 인스턴스 ID로 중복을 거르고 Raycast로 높이를 보정합니다.",
+    keywords: ["중복 생성", "지형 높이", "부족한 수량", "신규 개체", "인스턴스 ID", "Raycast"],
+  },
+  {
+    key: "everwind-animation", file: "troubleshooting/06-animator-overrides.png",
+    problem: "공격·피격마다 Animator 상태를 늘리면 전이 구조가 반복되고, 같은 행동의 클립·속도 차이를 관리하기 어려웠습니다.",
+    solution: "공통 전이는 유지하고 개체별 Animator Override로 키 클립을 교체합니다. 애니메이션 세트와 공격별 속도로 표현을 나눕니다.",
+    keywords: ["전이 구조", "클립·속도", "공통 전이", "Animator Override", "애니메이션 세트"],
+  },
+  {
+    key: "everwind-minimap", file: "troubleshooting/07-minimap-alignment.png",
+    problem: "미니맵 이미지와 월드 좌표가 어긋나고, UI 준비가 늦으면 맵 변경 이벤트를 놓쳤습니다.",
+    solution: "맵별 이미지·위치·회전·크기 보정값을 함께 적용합니다. UI 시작 시 현재 맵을 다시 조회해 초기 표시를 맞춥니다.",
+    keywords: ["월드 좌표", "맵 변경 이벤트", "보정값", "현재 맵을 다시 조회"],
+  },
+];
+everwindProject.coreFeatures.slice(3).forEach((feature) => {
+  const implementationIndex = everwindDesignDocument.coreFeatures.findIndex((item) => item.title === feature.title);
+  const implementation = everwindDesignDocument.coreFeatures[implementationIndex];
+  everwindProject.otherFeatures.push({
+    title: feature.title, summary: feature.summary, keywords: feature.keywords,
+    domain: ["재접속 가능한 게임 상태 영속화", "서버 타이머와 맵별 몬스터 보충"].includes(feature.title) ? "SERVER / DB" : "CLIENT",
+    details: [["설계 의도", feature.why], ["설계 방식", feature.how]],
+    diagram: implementation.diagram, tradeoff: implementation.tradeoff,
+    implementationIndex, resultMedia: feature.media || feature.video,
+  });
+});
+everwindProject.coreFeatures = everwindProject.coreFeatures.slice(0, 3);
+everwindProject.inlineVisuals = true;
+everwindProject.resultPoster = "assets/everwind-combat.png";
+everwindProject.coreFeatures.forEach((feature, index) => {
+  const visual = everwindCoreVisuals[index];
+  feature.visual = { ...visual, src: `${everwindVisualRoot}/${visual.file}`, alt: `${feature.title} 구현 흐름 개념도` };
+});
+everwindProject.troubleshooting.forEach((feature, index) => {
+  const visual = everwindTroubleshootingVisuals[index];
+  feature.visual = { ...visual, src: `${everwindVisualRoot}/${visual.file}`, alt: `${feature.title} 문제·해결 개념도` };
+});
+
+// Keep one reading location per implementation topic; preserve the source-backed details.
+const [ewInit, ewBase, ewWorld, ewOwner, ewRefill] = everwindProject.troubleshooting;
+const [ewInitDoc, ewBaseDoc, ewWorldDoc, ewOwnerDoc, ewRefillDoc] = everwindDesignDocument.troubleshooting;
+const ewOtherByTitle = (title) => everwindProject.otherFeatures.find((feature) => feature.title === title);
+const ewMainThread = ewOtherByTitle("Unity 메인 스레드와 지연 데이터 조립");
+const ewSpawnDefinition = ewOtherByTitle("맵·몬스터 스폰 기준");
+const ewTimer = ewOtherByTitle("서버 타이머와 맵별 몬스터 보충");
+const ewTimerDoc = everwindDesignDocument.coreFeatures[ewTimer.implementationIndex];
+const ewImplementationSection = (feature) => ({
+  title: feature.title,
+  summary: feature.intent || feature.summary,
+  details: feature.decisions || feature.details,
+  diagram: feature.diagram,
+  emphasis: feature.keywords,
+  sources: feature.sources,
+});
+
+// Shared singleton type management belongs with registration/initialization.
+ewInit.title = "싱글톤 등록·초기화 순서와 공통 베이스";
+ewInit.summary = "공통 베이스로 매니저를 모으고 등록·초기화·씬 수명을 나눠 관리했습니다.";
+ewInit.visual = { ...ewInit.visual,
+  problem: "서로 다른 싱글톤을 함께 관리하기 어렵고, 생성만으로 초기화 완료를 보장할 수 없었습니다.",
+  solution: "공통 베이스로 등록하고 우선순위에 따라 초기화합니다. 서비스는 먼저, 인게임 매니저는 월드 조립 후 준비합니다.",
+  keywords: ["공통 베이스", "초기화 완료", "우선순위", "월드 조립 후"],
+};
+ewInitDoc.title = ewInit.title;
+ewInitDoc.intent = ewInit.summary;
+ewInitDoc.problem = ewInit.visual.problem;
+ewInitDoc.result = ewInit.visual.solution;
+ewInitDoc.decisions = ewInitDoc.decisions.map(([label, copy]) => [label, label === "월드 이후 준비"
+  ? "월드 조립이 끝난 뒤 InitializeIngame으로 인게임 매니저의 Init을 호출합니다. 씬 준비를 초기화의 선행 조건으로 둡니다."
+  : copy]);
+ewInitDoc.implementationSections = [ewImplementationSection(ewBaseDoc)];
+ewInitDoc.tradeoff = ewBaseDoc.tradeoff;
+
+// Keep map-scoped relay in Core 03 and explain monster authority separately.
+const ewMultiplayer = everwindDesignDocument.coreFeatures[2];
+ewMultiplayer.intent = "세션의 맵 소속을 기준으로 상태 전파 범위를 제한한다.";
+ewMultiplayer.keywords = ["맵 컨텍스트", "MapData", "같은 맵 전파", "입장/이동/퇴장"];
+ewMultiplayer.problem = "다른 맵 사용자에게까지 상태를 보내면 불필요한 트래픽과 객체 관리 비용이 늘어납니다.";
+ewMultiplayer.decisions = [
+  ["맵 소속", "세션을 MapData에 등록하고 맵 ID에 따라 같은 월드를 공유할 사용자를 구분합니다."],
+  ["전파 범위", "입장·이동·퇴장 상태는 같은 맵의 세션을 대상으로 전달합니다."],
+  ["소속 변경", "맵 이동 시 이전 맵에서 세션을 제거하고 새 맵에 등록해 이후 전파 대상을 바꿉니다."],
+];
+ewMultiplayer.result = "서로 다른 맵의 전파 범위를 나누고 현재 맵에 속한 사용자에게만 상태를 전달합니다.";
+ewMultiplayer.diagram.groups = ewMultiplayer.diagram.groups.map((group) => ({ ...group, nodes: group.nodes.filter((node) => node !== "EnemyNetworkSync") }));
+const ewMapFeature = everwindProject.coreFeatures[2];
+ewMapFeature.keywords = [...ewMultiplayer.keywords];
+ewMapFeature.emphasis = [...ewMultiplayer.keywords];
+ewMapFeature.why = ewMultiplayer.problem;
+ewMapFeature.how = ewMapFeature.visual.brief;
+everwindProject.otherFeatures.push({
+  title: "몬스터 소유권·원격 보간과 사망 요청 검증",
+  domain: "CLIENT / SERVER",
+  summary: "소유 클라이언트가 몬스터를 계산하고 나머지는 보간합니다. 일부 요청의 소유자와 중복 사망 요청을 검사합니다.",
+  keywords: ewOwnerDoc.keywords,
+  details: [["문제 상황", ewOwnerDoc.problem], ...ewOwnerDoc.decisions],
+  diagram: ewOwnerDoc.diagram,
+  tradeoff: ewOwnerDoc.tradeoff,
+});
+
+// Queue dispatch and scene cleanup are a single world-assembly troubleshooting topic.
+ewWorld.title = "수신 스레드와 씬 전환의 월드 조립·정리";
+ewWorld.summary = "수신 데이터의 메인 스레드 반영과 씬 전환 시 이전 월드 정리를 연결했습니다.";
+ewWorld.visual = { ...ewWorld.visual,
+  problem: "소켓 응답과 씬 준비 시점이 달랐고, 맵 전환 후 이전 오브젝트·전투 UI가 남았습니다.",
+  solution: "수신 데이터를 보관하고 Unity 반영은 메인 스레드 큐로 넘깁니다. 이전 상태를 정리한 뒤 새 월드를 조립합니다.",
+  keywords: ["씬 준비 시점", "이전 오브젝트·전투 UI", "메인 스레드 큐", "새 월드를 조립"],
+};
+ewWorldDoc.title = ewWorld.title;
+ewWorldDoc.problem = ewWorld.visual.problem;
+ewWorldDoc.result = ewWorld.visual.solution;
+ewWorldDoc.intent = "네트워크 수신과 Unity 반영 시점을 구분하고, 씬 전환의 정리·조립 순서를 맞춘다.";
+ewWorldDoc.implementationSections = [ewImplementationSection(ewMainThread)];
+ewWorldDoc.tradeoff = ewMainThread.tradeoff;
+ewWorld.resultMedia = ewMainThread.media;
+
+// Spawn definitions, scheduling, refill and ground correction stay together.
+ewRefill.title = "서버 타이머 기반 몬스터 보충과 스폰 보정";
+ewRefill.summary = "스폰 정의와 반복 타이머를 연결하고 증분 전송·중복 검사·높이 보정으로 생성 상태를 맞췄습니다.";
+ewRefill.visual = { ...ewRefill.visual,
+  problem: "클라이언트별 리젠과 전체 목록 재전송으로 중복 생성이 발생하고, 스폰 높이가 경사진 지형과 맞지 않았습니다.",
+  solution: "서버 타이머가 부족한 수량만 보충해 신규 개체를 전송합니다. 클라이언트는 인스턴스 ID와 Raycast로 중복·높이를 보정합니다.",
+  keywords: ["중복 생성", "스폰 높이", "서버 타이머", "부족한 수량", "인스턴스 ID", "Raycast"],
+};
+ewRefillDoc.title = ewRefill.title;
+ewRefillDoc.intent = "스폰 정의·시간 작업·증분 전송과 클라이언트 생성을 하나의 흐름으로 연결한다.";
+ewRefillDoc.problem = ewRefill.visual.problem;
+ewRefillDoc.result = ewRefill.visual.solution;
+ewRefillDoc.implementationSections = [ewImplementationSection(ewSpawnDefinition), ewImplementationSection(ewTimerDoc)];
+ewRefillDoc.decisions = ewRefillDoc.decisions.map(([label, copy]) => [label, copy.replace("주기 실행 구조는 Core Feature의 서버 타이머에서 설명합니다.", "주기 실행 구조는 아래 서버 타이머 설명에서 이어집니다.")]);
+ewRefillDoc.tradeoff = [ewRefillDoc.tradeoff, ewTimerDoc.tradeoff, ewSpawnDefinition.tradeoff].join(" ");
+ewRefill.resultMedia = ewTimer.resultMedia;
+
+// Put tutorial event consumption and popup UI mechanics in their own Other Functions.
+const ewContent = everwindDesignDocument.coreFeatures[0];
+const ewTutorialSection = ewContent.implementationSections.find((section) => section.title === "튜토리얼 단계 계약과 등록 기반 확장");
+const ewPopupSection = ewContent.implementationSections.find((section) => section.title === "팝업·인벤토리·장비·제작 UI");
+ewContent.implementationSections = ewContent.implementationSections.filter((section) => section !== ewTutorialSection && section !== ewPopupSection && section.title !== "스킬·아이템·장비·제작");
+ewContent.decisions = ewContent.decisions.map(([label, copy]) => [label, copy
+  .replace("아이템은 IUsableItem, 스킬은 추상 Skill, 튜토리얼은 ITutorialStep을 사용합니다.", "아이템은 IUsableItem, 스킬은 추상 Skill을 사용합니다.")
+  .replace("스킬 실행은 Skill, 아이템 사용은 IUsableItem, 튜토리얼 단계는 ITutorialStep으로 요청합니다.", "스킬 실행은 Skill, 아이템 사용은 IUsableItem으로 요청합니다.")]);
+const ewEvents = ewOtherByTitle("이벤트 기반 퀘스트·튜토리얼");
+const ewEventsDoc = everwindDesignDocument.coreFeatures[ewEvents.implementationIndex];
+ewEventsDoc.implementationSections = [ewTutorialSection];
+ewEvents.details[1][1] = "처치·획득·제작 결과를 PlayEvents로 발행합니다. QuestManager와 현재 튜토리얼 단계는 필요한 사건을 구독해 목표와 비교하고, 단계 종료 시 구독을 해제합니다.";
+ewEventsDoc.decisions = ewEventsDoc.decisions.filter(([label]) => label !== "조건 해석");
+ewEventsDoc.diagram.groups = ewEventsDoc.diagram.groups.filter((group) => group.title !== "Progress");
+ewEventsDoc.diagram.relations = ewEventsDoc.diagram.relations.filter(([from, type, to]) => to !== "QuestProgressData");
+const ewPopup = ewOtherByTitle("퀘스트 목록·팝업 입력·사망 UI");
+ewPopup.implementationSections = [ewPopupSection];
+
+everwindProject.otherFeatures = everwindProject.otherFeatures.filter((feature) => ![ewMainThread, ewSpawnDefinition, ewTimer].includes(feature));
+everwindProject.troubleshooting = everwindProject.troubleshooting.filter((feature) => ![ewBase, ewOwner].includes(feature));
+everwindDesignDocument.troubleshooting = everwindDesignDocument.troubleshooting.filter((feature) => ![ewBaseDoc, ewOwnerDoc].includes(feature));
+
+const everwindOtherVisuals = [
+  { file: "other-functions/02-hud-combat-feedback.png", keywords: ["UI 이벤트", "재바인딩", "화면에 반영"] },
+  { file: "other-functions/03-quest-popup-death-ui.png", keywords: ["퀘스트 진행 상태", "UI 조작", "카메라 조작", "중복 소비"] },
+  { file: "other-functions/04-routing-db-boundary.png?v=technical-v2", keywords: ["Packet ID", "세션·월드·Queries", "SQL"] },
+  { file: "core-features/04-persistence.png", keywords: ["위치·맵 저장", "정상 로그아웃", "상태 저장 요청", "로그인 조회"] },
+  { file: "core-features/05-combat-state-flow.png", keywords: ["진입·갱신·종료", "상태 클래스", "타격 시점"] },
+  { file: "core-features/06-quest-tutorial-events.png", keywords: ["이벤트", "직접 의존하지 않게"] },
+  { file: "troubleshooting/04-monster-ownership.png", keywords: ["소유 클라이언트", "보간", "소유자", "중복 사망 요청"] },
+];
+everwindProject.otherFeatures.forEach((feature, index) => {
+  const visual = everwindOtherVisuals[index];
+  feature.visual = {
+    key: `everwind-other-${index + 1}`,
+    src: `${everwindVisualRoot}/${visual.file}`,
+    alt: `${feature.title} 구현 흐름 개념도`,
+    brief: feature.summary,
+    keywords: visual.keywords,
+  };
+  const intent = (feature.details || []).find(([label]) => label === "설계 의도");
+  feature.inlineImplementation = feature === everwindProject.otherFeatures[6]
+    ? ewOwnerDoc
+    : feature.implementationIndex !== undefined
+      ? everwindDesignDocument.coreFeatures[feature.implementationIndex]
+      : {
+        intent: intent?.[1] || feature.summary,
+        keywords: feature.keywords,
+        decisions: (feature.details || []).filter(([label]) => label !== "설계 의도"),
+        diagram: feature.diagram,
+        implementationSections: feature.implementationSections,
+        tradeoff: feature.tradeoff,
+      };
+});
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
@@ -4229,7 +4465,7 @@ const buildDesignDocument = (documentData) => {
   }));
 };
 
-const makeLspInlineExplanation = (feature, implementation) => {
+const makeInlineVisualExplanation = (feature, implementation, project) => {
   const visual = feature.visual;
   const content = document.createElement("div");
   const brief = document.createElement(visual.problem ? "div" : "p");
@@ -4256,7 +4492,7 @@ const makeLspInlineExplanation = (feature, implementation) => {
   }
   pair.className = "lsp-visual-pair";
   summary.className = "lsp-summary-figure";
-  image.src = `assets/gep/explainers/${visual.key}.png`;
+  image.src = visual.src || `assets/gep/explainers/${visual.key}.png`;
   image.alt = visual.alt;
   image.loading = "lazy";
   image.decoding = "async";
@@ -4283,7 +4519,7 @@ const makeLspInlineExplanation = (feature, implementation) => {
       asset.controls = true;
       asset.playsInline = true;
       asset.preload = "none";
-      asset.poster = "assets/gep/gep-gameplay.png";
+      asset.poster = project.resultPoster || "assets/gep/gep-gameplay.png";
       asset.setAttribute("aria-label", media.title || `${feature.title} 결과 영상`);
     }
     result.append(title, asset);
@@ -4503,7 +4739,7 @@ const buildProjectDetail = (project) => {
     if (project.inlineVisuals && feature.visual) {
       const implementation = project.designDocument.coreFeatures.find((item) => item.title === feature.title);
       article.classList.add("lsp-visual-detail");
-      article.append(header, makeFeatureKeywords(feature.keywords), makeLspInlineExplanation(feature, implementation));
+      article.append(header, makeFeatureKeywords(feature.keywords), makeInlineVisualExplanation(feature, implementation, project));
       modalFields.features.append(article);
       return;
     }
@@ -4562,6 +4798,13 @@ const buildProjectDetail = (project) => {
     appendEmphasizedText(summary, feature.summary, feature.keywords);
     headingGroup.append(domain, title);
     header.append(number, headingGroup);
+    if (project.inlineVisuals && feature.visual) {
+      article.classList.add("feature-detail", "lsp-visual-detail");
+      header.replaceChildren(number, title);
+      article.append(header, makeFeatureKeywords(feature.keywords), makeInlineVisualExplanation(feature, feature.inlineImplementation, project));
+      modalFields.others.append(article);
+      return;
+    }
     details.className = "other-feature-details";
     details.append(...(feature.details || []).flatMap(([label, copy]) => {
       const term = document.createElement("dt");
@@ -4571,6 +4814,8 @@ const buildProjectDetail = (project) => {
       return [term, description];
     }));
     article.append(header, makeFeatureKeywords(feature.keywords), summary, details);
+    if (feature.implementationIndex !== undefined) article.append(makeImplementationButton(feature.implementationIndex));
+    if (feature.resultMedia) article.append(makeResultMediaButton(feature.resultMedia));
     if (feature.tradeoff) article.append(makeLimitations(feature.tradeoff));
     if (feature.diagram) {
       const umlToggle = document.createElement("button");
@@ -4591,6 +4836,9 @@ const buildProjectDetail = (project) => {
       umlPanel.className = "other-feature-uml";
       umlPanel.hidden = true;
       umlPanel.append(makeUmlDiagram(feature.diagram));
+      (feature.implementationSections || []).forEach((section, sectionIndex) => {
+        umlPanel.append(makeImplementationSection(section, `${index + 1}.${sectionIndex + 1}`, `${umlId}-detail-${sectionIndex + 1}`));
+      });
       article.append(umlToggle, umlPanel);
     }
     modalFields.others.append(article);
@@ -4610,7 +4858,7 @@ const buildProjectDetail = (project) => {
 
     if (project.inlineVisuals && item.visual) {
       article.classList.add("lsp-visual-detail");
-      article.append(header, makeLspInlineExplanation(item, project.designDocument.troubleshooting[index]));
+      article.append(header, makeInlineVisualExplanation(item, project.designDocument.troubleshooting[index], project));
       modalFields.troubleshooting.append(article);
       return;
     }
@@ -4896,7 +5144,7 @@ const handleImplementationClick = (event) => {
   const projectLabel = activeProject.title.toUpperCase();
   featureDesignModal.querySelector(".project-type").textContent = type === "troubleshooting"
     ? `${projectLabel} / TROUBLESHOOTING`
-    : `${projectLabel} / CORE FEATURE`;
+    : `${projectLabel} / ${trigger.closest(".other-feature-detail") ? "OTHER FUNCTIONS" : "CORE FEATURE"}`;
   featureDesignContent.replaceChildren(makeFeatureImplementation(feature, index));
   featureDesignModal.showModal();
   featureDesignModal.scrollTop = 0;
@@ -4905,6 +5153,7 @@ const handleImplementationClick = (event) => {
 };
 modalFields.features.addEventListener("click", handleImplementationClick);
 modalFields.troubleshooting.addEventListener("click", handleImplementationClick);
+modalFields.others.addEventListener("click", handleImplementationClick);
 
 const closeFeatureImplementation = () => {
   if (featureDesignModal.open) featureDesignModal.close();
@@ -5040,6 +5289,7 @@ const handleResultMediaClick = (event) => {
 };
 modalFields.features.addEventListener("click", handleResultMediaClick);
 modalFields.troubleshooting.addEventListener("click", handleResultMediaClick);
+modalFields.others.addEventListener("click", handleResultMediaClick);
 technicalDocumentList.addEventListener("click", handleResultMediaClick);
 
 videoModalClose.addEventListener("click", closeFeatureMedia);

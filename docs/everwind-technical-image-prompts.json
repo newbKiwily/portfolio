@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-27",
+  "tool": "built-in image_gen",
+  "reference": "C:/Users/tlsal/.codex/skills/artifact-template-pixel-portfolio-explainers/assets/reference.png",
+  "constraint": "Retain approved pixel infographic style; no characters in these technical illustrations.",
+  "assets": [
+    {
+      "id": "iocp",
+      "prompt": "Edit target image 1. Image 2 is STYLE ONLY. Redesign this infographic with NO HUMANS, NO CHARACTERS, NO creatures, NO fantasy landscapes. Preserve warm off-white background, mint/amber rounded panels, crisp pixel-art illustrations, navy legible Korean lettering, landscape 1536x1024. Replace ALL game characters with technical pixel-art objects: server racks, memory blocks, gears, packet envelopes, buffers. Use this exact concise content in 3 horizontal rows. Title 'IOCP와 패킷 수명'. Row 1 'TCP 수신과 패킷 분리': fragmented orange packet pieces and merged blue envelopes -> '누적 버퍼' -> '헤더·길이 검사' -> '완료 패킷'; incomplete part loops/stays with label '미완성 데이터 보관'. Row 2 '완료까지 세션 수명 유지': IOContext gear/memory block --solid arrow labeled 'shared_ptr owner'--> Session server block; MapData storage block --dotted arrow labeled 'weak_ptr'--> Session. Distinguish strong ownership and non-owning reference accurately. Row3 '세션별 송신 큐': envelope queue 1,2,3 -> WSASend chip -> completed1 then active2 then waiting3, label '완료 후 다음 전송'. Small amber note '부분 송신 잔여 처리 보완 필요'. No invented guarantees, no characters anywhere, no faces on objects. Pixel texture same reference. Lots of whitespace, large Korean labels.",
+      "output": "assets/everwind/explainers/core-features/02-iocp-packet-lifetime.png"
+    },
+    {
+      "id": "singleton",
+      "prompt": "Edit target image 1. Image 2 STYLE ONLY. Rebuild infographic with NO HUMANS, NO GAME CHARACTERS, NO creatures, NO fantasy scenery. Pixel-art technical equipment only: registry index cards, service gears, app windows, lifecycle timeline. Preserve warm off-white backdrop, mint/amber rounded panels, navy large Korean text, pixel-art objects, landscape 1536x1024. This is Unity CLIENT initialization, not C++ server. Title '등록과 초기화 순서 분리'. Upper left amber problem '생성 순서 ≠ 준비 완료' with disconnected service modules. Upper main clear 4-step flow: '1 Awake: 등록' (SingletonManager registry), '2 Priority < 0: 서비스 Init' (sorted service cards), '3 씬 로드·월드 조립' (SceneLoader and WorldLoader app window), '4 인게임 Init' (ready module gears). Lower row title '씬 수명에 맞는 유지·정리': side by side abstract application scenes '씬 1' -> '씬 2'; persistent service memory block remains marked 'IsPersistent', scene-bound module replaced, duplicate block crossed out marked '중복 인스턴스 제거'. Footer concise '등록 → 우선순위 정렬 → 준비 단계별 Init'. Don't imply all objects persist or registration means ready. No code snippets except identifier labels above. Absolutely no adventurer/wizard/archer/human or fantasy object. Keep reference infographic visual feel.",
+      "output": "assets/everwind/explainers/troubleshooting/01-singleton-initialization.png"
+    }
+  ]
+}
