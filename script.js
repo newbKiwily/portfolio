@@ -2988,6 +2988,135 @@ littleSurvivalDesignDocument.coreFeatures = littleSurvivalDesignDocument.coreFea
   feature.diagram.contributionNote = "";
 });
 
+// Keep the illustrated overview short; retain the original implementation evidence below it.
+const lspDetailSpecs = [
+  {
+    intent: "입력·안내와 실행에서 같은 아이템·대상 규칙을 사용하고, 제작 조합은 한 곳에서 조회한다.",
+    decisions: [["입력 / 판정", "Player·PlayerInventory → 현재 아이템 + 전방 대상 → Comparer의 행동 판정."], ["설계 방식", "ItemType + 대상 역할 확인 → 행동 안내. 실제 실행은 대상의 IInteractable에 위임."], ["제작 조회", "튜플 Dictionary + RecipeItemTypeComparer → 재료 순서와 무관한 제작 함수 조회."], ["성공 처리", "낚시 해금 / 벌목 시간 ×0.6 / 양동이 생성 → 성공 이벤트 → 사용 재료 정리."]],
+    flow: 'flowchart LR\nA["보유 아이템 + 전방 대상"] --> B["Comparer: 행동 판정"]\nB --> C["행동 안내 갱신"]\nA --> D["대상 IInteractable 실행"]\nD --> E["제작 대상이면 CraftManager"]\nE --> F["레시피 조회"]\nF --> G["효과 적용 · 성공 시 재료 정리"]',
+  },
+  {
+    intent: "자원을 바로 생성하지 않고 지면·간격을 통과한 후보에서 거리 가중치로 선택한다.",
+    decisions: [["후보 범위", "BoxCollider의 XZ 내접 원 안에서 무작위 후보 생성."], ["후보 검증", "하향 Raycast → 지정 groundCollider 일치 → CheckSphere로 아이템 겹침 제외."], ["가중 선택", "Iron·Plant.GetSpawnWeight → 로켓 거리별 가중치 → 누적 가중치 추첨."], ["공급 주기", "후보 검증·추첨은 개인 구현. 자원별 코루틴·시도 횟수별 대기 간격은 팀원 조정. 후보가 없으면 생성 취소."]],
+    flow: 'flowchart TD\nA["무작위 XZ 후보"] --> B{"지정 지면에 Raycast 적중?"}\nB -->|아니오| X["후보 제외"]\nB -->|예| C{"주변 아이템과 겹침?"}\nC -->|예| X\nC -->|아니오| D["아이템별 거리 가중치"]\nD --> E["양수 가중치 후보만 수집"]\nE --> F{"유효 후보 존재?"}\nF -->|예| G["가중 추첨 → 생성"]\nF -->|아니오| H["이번 생성 취소"]',
+  },
+  {
+    intent: "플레이 의견을 대상 선택·제작 효과·자원 운용의 코드 변경과 연결하고, 개인 수정과 팀의 후속 평가를 구분한다.",
+    decisions: [["대상 선택", "이동·보유 아이템 변경 → RefreshForwardTarget → Comparer 결과로 상황별 안내 갱신."], ["제작 효과", "도끼 제작 → 벌목 시간 ×0.6. 기본 7초 기준 4.2초. 해금 표시·기본 시간 조정은 팀원 작업."], ["자원 운용", "나무·식물 연료 판정 + 검증·가중 스폰. 공급 루틴·간격은 팀원 조정."], ["평가 범위", "후속 의견: 진행 이해·목표 달성 가능. 자원 부담·반복과 일부 도구의 낮은 필요성은 남음. 정량 성능 개선으로 해석하지 않음."]],
+    flow: 'flowchart LR\nA["조작·대상 불명확"] --> B["상황별 판정 · 대상 제외"]\nC["도구 효과 불명확"] --> D["제작 → 시간·기능 변화"]\nE["자원 운용 부담"] --> F["연료 선택 · 스폰 규칙"]\nB --> G["후속 플레이 의견 확인"]\nD --> G\nF --> G\nG --> H["진행 이해 개선 · 자원 부담은 남음"]',
+  },
+  {
+    intent: "팀원의 전방 탐색을 유지하면서 자기 아이템이 대상이 되는 경로를 감지·판정 양쪽에서 막는다.",
+    decisions: [["팀원 기반", "ItemLayer + 전방 45도 + 거리 우선 후보 선택."], ["감지 보완", "현재 보유 아이템·Player 자식 Transform 제외 → 외부 대상 선택."], ["판정 보완", "Comparer.checkCraft에서 현재 아이템과 대상 재비교 → 자기 조합 차단."], ["안내 연결", "RefreshForwardTarget → 행동 판정 → OnChangeForwardGameObject → SystemMessageUI."]],
+    flow: 'flowchart LR\nA["전방 후보 탐색"] --> B["보유 아이템 · 자식 제외"]\nB --> C["각도·거리로 대상 선택"]\nC --> D["Comparer 제작 재검사"]\nD --> E["자기 조합 차단 · 행동 안내"]',
+  },
+  {
+    intent: "재료 순서가 바뀌어도 같은 레시피를 찾도록 동등성 비교와 해시 규칙을 함께 맞춘다.",
+    decisions: [["동등성", "Equals: (A,B) = (B,A). 정방향·역방향 두 경우 비교."], ["해시", "hash(A) XOR hash(B) → 순서를 바꿔도 같은 해시. 해시 충돌의 최종 구분은 Equals."], ["조회 구조", "Dictionary<(ItemType, ItemType), Func<Player, bool>>에 비교자 주입."], ["등록 방식", "레시피 한 번 등록 → 양방향 조회 → 제작 함수 실행."]],
+    flow: 'flowchart LR\nA["나무 + 철"] --> C["대칭 Equals · XOR 해시"]\nB["철 + 나무"] --> C\nC --> D["동일 레시피 조회"]\nD --> E["도끼 효과 적용"]',
+  },
+  {
+    intent: "양동이의 논리 상태·월드 표현을 함께 바꾸고, 사용처에서 인벤토리 갱신을 연결한다.",
+    decisions: [["상태 변경", "Pond.Fill / Tree.Empty 호출 → Bucket.isFilled와 ItemSprite 갱신."], ["월드 표현", "현재 상태에 맞는 머티리얼 → MeshRenderer 첫 슬롯 적용."], ["인벤토리", "Pond·Tree → PlayerInventory.OnInventoryChanged → InventoryUI가 현재 ItemSprite 다시 읽기."], ["기여 범위", "Bucket 기초 상태·InventoryUI는 팀원 기반. 상태별 표현 보완·호출부 갱신 연결은 개인 추가."]],
+    flow: 'flowchart TD\nA["Pond · Tree 상호작용"] --> B["Bucket.Fill / Empty"]\nB --> C["isFilled · ItemSprite 변경"]\nB --> D["월드 머티리얼 변경"]\nA --> E["OnInventoryChanged 발행"]\nE --> F["InventoryUI: 현재 아이콘 다시 읽기"]',
+  },
+];
+[...littleSurvivalDesignDocument.coreFeatures, ...littleSurvivalDesignDocument.troubleshooting].forEach((feature, index) => {
+  const spec = lspDetailSpecs[index];
+  feature.intent = spec.intent;
+  feature.decisions = spec.decisions;
+  feature.flowDiagram = { title: "처리 순서와 판단 기준", caption: "현재 구현의 호출·분기 흐름", source: spec.flow, zoomable: true };
+});
+lspFeedbackImplementation.implementationSections.forEach((section, index) => {
+  section.details = [
+    [["피드백", "조작·상호작용 대상이 불명확."], ["개인 수정", "29e64b7: 이동·보유 변경 시 판정·안내 갱신. 7eb871b: 현재 아이템·자식 제외 및 제작 재검사."], ["팀원 기반", "전방 45도·거리 탐색(130ee15), SystemMessageUI."], ["후속 의견", "팀 전체 UI·설명 개선 후 진행 파악 가능. 단일 수정의 효과를 별도 측정한 결과는 아님."]],
+    [["피드백", "긴 행동 대기 · 도끼 제작 이점 불명확."], ["개인 구현", "CraftManager 도끼 효과: 벌목 시간 ×0.6. 기본 7초 → 4.2초(제작 1회 기준)."], ["팀원 조정", "해금 아이콘 이벤트(fd8dd82), 기본 벌목 3→7초·성장 5→10초(67c6ca6)."], ["남은 문제", "도구별 차이는 보이나 낚시·양동이 없이도 클리어 가능. 활용을 유도하는 레벨 설계 필요."]],
+    [["피드백", "불 유지·채집·이동 대비 자원 수급 부담."], ["개인 수정", "식물도 모닥불 연료로 판정(d8fb4e2). 후보 검증·거리 가중 스폰(cf58cbd)."], ["팀원 조정", "자원별 공급 루틴·시도 횟수별 대기 시간 증가(ec8ce91·32d47be·fd8dd82). 간격 증가는 공급량 감소 방향."], ["후속 의견", "밸런스 개선 의견과 자원 부담·단조로움 지적이 공존. 수급·행동 동선 조정 필요."]],
+  ][index];
+});
+littleSurvivalProject.coreFeatures[2].resultMedia = { type: "image", src: "assets/gep/gep-tutorial.png", title: "관련 플레이 화면 · 튜토리얼과 행동 안내" };
+littleSurvivalProject.troubleshooting.forEach((feature) => {
+  feature.resultMedia = { type: "image", src: "assets/gep/gep-gameplay.png", title: "관련 인게임 화면 · 세부 처리 구조는 아래 상세 구현 참고" };
+});
+littleSurvivalProject.architectureOverview = {
+  title: "게임플레이 전체 구조와 기여 구분",
+  flow: ["입력 · 대상 탐색", "행동 판정 · 제작", "상태 실행 · 월드", "자원 스폰", "UI 반영"],
+  diagram: {
+    title: "Little Survival Planet 게임플레이 구조 UML",
+    caption: "실제 스크립트 참조·호출·상속 관계 · 메서드·속성 제외",
+    direction: "TB", zoomable: true,
+    groups: [
+      { title: "Player Control", nodes: ["GameManager", "Player", "PlayerMovement", "PlayerStateMachine"] },
+      { title: "Interaction and Craft", nodes: ["Comparer", "CraftManager", "RecipeItemTypeComparer", "IInteractable"] },
+      { title: "World and Items", nodes: ["PlayerInventory", "Item", "Bucket", "Pond", "Tree", "Rocket"] },
+      { title: "Resource Spawn", nodes: ["SpawnManager", "SpawnCandidate", "Iron", "Plant"] },
+      { title: "Presentation", nodes: ["SystemMessageUI", "InventoryUI", "CraftUI"] },
+    ],
+    relations: [
+      ["GameManager", "association", "CraftManager", "매니저 참조"],
+      ["GameManager", "association", "SpawnManager", "매니저 참조"],
+      ["Player", "association", "PlayerMovement", "이동"],
+      ["Player", "composition", "PlayerStateMachine", "상태 실행"],
+      ["Player", "association", "PlayerInventory", "보유 아이템"],
+      ["Player", "composition", "Comparer", "행동 판정"],
+      ["Player", "dependency", "IInteractable", "대상 상호작용"],
+      ["Comparer", "dependency", "CraftManager", "제작 가능 여부"],
+      ["CraftManager", "aggregation", "RecipeItemTypeComparer", "튜플 키 비교"],
+      ["CraftManager", "dependency", "PlayerInventory", "해금 · 재료 제거"],
+      ["CraftManager", "dependency", "Player", "벌목 시간 변경"],
+      ["CraftManager", "dependency", "Bucket", "프리팹 생성"],
+      ["Player", "event", "SystemMessageUI", "선택 대상 · 행동 안내"],
+      ["PlayerInventory", "event", "InventoryUI", "아이콘 갱신"],
+      ["InventoryUI", "dependency", "CraftManager", "도구 해금 이벤트 구독"],
+      ["Bucket", "inheritance", "Item", "아이템 기반"],
+      ["Tree", "implementation", "IInteractable", "상호작용"],
+      ["Pond", "implementation", "IInteractable", "상호작용"],
+      ["Rocket", "implementation", "IInteractable", "상호작용"],
+      ["Pond", "dependency", "Bucket", "물 채우기"],
+      ["Tree", "dependency", "Bucket", "물 사용"],
+      ["SpawnManager", "aggregation", "SpawnCandidate", "검증 후보"],
+      ["SpawnManager", "dependency", "Item", "가중치 요청 · 생성"],
+      ["Iron", "inheritance", "Item", "거리 가중치 재정의"],
+      ["Plant", "inheritance", "Item", "거리 가중치 재정의"],
+    ],
+    stereotypes: [["IInteractable", "interface"], ["Item", "abstract"], ["SpawnCandidate", "struct"]],
+    contributions: lspContributions(
+      ["Comparer", "CraftManager", "RecipeItemTypeComparer", "SpawnCandidate"],
+      ["GameManager", "Player", "PlayerMovement", "PlayerStateMachine", "PlayerInventory", "Item", "Bucket", "Pond", "Tree", "Rocket", "SpawnManager", "Iron", "Plant"],
+      ["IInteractable", "SystemMessageUI", "InventoryUI", "CraftUI"],
+    ),
+  },
+};
+
+const lspFullArchitecture = littleSurvivalProject.architectureOverview.diagram;
+littleSurvivalProject.architectureOverview.diagram = {
+  ...lspFullArchitecture,
+  title: "입력·판정·실행·표현을 잇는 주요 구조",
+  caption: "주요 스크립트의 실제 참조·호출 관계 · 색상으로 기여 구분",
+  groups: [
+    { title: "Control", nodes: ["GameManager", "Player", "PlayerStateMachine", "PlayerInventory"] },
+    { title: "Rules", nodes: ["Comparer", "CraftManager", "RecipeItemTypeComparer", "IInteractable"] },
+    { title: "Resources", nodes: ["SpawnManager", "SpawnCandidate", "Item"] },
+    { title: "UI", nodes: ["SystemMessageUI", "InventoryUI"] },
+  ],
+};
+const lspOverviewNodes = new Set(littleSurvivalProject.architectureOverview.diagram.groups.flatMap((group) => group.nodes));
+littleSurvivalProject.architectureOverview.diagram.relations = lspFullArchitecture.relations.filter(([from, , to]) => lspOverviewNodes.has(from) && lspOverviewNodes.has(to));
+littleSurvivalProject.architectureOverview.diagram.contributions = lspFullArchitecture.contributions.map((entry) => ({ ...entry, nodes: entry.nodes.filter((node) => lspOverviewNodes.has(node)) })).filter((entry) => entry.nodes.length);
+littleSurvivalProject.architectureOverview.diagram.stereotypes = lspFullArchitecture.stereotypes.filter(([node]) => lspOverviewNodes.has(node));
+
+const useLspOrthogonalRouting = (diagram) => {
+  if (!diagram) return;
+  diagram.routing = "elk";
+  diagram.edgeStyle = "linear";
+};
+useLspOrthogonalRouting(littleSurvivalProject.architectureOverview.diagram);
+[...littleSurvivalDesignDocument.coreFeatures, ...littleSurvivalDesignDocument.troubleshooting].forEach((feature) => {
+  useLspOrthogonalRouting(feature.diagram);
+  useLspOrthogonalRouting(feature.flowDiagram);
+  (feature.implementationSections || []).forEach((section) => useLspOrthogonalRouting(section.diagram));
+});
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
@@ -3327,7 +3456,10 @@ const makeMermaidIdentifier = (value, fallback) => {
 };
 
 const makeMermaidSource = (diagram) => {
-  if (diagram.source) return diagram.source.trim();
+  const layoutHeader = diagram.routing === "elk"
+    ? ["---", "config:", "  layout: elk", "  elk:", "    mergeEdges: false", "    nodePlacementStrategy: NETWORK_SIMPLEX", "    considerModelOrder: NONE", "    cycleBreakingStrategy: GREEDY", ...(diagram.edgeStyle === "linear" ? ["  flowchart:", "    curve: linear", "    nodeSpacing: 40", "    rankSpacing: 60", "  class:", "    nodeSpacing: 40", "    rankSpacing: 60"] : []), "---"]
+    : [];
+  if (diagram.source) return diagram.edgeStyle === "linear" ? [...layoutHeader, diagram.source.trim()].join("\n") : diagram.source.trim();
 
   const knownNodes = new Set(diagram.groups.flatMap((group) => group.nodes));
   const externalNodes = [...new Set(diagram.relations.flatMap(([from, , to]) => [from, to]))]
@@ -3362,10 +3494,7 @@ const makeMermaidSource = (diagram) => {
   (diagram.stereotypes || []).forEach(([node, stereotype]) => {
     lines.push(`<<${stereotype}>> ${node}`);
   });
-  if (diagram.routing === "elk") {
-    lines.unshift("---", "config:", "  layout: elk", "  elk:", "    mergeEdges: false", "    nodePlacementStrategy: NETWORK_SIMPLEX", "    considerModelOrder: NONE", "    cycleBreakingStrategy: GREEDY", "---");
-  }
-  return lines.join("\n");
+  return [...layoutHeader, ...lines].join("\n");
 };
 
 const roundMermaidEdges = (diagram) => {
@@ -3431,6 +3560,7 @@ const renderMermaidCanvas = async (canvas) => {
       canvas,
     );
     canvas.innerHTML = svg;
+    if (canvas.dataset.edgeStyle === "linear") straightenMermaidEdges(canvas.querySelector("svg"));
     // Place namespace labels above the outline and include them in the fitted SVG bounds.
     canvas.querySelectorAll(".cluster").forEach((cluster) => {
       const rect = cluster.querySelector(":scope > rect");
@@ -3551,6 +3681,7 @@ const makeUmlDiagram = (diagram) => {
   canvas.className = "mermaid-canvas";
   canvas.dataset.mermaidSource = makeMermaidSource(diagram);
   if (diagram.routing) canvas.dataset.routing = diagram.routing;
+  if (diagram.edgeStyle) canvas.dataset.edgeStyle = diagram.edgeStyle;
   loading.className = "mermaid-loading";
   loading.textContent = "다이어그램 준비 중";
   canvas.append(loading);
@@ -3872,12 +4003,12 @@ const makeFeatureImplementation = (feature, index) => {
   return article;
 };
 
-const makeArchitectureDetailList = (items = []) => {
+const makeArchitectureDetailList = (items = [], label = "기능별 상세 UML") => {
   if (!items.length) return null;
   const list = document.createElement("div");
   const heading = document.createElement("h6");
   list.className = "architecture-detail-list";
-  heading.textContent = "기능별 상세 UML";
+  heading.textContent = label;
   list.append(heading);
   items.forEach((item, index) => {
     const details = document.createElement("details");
@@ -4002,7 +4133,6 @@ const makeLspInlineExplanation = (feature, implementation) => {
   caption.textContent = "구현 흐름 요약 · 이해를 돕는 개념 그림";
   summary.append(image, caption);
   pair.append(summary);
-  if (implementation?.diagram) pair.append(makeUmlDiagram(implementation.diagram));
   const points = document.createElement("dl");
   points.className = "lsp-feature-points";
   visual.points.forEach(([label, copy]) => {
@@ -4013,21 +4143,86 @@ const makeLspInlineExplanation = (feature, implementation) => {
     points.append(term, description);
   });
   content.append(brief, points, pair);
-  const media = feature.media || feature.video;
+  const media = feature.media || feature.video || feature.resultMedia;
   if (media?.src) {
     const result = document.createElement("figure");
-    const video = document.createElement("video");
+    const isImage = media.type === "image";
+    const asset = document.createElement(isImage ? "img" : "video");
     const title = document.createElement("figcaption");
     result.className = "lsp-inline-result";
-    title.textContent = "구현 결과 · 바로 재생";
-    video.src = media.src;
-    video.controls = true;
-    video.playsInline = true;
-    video.preload = "none";
-    video.poster = "assets/gep/gep-gameplay.png";
-    video.setAttribute("aria-label", media.title || `${feature.title} 결과 영상`);
-    result.append(title, video);
+    title.textContent = isImage ? media.title : "구현 결과 · 바로 재생";
+    asset.src = media.src;
+    if (isImage) {
+      asset.alt = media.title || `${feature.title} 관련 플레이 화면`;
+      asset.loading = "lazy";
+      asset.decoding = "async";
+    } else {
+      asset.controls = true;
+      asset.playsInline = true;
+      asset.preload = "none";
+      asset.poster = "assets/gep/gep-gameplay.png";
+      asset.setAttribute("aria-label", media.title || `${feature.title} 결과 영상`);
+    }
+    result.append(title, asset);
     content.append(result);
+  }
+  if (implementation) {
+    const details = document.createElement("details");
+    const toggle = document.createElement("summary");
+    const label = document.createElement("span");
+    const hint = document.createElement("small");
+    const icon = document.createElement("span");
+    const panel = document.createElement("div");
+    const sections = document.createElement("div");
+    const id = `lsp-detail-${visual.key}`;
+    details.className = "lsp-implementation-collapse";
+    label.textContent = "상세 구현";
+    hint.textContent = "설계 의도 · 설계 방식 · UML";
+    icon.className = "collapse-chevron";
+    icon.setAttribute("aria-hidden", "true");
+    toggle.append(label, hint, icon);
+    panel.className = "lsp-implementation-panel";
+    sections.className = "implementation-block-list";
+    const context = document.createElement("div");
+    const intentSection = document.createElement("section");
+    const methodSection = document.createElement("section");
+    const intentHeading = document.createElement("h5");
+    const methodHeading = document.createElement("h5");
+    const intentCopy = document.createElement("p");
+    context.className = "lsp-design-context";
+    intentHeading.textContent = "설계 의도";
+    methodHeading.textContent = "설계 방식";
+    appendEmphasizedText(intentCopy, implementation.intent, implementation.keywords);
+    intentSection.append(intentHeading, intentCopy);
+    methodSection.append(methodHeading, makeDecisionList(implementation.decisions, "design-decision-list", implementation.keywords));
+    context.append(intentSection, methodSection);
+    panel.append(makeKeywordList(implementation.keywords), context);
+    if (implementation.flowDiagram) panel.append(makeUmlDiagram(implementation.flowDiagram));
+    if (implementation.diagram) panel.append(makeUmlDiagram(implementation.diagram));
+    if (implementation.sources?.length) {
+      const sources = document.createElement("nav");
+      sources.className = "implementation-sources";
+      sources.setAttribute("aria-label", "구현 근거 커밋");
+      implementation.sources.forEach(({ label, url }) => {
+        const link = document.createElement("a");
+        link.textContent = label;
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        sources.append(link);
+      });
+      panel.append(sources);
+    }
+    if (implementation.implementationSections?.length) {
+      sections.append(...implementation.implementationSections.map((block, index) => makeImplementationSection(block, String(index + 1).padStart(2, "0"), `${id}-${index + 1}`)));
+      panel.append(sections);
+    }
+    if (implementation.tradeoff) panel.append(makeLimitations(implementation.tradeoff));
+    details.append(toggle, panel);
+    details.addEventListener("toggle", () => {
+      if (details.open) details.querySelectorAll(".mermaid-canvas").forEach(queueMermaidRender);
+    });
+    content.append(details);
   }
   return content;
 };
@@ -4380,6 +4575,8 @@ const openProject = (projectId) => {
     modalFields.architectureTitle.textContent = architectureOverview.title || "전체 시스템 흐름";
     modalFields.architectureFlow.append(makeSystemFlow(architectureOverview.flow || []));
     if (architectureOverview.diagram) modalFields.architectureDiagram.append(makeUmlDiagram(architectureOverview.diagram));
+    if (architectureOverview.contributions?.length) modalFields.architectureDiagram.append(makeDecisionList(architectureOverview.contributions, "design-decision-list", ["개인 구현", "공동 수정", "팀원 기반"]));
+    if (architectureOverview.details?.length) modalFields.architectureDiagram.append(makeArchitectureDetailList(architectureOverview.details, "확장 구조도"));
   }
   modalFields.story.hidden = isCollection || !(project.feature || project.challenge || project.solution);
   modalFields.tags.replaceChildren(

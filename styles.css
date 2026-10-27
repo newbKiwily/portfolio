@@ -542,10 +542,48 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .lsp-inline-result { display: grid; gap: .65rem; min-width: 0; margin: 0; border-top: 1px solid var(--line); padding-top: 1rem; }
 .lsp-inline-result figcaption { color: var(--cyan); font-size: .8rem; font-weight: 850; }
 .lsp-inline-result video { display: block; width: 100%; max-height: 480px; aspect-ratio: 16/9; border: 1px solid var(--line); border-radius: 4px; background: #050811; object-fit: contain; }
+.lsp-inline-result img { display: block; width: min(100%,780px); max-height: 440px; height: auto; margin-inline: auto; border: 1px solid var(--line); border-radius: 4px; background: #050811; object-fit: contain; }
+.lsp-implementation-collapse { min-width: 0; border: 3px solid rgba(103,211,255,.6); border-radius: 5px; background: rgba(7,12,24,.6); }
+.lsp-implementation-collapse > summary { display: flex; align-items: center; gap: .8rem; list-style: none; padding: 1rem 1.15rem; color: var(--yellow); cursor: var(--pixel-cursor), pointer; }
+.lsp-implementation-collapse > summary::-webkit-details-marker { display: none; }
+.lsp-implementation-collapse > summary > span:first-child { font-size: 1rem; font-weight: 900; }
+.lsp-implementation-collapse > summary small { flex: 1; color: var(--muted); font-size: .73rem; }
+.lsp-implementation-collapse > summary:focus-visible { outline: 2px solid var(--yellow); outline-offset: 4px; }
+.lsp-implementation-collapse[open] > summary { border-bottom: 1px solid rgba(160,170,185,.25); background: rgba(255,255,255,.025); }
+.lsp-implementation-collapse[open] > summary .collapse-chevron { transform: rotate(225deg); }
+.lsp-implementation-panel { min-width: 0; padding: clamp(.85rem,2vw,1.5rem); }
+.lsp-implementation-panel .implementation-block-list { gap: 1.5rem; margin-top: 1.25rem; }
+.lsp-implementation-panel .technical-feature { min-width: 0; margin: 0; border: 1px solid rgba(160,170,185,.25); border-radius: 4px; padding: clamp(.8rem,2vw,1.3rem); background: transparent; }
+.lsp-design-context { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); align-items: start; gap: clamp(1.2rem,3vw,2.5rem); margin-top: 1.4rem; }
+.lsp-design-context > section { min-width: 0; }
+.lsp-design-context h5 { margin: 0 0 .8rem; color: var(--yellow); font-size: .95rem; }
+.lsp-design-context p { margin: 0; border: 1px solid rgba(160,170,185,.25); border-radius: 4px; padding: .8rem; color: var(--muted); font-size: .82rem; line-height: 1.85; }
+.lsp-design-context strong { color: var(--text); }
+.lsp-design-context .design-decision-list { margin: 0; border-color: rgba(160,170,185,.25); }
+.lsp-design-context .design-decision-list dt, .lsp-design-context .design-decision-list dd { border-color: rgba(160,170,185,.25); }
+.lsp-implementation-panel > .uml-diagram { border-color: rgba(160,170,185,.25); }
+.lsp-implementation-panel > .design-tradeoff { border: 1px solid rgba(160,170,185,.25); background: transparent; }
+.lsp-implementation-panel .technical-feature > header { align-items: start; margin-bottom: 1.1rem; }
+.lsp-implementation-panel .technical-feature-number { font-size: 1rem; }
+.lsp-implementation-panel .uml-diagram { margin-top: 1.3rem; }
+.lsp-implementation-panel .mermaid-canvas svg { max-height: 560px; }
+@supports (interpolate-size: allow-keywords) {
+  .lsp-implementation-collapse::details-content { interpolate-size: allow-keywords; height: 0; overflow: clip; transition: height .24s ease, content-visibility .24s allow-discrete; }
+  .lsp-implementation-collapse[open]::details-content { height: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lsp-implementation-collapse::details-content { transition: none; }
+}
 @media (max-width: 600px) {
   .project-modal.has-inline-visuals { width: calc(100% - .75rem); max-width: calc(100vw - .75rem); }
   .lsp-feature-points { grid-template-columns: 1fr; gap: .2rem; padding: .65rem; }
   .lsp-feature-points dd + dt { margin-top: .5rem; }
+  .lsp-implementation-collapse > summary { flex-wrap: wrap; gap: .6rem; }
+  .lsp-implementation-collapse > summary small { flex-basis: calc(100% - 2rem); order: 3; }
+  .lsp-implementation-collapse > summary .collapse-chevron { margin-left: auto; }
+  .lsp-implementation-panel .design-decision-list { grid-template-columns: 1fr; }
+  .lsp-implementation-panel .design-decision-list dd { border-left: 0; }
+  .lsp-design-context { grid-template-columns: 1fr; gap: 1.5rem; }
 }
 .feature-how-header { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .35rem; }
 .feature-how-header .eyebrow { margin: 0; }
