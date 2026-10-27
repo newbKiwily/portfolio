@@ -3028,12 +3028,18 @@ const lspDetailSpecs = [
   feature.flowDiagram = { title: "처리 순서와 판단 기준", caption: "현재 구현의 호출·분기 흐름", source: spec.flow, zoomable: true };
 });
 lspFeedbackImplementation.implementationSections.forEach((section, index) => {
+  section.sources = [];
   section.details = [
     [["피드백", "조작·상호작용 대상이 불명확."], ["개인 수정", "29e64b7: 이동·보유 변경 시 판정·안내 갱신. 7eb871b: 현재 아이템·자식 제외 및 제작 재검사."], ["팀원 기반", "전방 45도·거리 탐색(130ee15), SystemMessageUI."], ["후속 의견", "팀 전체 UI·설명 개선 후 진행 파악 가능. 단일 수정의 효과를 별도 측정한 결과는 아님."]],
     [["피드백", "긴 행동 대기 · 도끼 제작 이점 불명확."], ["개인 구현", "CraftManager 도끼 효과: 벌목 시간 ×0.6. 기본 7초 → 4.2초(제작 1회 기준)."], ["팀원 조정", "해금 아이콘 이벤트(fd8dd82), 기본 벌목 3→7초·성장 5→10초(67c6ca6)."], ["남은 문제", "도구별 차이는 보이나 낚시·양동이 없이도 클리어 가능. 활용을 유도하는 레벨 설계 필요."]],
     [["피드백", "불 유지·채집·이동 대비 자원 수급 부담."], ["개인 수정", "식물도 모닥불 연료로 판정(d8fb4e2). 후보 검증·거리 가중 스폰(cf58cbd)."], ["팀원 조정", "자원별 공급 루틴·시도 횟수별 대기 시간 증가(ec8ce91·32d47be·fd8dd82). 간격 증가는 공급량 감소 방향."], ["후속 의견", "밸런스 개선 의견과 자원 부담·단조로움 지적이 공존. 수급·행동 동선 조정 필요."]],
   ][index];
 });
+delete littleSurvivalDesignDocument.coreFeatures[1].tradeoff;
+littleSurvivalDesignDocument.coreFeatures[1].flowDiagram.presentation = "compact-spawn";
+littleSurvivalDesignDocument.coreFeatures[1].flowDiagram.source = littleSurvivalDesignDocument.coreFeatures[1].flowDiagram.source.replace("flowchart TD", "flowchart LR");
+littleSurvivalDesignDocument.coreFeatures[1].flowDiagram.exactEndpoints = true;
+littleSurvivalDesignDocument.coreFeatures[1].diagram.exactEndpoints = true;
 littleSurvivalProject.coreFeatures[2].resultMedia = { type: "image", src: "assets/gep/gep-tutorial.png", title: "관련 플레이 화면 · 튜토리얼과 행동 안내" };
 littleSurvivalProject.troubleshooting.forEach((feature) => {
   feature.resultMedia = { type: "image", src: "assets/gep/gep-gameplay.png", title: "관련 인게임 화면 · 세부 처리 구조는 아래 상세 구현 참고" };
@@ -3537,10 +3543,52 @@ const roundMermaidEdges = (diagram) => {
   });
 };
 
-const straightenMermaidEdges = (diagram) => {
+const straightenMermaidEdges = (diagram, exactEndpoints = false) => {
+  const svgNamespace = "http://www.w3.org/2000/svg";
+  const attachExactMarker = (edge, attribute) => {
+    const original = edge.getAttribute(attribute);
+    if (!original) return;
+    const kind = original.includes("extension") ? "inheritance" : original.includes("dependency") ? "dependency" : "arrow";
+    const id = `${diagram.id}-exact-${kind}`;
+    let defs = diagram.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS(svgNamespace, "defs");
+      diagram.prepend(defs);
+    }
+    if (!diagram.querySelector(`[id="${id}"]`)) {
+      const marker = document.createElementNS(svgNamespace, "marker");
+      const shape = document.createElementNS(svgNamespace, "path");
+      marker.id = id;
+      Object.entries({ viewBox: "-13 -8 14 16", refX: "0", refY: "0", markerWidth: "14", markerHeight: "16", markerUnits: "userSpaceOnUse", orient: "auto-start-reverse", overflow: "visible" }).forEach(([name, value]) => marker.setAttribute(name, value));
+      shape.setAttribute("d", kind === "inheritance" ? "M0,0 L-12,-7 L-12,7 Z" : kind === "dependency" ? "M-9,-5 L0,0 L-9,5" : "M0,0 L-9,-5 L-9,5 Z");
+      shape.setAttribute("fill", kind === "inheritance" ? "#060a12" : kind === "dependency" ? "none" : "#9db5cc");
+      shape.setAttribute("stroke", "#9db5cc");
+      shape.setAttribute("stroke-width", "1.2");
+      marker.append(shape);
+      defs.append(marker);
+    }
+    edge.setAttribute(attribute, `url(#${id})`);
+  };
   diagram.querySelectorAll('path[data-edge="true"][data-points]').forEach((path) => {
     const points = JSON.parse(atob(path.dataset.points));
     if (points.length < 2) return;
+    if (exactEndpoints) {
+      // ELK's final boundary intersection can be less than a pixel beyond its last
+      // waypoint. Native marker offsets can then make that segment point backwards.
+      // Keep the boundary ports, remove tiny interior segments, and anchor each
+      // arrow tip directly on its port instead of reusing the offset curve ends.
+      const routed = [points[0]];
+      for (let index = 1; index < points.length - 1; index += 1) {
+        if (Math.hypot(points[index].x - routed.at(-1).x, points[index].y - routed.at(-1).y) >= 1) routed.push(points[index]);
+      }
+      const end = points.at(-1);
+      while (routed.length > 1 && Math.hypot(end.x - routed.at(-1).x, end.y - routed.at(-1).y) < 1) routed.pop();
+      routed.push(end);
+      path.setAttribute("d", routed.map((point, index) => `${index ? "L" : "M"}${point.x},${point.y}`).join(" "));
+      attachExactMarker(path, "marker-start");
+      attachExactMarker(path, "marker-end");
+      return;
+    }
     // Preserve Mermaid's marker offsets and routing waypoints, without Bezier smoothing.
     points[0] = path.getPointAtLength(0);
     points[points.length - 1] = path.getPointAtLength(path.getTotalLength());
@@ -3574,7 +3622,7 @@ const renderMermaidCanvas = async (canvas) => {
       canvas,
     );
     canvas.innerHTML = svg;
-    if (canvas.dataset.edgeStyle === "linear") straightenMermaidEdges(canvas.querySelector("svg"));
+    if (canvas.dataset.edgeStyle === "linear") straightenMermaidEdges(canvas.querySelector("svg"), canvas.dataset.exactEndpoints === "true");
     // Place namespace labels above the outline and include them in the fitted SVG bounds.
     canvas.querySelectorAll(".cluster").forEach((cluster) => {
       const rect = cluster.querySelector(":scope > rect");
@@ -3687,12 +3735,14 @@ const makeUmlDiagram = (diagram) => {
   const canvas = document.createElement("div");
   const loading = document.createElement("span");
   figure.className = "uml-diagram";
+  if (diagram.presentation === "compact-spawn") figure.classList.add("is-compact-spawn");
   if (diagram.kind === "er") figure.classList.add("is-er-diagram");
   caption.textContent = diagram.title;
   canvas.className = "mermaid-canvas";
   canvas.dataset.mermaidSource = makeMermaidSource(diagram);
   if (diagram.routing) canvas.dataset.routing = diagram.routing;
   if (diagram.edgeStyle) canvas.dataset.edgeStyle = diagram.edgeStyle;
+  if (diagram.exactEndpoints) canvas.dataset.exactEndpoints = "true";
   loading.className = "mermaid-loading";
   loading.textContent = "다이어그램 준비 중";
   canvas.append(loading);

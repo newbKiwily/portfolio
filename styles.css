@@ -544,7 +544,10 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .lsp-inline-result video { display: block; width: 100%; max-height: 480px; aspect-ratio: 16/9; border: 1px solid var(--line); border-radius: 4px; background: #050811; object-fit: contain; }
 .lsp-inline-result img { display: block; width: min(100%,780px); max-height: 440px; height: auto; margin-inline: auto; border: 1px solid var(--line); border-radius: 4px; background: #050811; object-fit: contain; }
 .lsp-implementation-collapse { min-width: 0; border: 3px solid rgba(103,211,255,.6); border-radius: 5px; background: rgba(7,12,24,.6); }
-.lsp-implementation-collapse > summary { display: flex; align-items: center; gap: .8rem; list-style: none; padding: 1rem 1.15rem; color: var(--yellow); cursor: var(--pixel-cursor), pointer; }
+.lsp-implementation-collapse > summary { position: relative; display: flex; align-items: center; gap: .8rem; list-style: none; padding: 1rem 1.15rem; color: var(--yellow); cursor: var(--pixel-cursor), pointer; }
+.lsp-implementation-collapse > summary::after { position: absolute; inset: 0; border-radius: 2px; background: rgba(103,211,255,.09); box-shadow: inset 0 0 14px rgba(103,211,255,.12); opacity: 0; pointer-events: none; content: ""; }
+.lsp-implementation-collapse > summary:is(:hover,:focus-visible)::after { animation: lsp-interaction-pulse 1.8s ease-in-out infinite; }
+@keyframes lsp-interaction-pulse { 0%,100% { opacity: .2; } 50% { opacity: .7; } }
 .lsp-implementation-collapse > summary::-webkit-details-marker { display: none; }
 .lsp-implementation-collapse > summary > span:first-child { font-size: 1rem; font-weight: 900; }
 .lsp-implementation-collapse > summary small { flex: 1; color: var(--muted); font-size: .73rem; }
@@ -567,12 +570,14 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .lsp-implementation-panel .technical-feature-number { font-size: 1rem; }
 .lsp-implementation-panel .uml-diagram { margin-top: 1.3rem; }
 .lsp-implementation-panel .mermaid-canvas svg { max-height: 560px; }
+.lsp-implementation-panel .is-compact-spawn .mermaid-canvas svg { width: 93.5% !important; }
 @supports (interpolate-size: allow-keywords) {
   .lsp-implementation-collapse::details-content { interpolate-size: allow-keywords; height: 0; overflow: clip; transition: height .24s ease, content-visibility .24s allow-discrete; }
   .lsp-implementation-collapse[open]::details-content { height: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .lsp-implementation-collapse::details-content { transition: none; }
+  .lsp-implementation-collapse > summary:is(:hover,:focus-visible)::after { animation: none; opacity: .4; }
 }
 @media (max-width: 600px) {
   .project-modal.has-inline-visuals { width: calc(100% - .75rem); max-width: calc(100vw - .75rem); }
