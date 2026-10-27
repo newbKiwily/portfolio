@@ -2965,43 +2965,45 @@ lspBucketFix.diagram.contributionNote = "개인: 상태별 표현 보완·호출
 const lspVisualCore = [
   {
     key: "craft", alt: "나무·식물은 낚시 해금, 나무·철은 도끼, 철·철은 양동이로 연결되며 재료 순서가 바뀌어도 같은 레시피를 조회하는 개념도",
-    brief: "보유 아이템과 대상을 함께 판정하고, 재료 순서와 관계없이 같은 제작 결과로 연결합니다.",
-    points: [["개인 구현", "Comparer · CraftManager · RecipeItemTypeComparer"], ["결과", "낚시 해금 · 도끼의 벌목 시간 ×0.6 · 양동이 생성"]],
+    brief: "보유 아이템과 대상을 함께 판정해 재료 순서와 무관하게 제작합니다. 낚시 해금·양동이 생성과 도끼의 벌목 시간 40% 단축으로 연결합니다.",
+    keywords: ["재료 순서", "낚시 해금", "양동이 생성", "벌목 시간 40% 단축"],
     sources: [lspCommit("29e64b7", "제작 결과 연결")],
   },
   {
     key: "action-lock", alt: "시간 행동 시작 시 잠그고 완료 처리 뒤 해제하는 흐름과 벌목·섭취·요리·수리의 적용 범위 개념도",
     brief: "팀원 상태 구조에 잠금을 더해 시간 행동 중 상태 전환과 줍기·버리기를 제한했습니다.",
-    points: [["개인 추가", "잠금 검사 → 완료 처리 → 해제"], ["적용 범위", "벌목 · 섭취 · 요리 · 수리. 낚시·X/C의 공통 잠금은 미적용"]],
   },
   {
     key: "spawn", alt: "후보 생성, 지면·겹침 검사, 로켓 거리 가중치, 유효 후보 선택의 네 단계와 후보가 없으면 생성을 취소하는 흐름",
-    brief: "지면·겹침 검증을 통과한 후보에서 거리 가중치로 자원 위치를 선택합니다.",
-    points: [["개인 구현", "후보 검증 · 가중 선택"], ["공동 조정", "자원별 공급 주기. 유효 후보가 없으면 해당 생성은 취소"]],
+    brief: "지면·겹침 검증과 거리 가중치로 자원 위치를 선택하며, 유효 후보가 없으면 생성을 취소합니다. 자원별 공급 주기는 팀원과 함께 조정했습니다.",
+    keywords: ["지면·겹침 검증", "거리 가중치", "생성을 취소", "공급 주기"],
   },
   {
     key: "playtest", alt: "행동 안내, 도끼 제작으로 벌목 시간 7초에서 4.2초로 변화, 연료 선택 확장과 정성 피드백을 비교하는 개념도",
-    brief: "진행 방법·긴 행동 시간·자원 운용 피드백을 판정·제작·공급 규칙에 반영했습니다.",
-    points: [["구현 변화", "상황별 안내 · 자기 아이템 제외 · 도끼 1회 제작 시 벌목 시간 40% 감소(코드 기준)"], ["후속 평가", "진행 이해·목표 달성 가능 의견. 도구 필요성·반복 플레이는 남은 과제"]],
+    brief: "플레이 피드백을 상황별 안내·자기 아이템 제외·제작 효과에 반영했습니다. 도끼 1회 제작 시 벌목 시간은 코드 기준 7초에서 4.2초로 줄어듭니다.",
+    keywords: ["상황별 안내", "자기 아이템 제외", "제작 효과", "7초에서 4.2초"],
     sources: [lspCommit("29e64b7", "개인 · 판정 갱신·제작"), lspCommit("7eb871b", "개인 · 대상 제외"), lspCommit("fd8dd82", "팀원 · 공급·해금 UI")],
   },
 ];
 const lspVisualTroubleshooting = [
   {
     key: "target-filter", alt: "손에 든 아이템이 잘못 선택되는 경우와 이를 탐색·제작 판정 두 단계에서 제외해 지면의 대상을 선택하는 비교 개념도",
-    brief: "현재 아이템과 플레이어 자식을 탐색에서 제외하고, 제작 판정에서도 자기 조합을 재검사했습니다.",
-    points: [["문제", "범위를 넓힌 탐색이 손에 든 아이템까지 선택"], ["해결·결과", "후보 제외 + Comparer 재검사 → 자기 아이템을 제작 대상으로 선택하는 경로 차단"]],
+    problem: "탐색 범위를 넓히자 손에 든 아이템까지 상호작용 대상으로 선택되었습니다.",
+    solution: "보유 아이템·플레이어 자식을 탐색에서 제외하고, 제작 판정에서도 자기 조합을 차단했습니다.",
+    keywords: ["손에 든 아이템", "탐색에서 제외", "자기 조합을 차단"],
     sources: [lspCommit("7eb871b", "개인 · 자기 아이템 제외")],
   },
   {
     key: "recipe-order", alt: "Wood와 Iron을 잡는 순서가 바뀌어도 대칭 Equals와 XOR 해시를 거쳐 하나의 레시피에서 같은 도끼 결과를 찾는 개념도",
-    brief: "(A, B)와 (B, A)에 같은 비교·해시 규칙을 적용해 레시피를 한 번만 등록합니다.",
-    points: [["개인 구현", "CraftManager · RecipeItemTypeComparer"], ["해결·결과", "대칭 Equals + XOR 해시 → 선택 순서와 무관한 조회"]],
+    problem: "재료 선택 순서에 따라 (A, B)와 (B, A)가 구분되어 레시피 중복 등록이 필요했습니다.",
+    solution: "대칭 Equals와 XOR 해시로 두 순서를 같은 조합으로 조회해, 레시피를 한 번만 등록합니다.",
+    keywords: ["레시피 중복", "대칭 Equals", "XOR 해시", "같은 조합"],
   },
   {
     key: "bucket-sync", alt: "양동이 내부 상태와 화면의 불일치를 Pond·Tree에서 상태 변경과 인벤토리 갱신 이벤트를 각각 호출해 맞추는 개념도",
-    brief: "양동이 상태·월드 표현을 갱신하고, Pond·Tree에서 인벤토리 갱신 이벤트를 발행합니다.",
-    points: [["문제", "물은 찼지만 월드·인벤토리에는 빈 양동이로 표시"], ["개인 보완", "스프라이트·머티리얼 + 호출부의 UI 갱신 연결"]],
+    problem: "양동이에 물이 차도 월드·인벤토리에는 빈 양동이로 표시되었습니다.",
+    solution: "상태별 스프라이트·머티리얼 갱신과 Pond·Tree의 인벤토리 갱신 이벤트를 연결했습니다.",
+    keywords: ["빈 양동이", "스프라이트·머티리얼 갱신", "인벤토리 갱신 이벤트"],
   },
 ];
 littleSurvivalProject.coreFeatures.forEach((feature, index) => { feature.visual = lspVisualCore[index]; });
@@ -3094,9 +3096,6 @@ littleSurvivalDesignDocument.coreFeatures[1].flowDiagram.source = littleSurvival
 littleSurvivalDesignDocument.coreFeatures[1].flowDiagram.exactEndpoints = true;
 littleSurvivalDesignDocument.coreFeatures[1].diagram.exactEndpoints = true;
 littleSurvivalProject.coreFeatures[2].resultMedia = { type: "image", src: "assets/gep/gep-tutorial.png", title: "관련 플레이 화면 · 튜토리얼과 행동 안내" };
-littleSurvivalProject.troubleshooting.forEach((feature) => {
-  feature.resultMedia = { type: "image", src: "assets/gep/gep-gameplay.png", title: "관련 인게임 화면 · 세부 처리 구조는 아래 상세 구현 참고" };
-});
 littleSurvivalProject.architectureOverview = {
   title: "게임플레이 전체 구조와 기여 구분",
   flow: ["입력 · 대상 탐색", "행동 판정 · 제작", "상태 실행 · 월드", "자원 스폰", "UI 반영"],
@@ -4233,14 +4232,28 @@ const buildDesignDocument = (documentData) => {
 const makeLspInlineExplanation = (feature, implementation) => {
   const visual = feature.visual;
   const content = document.createElement("div");
-  const brief = document.createElement("p");
+  const brief = document.createElement(visual.problem ? "div" : "p");
   const pair = document.createElement("div");
   const summary = document.createElement("figure");
   const image = document.createElement("img");
   const caption = document.createElement("figcaption");
   content.className = "lsp-inline-explanation";
-  brief.className = "lsp-feature-brief";
-  brief.textContent = visual.brief;
+  if (visual.problem) {
+    brief.className = "lsp-troubleshooting-summary";
+    [["문제 상황", visual.problem], ["해결 방법", visual.solution]].forEach(([label, copy]) => {
+      const block = document.createElement("section");
+      const heading = document.createElement("h5");
+      const description = document.createElement("p");
+      heading.textContent = label;
+      description.className = "lsp-feature-brief";
+      appendEmphasizedText(description, copy, visual.keywords);
+      block.append(heading, description);
+      brief.append(block);
+    });
+  } else {
+    brief.className = "lsp-feature-brief";
+    appendEmphasizedText(brief, visual.brief, visual.keywords);
+  }
   pair.className = "lsp-visual-pair";
   summary.className = "lsp-summary-figure";
   image.src = `assets/gep/explainers/${visual.key}.png`;
@@ -4252,16 +4265,7 @@ const makeLspInlineExplanation = (feature, implementation) => {
   caption.textContent = "구현 흐름 요약 · 이해를 돕는 개념 그림";
   summary.append(image, caption);
   pair.append(summary);
-  const points = document.createElement("dl");
-  points.className = "lsp-feature-points";
-  visual.points.forEach(([label, copy]) => {
-    const term = document.createElement("dt");
-    const description = document.createElement("dd");
-    term.textContent = label;
-    description.textContent = copy;
-    points.append(term, description);
-  });
-  content.append(brief, points, pair);
+  content.append(brief, pair);
   const media = feature.media || feature.video || feature.resultMedia;
   if (media?.src) {
     const result = document.createElement("figure");

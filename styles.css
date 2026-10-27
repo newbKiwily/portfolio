@@ -569,11 +569,15 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .has-inline-visuals .feature-detail-list, .has-inline-visuals .troubleshooting-list { gap: 2rem; }
 .lsp-visual-detail { padding: clamp(1rem,2.5vw,1.8rem); border-width: 2px; }
 .lsp-inline-explanation { display: grid; gap: 1.2rem; margin-top: 1rem; }
-.lsp-feature-brief { margin: 0; color: var(--text); font-size: .95rem; line-height: 1.7; }
-.lsp-feature-points { display: grid; grid-template-columns: max-content minmax(0,1fr); gap: .5rem 1rem; margin: 0; border-left: 3px solid var(--cyan); padding: .65rem 1rem; background: rgba(103,211,255,.04); }
-.lsp-feature-points dt, .lsp-feature-points dd { margin: 0; font-size: .78rem; line-height: 1.7; }
-.lsp-feature-points dt { color: var(--yellow); font-weight: 850; }
-.lsp-feature-points dd { min-width: 0; color: var(--muted); }
+.lsp-feature-brief { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.7; }
+.lsp-feature-brief strong { color: #f4f6fb; font-weight: 800; }
+.lsp-troubleshooting-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.lsp-troubleshooting-summary > section { min-width: 0; padding: 1rem 1.1rem; border: 1px solid rgba(160,170,185,.3); border-radius: 4px; background: rgba(7,12,24,.35); }
+.lsp-troubleshooting-summary h5 { margin: 0 0 .55rem; color: var(--peach); font-size: .85rem; font-weight: 800; }
+.lsp-troubleshooting-summary > section:last-child h5 { color: var(--cyan); }
+@media (max-width: 600px) {
+  .lsp-troubleshooting-summary { grid-template-columns: 1fr; gap: .75rem; }
+}
 .lsp-visual-pair { display: grid; gap: 1.25rem; min-width: 0; }
 .lsp-summary-figure { width: 65%; min-width: 0; margin: 0 auto; border: 1px solid #dddccf; border-radius: 5px; overflow: hidden; background: #fbfaf5; }
 .lsp-summary-figure img { display: block; width: 100%; height: auto; object-fit: contain; image-rendering: auto; }
@@ -622,8 +626,6 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 }
 @media (max-width: 600px) {
   .project-modal.has-inline-visuals { width: calc(100% - .75rem); max-width: calc(100vw - .75rem); }
-  .lsp-feature-points { grid-template-columns: 1fr; gap: .2rem; padding: .65rem; }
-  .lsp-feature-points dd + dt { margin-top: .5rem; }
   .lsp-implementation-collapse > summary { flex-wrap: wrap; gap: .6rem; }
   .lsp-implementation-collapse > summary small { flex-basis: calc(100% - 2rem); order: 3; }
   .lsp-implementation-collapse > summary .collapse-chevron { margin-left: auto; }
