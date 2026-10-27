@@ -3088,22 +3088,36 @@ littleSurvivalProject.architectureOverview = {
   },
 };
 
-const lspFullArchitecture = littleSurvivalProject.architectureOverview.diagram;
 littleSurvivalProject.architectureOverview.diagram = {
-  ...lspFullArchitecture,
-  title: "입력·판정·실행·표현을 잇는 주요 구조",
-  caption: "주요 스크립트의 실제 참조·호출 관계 · 색상으로 기여 구분",
+  title: "모듈별 시스템 아키텍처",
+  caption: "플레이어 제어 · 판정·제작 · 월드·자원 · UI / 대표 클래스와 실제 연결 관계",
+  zoomable: true,
+  direction: "LR",
   groups: [
-    { title: "Control", nodes: ["GameManager", "Player", "PlayerStateMachine", "PlayerInventory"] },
-    { title: "Rules", nodes: ["Comparer", "CraftManager", "RecipeItemTypeComparer", "IInteractable"] },
-    { title: "Resources", nodes: ["SpawnManager", "SpawnCandidate", "Item"] },
-    { title: "UI", nodes: ["SystemMessageUI", "InventoryUI"] },
+    { title: "PlayerControl", nodes: ["Player", "PlayerInventory", "PlayerStateMachine"] },
+    { title: "InteractionCraft", nodes: ["Comparer", "CraftManager", "RecipeItemTypeComparer"] },
+    { title: "WorldResources", nodes: ["SpawnManager", "Item"] },
+    { title: "Presentation", nodes: ["SystemMessageUI", "InventoryUI"] },
   ],
+  relations: [
+    ["Player", "association", "PlayerInventory", "보유 아이템"],
+    ["Player", "composition", "PlayerStateMachine", "상태 실행"],
+    ["Player", "composition", "Comparer", "행동 판정"],
+    ["Comparer", "dependency", "CraftManager", "레시피 확인"],
+    ["CraftManager", "aggregation", "RecipeItemTypeComparer", "키 비교"],
+    ["CraftManager", "dependency", "PlayerInventory", "재료 제거 · 해금"],
+    ["PlayerInventory", "dependency", "Item", "현재 아이템"],
+    ["SpawnManager", "dependency", "Item", "가중치 조회 · 생성"],
+    ["Player", "event", "SystemMessageUI", "행동 안내"],
+    ["PlayerInventory", "event", "InventoryUI", "표시 갱신"],
+  ],
+  stereotypes: [["Item", "abstract"]],
+  contributions: lspContributions(
+    ["Comparer", "CraftManager", "RecipeItemTypeComparer"],
+    ["Player", "PlayerInventory", "PlayerStateMachine", "SpawnManager", "Item"],
+    ["SystemMessageUI", "InventoryUI"],
+  ),
 };
-const lspOverviewNodes = new Set(littleSurvivalProject.architectureOverview.diagram.groups.flatMap((group) => group.nodes));
-littleSurvivalProject.architectureOverview.diagram.relations = lspFullArchitecture.relations.filter(([from, , to]) => lspOverviewNodes.has(from) && lspOverviewNodes.has(to));
-littleSurvivalProject.architectureOverview.diagram.contributions = lspFullArchitecture.contributions.map((entry) => ({ ...entry, nodes: entry.nodes.filter((node) => lspOverviewNodes.has(node)) })).filter((entry) => entry.nodes.length);
-littleSurvivalProject.architectureOverview.diagram.stereotypes = lspFullArchitecture.stereotypes.filter(([node]) => lspOverviewNodes.has(node));
 
 const useLspOrthogonalRouting = (diagram) => {
   if (!diagram) return;
@@ -3670,14 +3684,11 @@ const makeSystemFlow = (steps = []) => {
 const makeUmlDiagram = (diagram) => {
   const figure = document.createElement("figure");
   const caption = document.createElement("figcaption");
-  const hint = document.createElement("span");
   const canvas = document.createElement("div");
   const loading = document.createElement("span");
   figure.className = "uml-diagram";
   if (diagram.kind === "er") figure.classList.add("is-er-diagram");
   caption.textContent = diagram.title;
-  hint.textContent = diagram.caption || (diagram.kind === "er" ? "Mermaid ERD · 실제 쿼리 컬럼 기준" : "Mermaid UML · 메서드·속성 제외");
-  caption.append(hint);
   canvas.className = "mermaid-canvas";
   canvas.dataset.mermaidSource = makeMermaidSource(diagram);
   if (diagram.routing) canvas.dataset.routing = diagram.routing;
