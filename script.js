@@ -567,6 +567,7 @@ const projects = {
       {
         eyebrow: "팀 프로젝트",
         title: "홍캠몬스터",
+        award: "교내 공모전 우수상",
         genre: "2D Mini-game Collection",
         summary: "유니티를 사용하여 만든 첫 게임으로 유니티 툴의 기초를 배울 수 있었습니다.",
         image: "assets/side-project-school-monster.png",
@@ -3030,9 +3031,9 @@ const lspDetailSpecs = [
 lspFeedbackImplementation.implementationSections.forEach((section, index) => {
   section.sources = [];
   section.details = [
-    [["피드백", "조작·상호작용 대상이 불명확."], ["개인 수정", "29e64b7: 이동·보유 변경 시 판정·안내 갱신. 7eb871b: 현재 아이템·자식 제외 및 제작 재검사."], ["팀원 기반", "전방 45도·거리 탐색(130ee15), SystemMessageUI."], ["후속 의견", "팀 전체 UI·설명 개선 후 진행 파악 가능. 단일 수정의 효과를 별도 측정한 결과는 아님."]],
-    [["피드백", "긴 행동 대기 · 도끼 제작 이점 불명확."], ["개인 구현", "CraftManager 도끼 효과: 벌목 시간 ×0.6. 기본 7초 → 4.2초(제작 1회 기준)."], ["팀원 조정", "해금 아이콘 이벤트(fd8dd82), 기본 벌목 3→7초·성장 5→10초(67c6ca6)."], ["남은 문제", "도구별 차이는 보이나 낚시·양동이 없이도 클리어 가능. 활용을 유도하는 레벨 설계 필요."]],
-    [["피드백", "불 유지·채집·이동 대비 자원 수급 부담."], ["개인 수정", "식물도 모닥불 연료로 판정(d8fb4e2). 후보 검증·거리 가중 스폰(cf58cbd)."], ["팀원 조정", "자원별 공급 루틴·시도 횟수별 대기 시간 증가(ec8ce91·32d47be·fd8dd82). 간격 증가는 공급량 감소 방향."], ["후속 의견", "밸런스 개선 의견과 자원 부담·단조로움 지적이 공존. 수급·행동 동선 조정 필요."]],
+    [["피드백", "조작·상호작용 대상이 불명확."], ["개인 수정", "이동·보유 변경 시 판정·안내 갱신. 현재 아이템·자식 제외 및 제작 재검사."], ["팀원 기반", "전방 45도·거리 탐색, SystemMessageUI."], ["후속 의견", "팀 전체 UI·설명 개선 후 진행 파악 가능. 단일 수정의 효과를 별도 측정한 결과는 아님."]],
+    [["피드백", "긴 행동 대기 · 도끼 제작 이점 불명확."], ["개인 구현", "CraftManager 도끼 효과: 벌목 시간 ×0.6. 기본 7초 → 4.2초(제작 1회 기준)."], ["팀원 조정", "해금 아이콘 이벤트, 기본 벌목 3→7초·성장 5→10초."], ["남은 문제", "도구별 차이는 보이나 낚시·양동이 없이도 클리어 가능. 활용을 유도하는 레벨 설계 필요."]],
+    [["피드백", "불 유지·채집·이동 대비 자원 수급 부담."], ["개인 수정", "식물도 모닥불 연료로 판정. 후보 검증·거리 가중 스폰."], ["팀원 조정", "자원별 공급 루틴·시도 횟수별 대기 시간 증가. 간격 증가는 공급량 감소 방향."], ["후속 의견", "밸런스 개선 의견과 자원 부담·단조로움 지적이 공존. 수급·행동 동선 조정 필요."]],
   ][index];
 });
 delete littleSurvivalDesignDocument.coreFeatures[1].tradeoff;
@@ -3257,8 +3258,13 @@ const buildOtherProjects = (items = []) => {
       const projectNumber = document.createElement("div");
       article.className = "other-project-card";
       projectNumber.className = "other-project-number";
-      projectNumber.setAttribute("aria-hidden", "true");
       projectNumber.textContent = `${String(index + 1).padStart(2, "0")}.`;
+      if (item.award) {
+        const award = document.createElement("span");
+        award.className = "other-project-award";
+        award.textContent = item.award;
+        projectNumber.append(award);
+      }
 
       const mediaStack = document.createElement("div");
       mediaStack.className = "other-project-media-stack";
