@@ -3425,6 +3425,35 @@ everwindProject.otherFeatures.forEach((feature, index) => {
       };
 });
 
+// RPG layout draft: retain existing project text; all comparison media are placeholders.
+const rpgFieldProject = projects["project-3"];
+rpgFieldProject.graphicsShowcase = {
+  features: rpgFieldProject.coreFeatures.map((feature, index) => ({
+    title: feature.title,
+    copy: ["오브젝트 배치 · 카메라 투영 · 화면 고정 UI", "필드의 명암과 표면 표현", "지형 표면과 주변 환경 표현", "캐릭터 애니메이션 · 레이 선택 반응", "위치 목록을 이용한 나무 반복 배치"][index],
+    before: ["변환 적용 전", "조명 적용 전", "단일 텍스처", "정적 메시", "단일 오브젝트"][index],
+    after: ["WVP 변환 적용", "Phong 조명 적용", "멀티 텍스처 적용", "애니메이션·인터랙션", "반복 오브젝트 배치"][index],
+  })),
+  cases: [
+    { source: 0, title: "월드 행렬 누적으로 공전 궤도가 틀어지는 문제", overviewSummary: "오브젝트별 World Matrix를 두고 매 프레임 행렬을 다시 구성했습니다.", explanationImage: "assets/rpg-field/explainers/world-matrix-before-after.png", before: "궤도·위치 이탈", after: "기준값에서 행렬 재구성", steps: ["변환 누적 확인", "고정 위치 좌표 분리", "매 프레임 행렬 재구성"] },
+    { source: 2, title: "FBX 본 데이터로 캐릭터 메시가 뒤틀리는 문제", overviewSummary: "본 계층을 로그로 추적하고 불필요한 본 정보를 제외했습니다.", comparisonVideos: { before: "assets/rpg-field/videos/skinning-before.mp4", after: "assets/rpg-field/videos/skinning-after.mp4" }, before: "본 뒤틀림 발생", after: "본 계층 수정 후 정상 동작", steps: ["본 이름·계층 로그 비교", "불필요한 본 정보 식별", "유효 계층으로 본 행렬 계산"] },
+    { source: 3, title: "빌보드가 카메라를 안정적으로 바라보지 못한 점", overviewSummary: "변환 책임 분리와 카메라 정렬을 검토했지만 구현을 완료하지 못했습니다.", hideFlow: true, hideComparison: true, unresolved: true, steps: [] },
+  ].map((item, index) => ({
+    ...item,
+    original: rpgFieldProject.troubleshooting[item.source],
+    problemCopy: [
+      "공전을 구현할 때 오브젝트가 설정한 궤도를 이탈하는 현상이 발생했습니다.",
+      "FBX 애니메이션 재생 시 캐릭터 메시가 뒤틀리거나 관절이 비정상적으로 늘어나는 현상이 발생했습니다.",
+      "빌보드를 구현할 때 오브젝트가 카메라 시점에 맞춰 회전하지 않고 X·Y·Z축으로 과도하게 회전했습니다.",
+    ][index],
+    resolutionCopy: [
+      "기존 World Matrix에 회전·이동 행렬을 계속 곱하면서 변환이 누적되는 것이 원인이었습니다. 오브젝트 자체를 클래스화해 각각의 World Matrix를 멤버로 갖도록 하고, 고정 위치와 현재 회전·이동을 기준으로 매 프레임 행렬을 새로 구성했습니다.",
+      "Assimp가 읽은 본 계층에 실제 스키닝에 필요하지 않은 보조 정보가 포함된 것을 확인했습니다. 본 이름·계층을 로그로 출력해 원본과 비교하고, 불필요한 본 정보를 제외한 뒤 유효한 부모·자식 관계와 가중치로 최종 본 행렬을 계산했습니다.",
+      "오브젝트를 클래스화해 별도의 World Matrix를 할당받더라도, 해당 행렬을 매핑하는 과정에서 행렬곱이 꼬이는 것으로 추측했습니다. 위치·회전·크기를 분리해 카메라 방향으로 행렬을 재구성하는 방식을 검토했지만, 3D 빌보드는 구현하지 못했습니다.",
+    ][index],
+  })),
+};
+
 const modal = document.querySelector("#project-modal");
 const closeButton = modal.querySelector(".modal-close");
 const overviewJumpButton = modal.querySelector("#modal-jump-overview");
@@ -4586,6 +4615,180 @@ const makeInlineVisualExplanation = (feature, implementation, project) => {
   return content;
 };
 
+const makeGraphicsPlaceholder = (label, copy, phase) => {
+  const figure = document.createElement("figure");
+  const screen = document.createElement("div");
+  const badge = document.createElement("span");
+  const geometry = document.createElement("div");
+  const note = document.createElement("span");
+  const caption = document.createElement("figcaption");
+  figure.className = `rpg-comparison-frame is-${phase}`;
+  screen.className = "rpg-dummy-screen";
+  screen.setAttribute("role", "img");
+  screen.setAttribute("aria-label", `${label} 더미 화면. 실제 실행 결과가 아닙니다.`);
+  badge.className = "rpg-comparison-label";
+  badge.textContent = label;
+  geometry.className = "rpg-dummy-geometry";
+  geometry.setAttribute("aria-hidden", "true");
+  for (let index = 0; index < 3; index += 1) geometry.append(document.createElement("i"));
+  note.className = "rpg-dummy-note";
+  note.textContent = "더미 화면";
+  caption.textContent = copy;
+  screen.append(badge, geometry, note);
+  figure.append(screen, caption);
+  return figure;
+};
+
+const makeGraphicsComparison = (item) => {
+  const pair = document.createElement("div");
+  pair.className = "rpg-comparison-pair";
+  pair.append(
+    makeGraphicsPlaceholder("BEFORE", item.before, "before"),
+    makeGraphicsPlaceholder(item.unresolved ? "ATTEMPT" : "AFTER", item.after, item.unresolved ? "attempt" : "after"),
+  );
+  return pair;
+};
+
+const makeGraphicsCaseMedia = (item) => {
+  if (item.explanationImage) {
+    const figure = document.createElement("figure");
+    const image = document.createElement("img");
+    const caption = document.createElement("figcaption");
+    figure.className = "rpg-explainer-figure";
+    image.src = item.explanationImage;
+    image.alt = "이전 World Matrix에 변환을 누적해 궤도를 이탈한 경우와 기준값에서 매 프레임 새 행렬을 구성한 경우의 비교 개념도";
+    image.width = 1536;
+    image.height = 1024;
+    image.loading = "lazy";
+    image.decoding = "async";
+    caption.textContent = "행렬 누적과 재구성 비교 · 실제 실행 화면이 아닌 설명용 개념도";
+    figure.append(image, caption);
+    return figure;
+  }
+  if (item.comparisonVideos) {
+    const pair = document.createElement("div");
+    pair.className = "rpg-comparison-pair";
+    [["before", "BEFORE", item.before], ["after", "AFTER", item.after]].forEach(([phase, label, copy]) => {
+      const figure = document.createElement("figure");
+      const screen = document.createElement("div");
+      const badge = document.createElement("span");
+      const video = document.createElement("video");
+      const caption = document.createElement("figcaption");
+      figure.className = `rpg-comparison-frame is-${phase}`;
+      screen.className = "rpg-video-screen";
+      badge.className = "rpg-comparison-label";
+      badge.textContent = label;
+      video.className = "rpg-autoplay-video";
+      video.src = item.comparisonVideos[phase];
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      video.playsInline = true;
+      video.controls = true;
+      video.preload = "auto";
+      video.setAttribute("aria-label", `${label} · ${copy} · 무음 반복 재생`);
+      caption.textContent = copy;
+      screen.append(video, badge);
+      figure.append(screen, caption);
+      pair.append(figure);
+    });
+    return pair;
+  }
+  return item.hideComparison ? null : makeGraphicsComparison(item);
+};
+
+const buildGraphicsShowcase = (project) => {
+  const showcase = project.graphicsShowcase;
+  modalFields.featuresSection.querySelector(".modal-section-title h3").textContent = "Difficulties";
+  modalFields.troubleshootingSection.querySelector(".modal-section-title h3").textContent = "Implemented Functions";
+  modalFields.featuresIndex.textContent = "03";
+  modalFields.troubleshootingIndex.textContent = "04";
+  modalFields.reflectionIndex.textContent = "05";
+  const addOutline = (number, title, target, items = []) => {
+    const entry = document.createElement("li");
+    const index = document.createElement("span");
+    index.textContent = number;
+    entry.append(index, makeOutlineButton(title, target));
+    if (items.length) {
+      const nested = document.createElement("ol");
+      items.forEach((item, itemIndex) => {
+        const row = document.createElement("li");
+        row.append(makeOutlineButton(`${String(itemIndex + 1).padStart(2, "0")}. ${item.title}`, item.target, item.summary || ""));
+        nested.append(row);
+      });
+      entry.append(nested);
+    }
+    modalFields.outline.append(entry);
+  };
+  addOutline("03", "Difficulties", "modal-features", showcase.cases.map((item, index) => ({ title: item.title, summary: item.overviewSummary, target: `modal-feature-${index + 1}` })));
+  addOutline("04", "Implemented Functions", "modal-troubleshooting", showcase.features.map((item, index) => ({ title: item.title, summary: item.copy, target: `modal-render-feature-${index + 1}` })));
+  const introduction = document.createElement("p");
+  introduction.className = "rpg-showcase-note";
+  introduction.textContent = "1번은 설명용 개념도, 2번은 실제 비교 영상입니다. Implemented Functions의 비교 화면은 더미입니다.";
+  modalFields.features.append(introduction);
+  showcase.cases.forEach((item, index) => {
+    const article = document.createElement("article");
+    const header = document.createElement("header");
+    const number = document.createElement("span");
+    const title = document.createElement("h4");
+    const content = document.createElement("div");
+    const flow = makeSystemFlow(item.steps);
+    article.className = "feature-detail lsp-visual-detail rpg-focus-case";
+    article.id = `modal-feature-${index + 1}`;
+    number.textContent = `${String(index + 1).padStart(2, "0")}.`;
+    title.textContent = item.title;
+    header.append(number, title);
+    if (item.unresolved) {
+      const status = document.createElement("small");
+      status.className = "rpg-unresolved-badge";
+      status.textContent = "미해결";
+      title.append(status);
+    }
+    content.className = "lsp-inline-explanation";
+    flow.classList.add("rpg-case-flow");
+    flow.setAttribute("role", "group");
+    flow.setAttribute("aria-label", item.unresolved ? "분석·검토 과정" : "문제 해결 과정");
+    const context = document.createElement("div");
+    context.className = "rpg-resolution-block";
+    [["문제 상황", item.problemCopy], [item.unresolved ? "시도와 남은 과제" : "해결 상황", item.resolutionCopy]].forEach(([heading, copy]) => {
+      const section = document.createElement("section");
+      const headingNode = document.createElement("h5");
+      const text = document.createElement("p");
+      headingNode.textContent = heading;
+      appendEmphasizedText(text, copy, [...item.original.emphasis, "설정한 궤도를 이탈", "클래스화", "멤버", "본 계층", "X·Y·Z축", "행렬곱", "추측", "매 프레임", "본 이름·계층", "위치·회전·크기", "구현하지 못했습니다"]);
+      section.append(headingNode, text);
+      context.append(section);
+    });
+    content.append(context);
+    if (!item.hideFlow) content.append(flow);
+    const media = makeGraphicsCaseMedia(item);
+    if (media) content.append(media);
+    article.append(header, makeFeatureKeywords(item.original.emphasis.slice(0, 4)), content);
+    modalFields.features.append(article);
+  });
+  modalFields.troubleshooting.classList.add("rpg-feature-strip");
+  showcase.features.forEach((item, index) => {
+    const article = document.createElement("article");
+    const copy = document.createElement("div");
+    const number = document.createElement("span");
+    const title = document.createElement("h4");
+    const description = document.createElement("p");
+    article.id = `modal-render-feature-${index + 1}`;
+    article.className = "rpg-feature-step";
+    article.style.zIndex = String(index + 1);
+    copy.className = "rpg-feature-step-copy";
+    number.className = "rpg-feature-step-number";
+    number.textContent = String(index + 1).padStart(2, "0");
+    title.textContent = item.title;
+    description.textContent = item.copy;
+    copy.append(number, title, description);
+    article.append(copy, makeGraphicsComparison(item));
+    modalFields.troubleshooting.append(article);
+  });
+};
+
 const buildProjectDetail = (project) => {
   const principles = project.principles || [];
   const coreFeatures = project.coreFeatures || [];
@@ -4600,6 +4803,9 @@ const buildProjectDetail = (project) => {
   modalFields.features.replaceChildren();
   modalFields.others.replaceChildren();
   modalFields.troubleshooting.replaceChildren();
+  modalFields.troubleshooting.classList.remove("rpg-feature-strip");
+  modalFields.featuresSection.querySelector(".modal-section-title h3").textContent = "Core Features";
+  modalFields.troubleshootingSection.querySelector(".modal-section-title h3").textContent = "Troubleshooting";
   modalFields.principlesSection.hidden = principles.length === 0;
   modalFields.featuresSection.hidden = coreFeatures.length === 0;
   modalFields.othersSection.hidden = otherFeatures.length === 0;
@@ -4610,6 +4816,10 @@ const buildProjectDetail = (project) => {
   modalFields.reflectionTitle.textContent = project.reflectionTitle || "";
   modalFields.reflectionCopy.textContent = project.reflection || "";
   if (!hasDetail) return;
+  if (project.graphicsShowcase) {
+    buildGraphicsShowcase(project);
+    return;
+  }
 
   let sectionIndex = 3;
   if (principles.length) {
@@ -4902,6 +5112,7 @@ const openProject = (projectId) => {
   activeProject = project;
 
   modal.classList.toggle("is-collection", isCollection);
+  modal.classList.toggle("is-graphics-showcase", Boolean(project.graphicsShowcase));
   modal.classList.toggle("has-inline-visuals", Boolean(project.inlineVisuals));
   modal.classList.toggle("has-design-document", hasDesignPage);
   designOpenButton.hidden = !hasDesignPage;
@@ -4962,6 +5173,7 @@ const openProject = (projectId) => {
   buildProjectDetail(project);
 
   modal.showModal();
+  modal.querySelectorAll(".rpg-autoplay-video").forEach((video) => video.play().catch(() => {}));
   modal.scrollTop = 0;
   document.body.classList.add("modal-open");
   if (architectureOverview?.diagram || project.inlineVisuals) observeMermaidDiagrams(modal);
@@ -5310,7 +5522,7 @@ modal.addEventListener("click", (event) => {
   if (event.target === modal) modal.close();
 });
 modal.addEventListener("close", () => {
-  modal.querySelectorAll(".lsp-inline-result video").forEach((video) => video.pause());
+  modal.querySelectorAll(".lsp-inline-result video, .rpg-autoplay-video").forEach((video) => video.pause());
   closeDesignDocument();
   closeFeatureImplementation();
   activeProject = null;

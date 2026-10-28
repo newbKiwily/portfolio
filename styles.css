@@ -464,7 +464,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .other-project-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; }
 .other-project-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 2px solid rgba(255,183,92,.62); border-radius: 5px; background: var(--panel); box-shadow: 0 16px 34px rgba(0,0,0,.28), inset 0 0 0 1px rgba(103,211,255,.08); }
 .other-project-number { display: flex; align-items: center; justify-content: space-between; gap: .6rem; border-bottom: 2px solid rgba(255,183,92,.62); padding: .55rem .75rem .48rem; background: linear-gradient(90deg,rgba(255,150,53,.16),rgba(11,16,32,.96) 52%); color: var(--yellow); font-size: 1rem; font-weight: 950; line-height: 1; }
-.other-project-award { border: 1px solid rgba(255,225,140,.65); border-radius: 3px; padding: .25rem .4rem; background: rgba(255,183,92,.09); color: var(--yellow); font-size: .6rem; font-weight: 850; line-height: 1.2; white-space: nowrap; }
+.other-project-award { border: 1px solid rgba(255,225,140,.65); border-radius: 3px; padding: .25rem .4rem; background: rgba(255,183,92,.09); color: var(--yellow); font-size: .72rem; font-weight: 850; line-height: 1.2; white-space: nowrap; }
 .other-project-media-stack { display: grid; gap: .5rem; border-bottom: 1px solid var(--line); padding: .5rem; background: rgba(5,8,17,.58); }
 .other-project-card figure { position: relative; aspect-ratio: 16/9; margin: 0; overflow: hidden; background: #050811; }
 .other-project-card figure::after { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to bottom,rgba(5,8,17,.08),rgba(5,8,17,.3)); content: ""; pointer-events: none; }
@@ -571,6 +571,65 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .lsp-inline-explanation { display: grid; gap: 1.2rem; margin-top: 1rem; }
 .lsp-feature-brief { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.7; }
 .lsp-feature-brief strong { color: #f4f6fb; font-weight: 800; }
+.project-modal.is-graphics-showcase { width: min(calc(100% - 2rem),1240px); }
+.is-graphics-showcase .feature-detail-list { gap: 1.8rem; }
+.rpg-showcase-note { margin: 0; border-left: 3px solid var(--cyan); padding: .65rem .9rem; background: rgba(117,213,218,.045); color: var(--muted); font-size: .78rem; line-height: 1.7; }
+.rpg-unresolved-badge { display: inline-block; margin-left: .65rem; border: 1px solid rgba(255,183,92,.6); border-radius: 3px; padding: .2rem .45rem; color: var(--peach); font-size: .68rem; line-height: 1.4; vertical-align: middle; white-space: nowrap; }
+.system-flow.rpg-case-flow { margin: 0; }
+.rpg-comparison-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .85rem; min-width: 0; }
+.rpg-comparison-frame { min-width: 0; margin: 0; overflow: hidden; border: 1px solid rgba(160,170,185,.3); border-radius: 4px; background: #0b1422; }
+.rpg-dummy-screen { position: relative; display: grid; place-items: center; aspect-ratio: 16/9; overflow: hidden; background: radial-gradient(ellipse at 50% 10%,rgba(141,156,178,.12),transparent 70%),#101927; }
+.rpg-dummy-screen::after { position: absolute; inset: 50% -30% -80%; background-image: linear-gradient(rgba(155,175,195,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(155,175,195,.16) 1px,transparent 1px); background-size: 26px 26px; transform: perspective(180px) rotateX(48deg); content: ""; }
+.rpg-comparison-label { position: absolute; z-index: 2; top: .6rem; left: .65rem; border: 1px solid rgba(174,187,208,.32); border-radius: 2px; padding: .15rem .4rem; background: rgba(5,10,20,.7); color: var(--muted); font-size: .62rem; font-weight: 900; letter-spacing: .08em; }
+.rpg-dummy-note { position: absolute; z-index: 2; right: .65rem; bottom: .5rem; color: #a0aabc; font-size: .62rem; }
+.rpg-dummy-geometry { position: relative; z-index: 1; display: flex; align-items: end; gap: 1.25rem; transform: translateY(.3rem); }
+.rpg-dummy-geometry i { display: block; width: clamp(1.2rem,3.2vw,2.7rem); aspect-ratio: 1; border: 1px solid #738197; background: rgba(129,145,166,.08); box-shadow: 5px -5px 0 -1px #101927,5px -5px 0 0 #5a687c; transform: rotate(-10deg) skewY(7deg); }
+.rpg-dummy-geometry i:nth-child(2) { width: clamp(1.6rem,4.2vw,3.6rem); }
+.rpg-comparison-frame figcaption { border-top: 1px solid rgba(160,170,185,.22); padding: .6rem .75rem; color: var(--muted); font-size: .75rem; line-height: 1.6; }
+.rpg-comparison-frame.is-after { border-color: rgba(117,213,218,.44); }
+.is-after .rpg-comparison-label { border-color: rgba(117,213,218,.48); color: var(--cyan); }
+.is-after .rpg-dummy-geometry i { border-color: var(--cyan); background: rgba(117,213,218,.1); box-shadow: 5px -5px 0 -1px #101927,5px -5px 0 0 #508a90; }
+.rpg-comparison-frame.is-attempt { border-color: rgba(255,183,92,.45); }
+.is-attempt .rpg-comparison-label { border-color: rgba(255,183,92,.5); color: var(--peach); }
+.rpg-explainer-figure { width: min(75%,720px); min-width: 0; margin: 0 auto; overflow: hidden; border: 1px solid #d9dfd5; border-radius: 4px; background: #fbfaf5; }
+.rpg-explainer-figure img { display: block; width: 100%; height: auto; }
+.rpg-explainer-figure figcaption { border-top: 1px solid #d9dfd5; padding: .55rem .75rem; color: #59635e; font-size: .7rem; line-height: 1.6; }
+.rpg-video-screen { position: relative; background: #060a12; }
+.rpg-autoplay-video { display: block; width: 100%; aspect-ratio: 16/9; object-fit: contain; background: #060a12; }
+.rpg-resolution-block { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); overflow: hidden; border: 1px solid rgba(117,213,218,.4); border-radius: 4px; background: rgba(7,12,24,.4); }
+.rpg-resolution-block > section { min-width: 0; padding: 1rem 1.1rem; }
+.rpg-resolution-block > section + section { border-left: 1px solid var(--line); }
+.rpg-resolution-block h5 { margin: 0 0 .55rem; color: var(--peach); font-size: .85rem; }
+.rpg-resolution-block > section:last-child h5 { color: var(--cyan); }
+.rpg-resolution-block p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }
+.rpg-resolution-block strong { color: var(--text); font-weight: 800; }
+.rpg-feature-strip { gap: 0; padding-block: .5rem 1rem; }
+.rpg-feature-step { position: relative; display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.25fr); align-items: center; gap: 1.25rem; width: 100%; min-width: 0; border: 1px solid rgba(117,213,218,.34); border-radius: 5px; padding: 1.1rem; background: #131e30; box-shadow: 0 12px 22px rgba(0,0,0,.2); scroll-margin-top: 1rem; }
+.rpg-feature-step + .rpg-feature-step { margin-top: .8rem; }
+.rpg-feature-step-copy { min-width: 0; }
+.rpg-feature-step-number { display: block; margin-bottom: .4rem; color: var(--orange); font-size: .85rem; font-weight: 900; }
+.rpg-feature-step h4 { margin: 0 0 .45rem; color: var(--yellow); font-size: 1rem; line-height: 1.5; word-break: keep-all; }
+.rpg-feature-step-copy p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.7; }
+.rpg-feature-step .rpg-comparison-pair { gap: .5rem; }
+.rpg-feature-step .rpg-comparison-frame figcaption { padding: .4rem .5rem; font-size: .65rem; }
+.rpg-feature-step .rpg-dummy-note { font-size: .55rem; }
+@media (max-width: 900px) {
+  .rpg-feature-step { gap: .85rem; }
+  .rpg-feature-step .rpg-dummy-geometry { gap: .8rem; }
+}
+@media (max-width: 600px) {
+  .rpg-resolution-block { grid-template-columns: 1fr; }
+  .rpg-resolution-block > section + section { border-left: 0; border-top: 1px solid var(--line); }
+  .rpg-comparison-pair { gap: .5rem; }
+  .rpg-comparison-label { top: .4rem; left: .4rem; font-size: .55rem; }
+  .rpg-comparison-frame figcaption { padding: .45rem; font-size: .65rem; }
+  .rpg-dummy-geometry { gap: .7rem; }
+  .rpg-dummy-note { right: .4rem; bottom: .3rem; font-size: .55rem; }
+  .rpg-feature-strip { gap: 1rem; }
+  .rpg-feature-step { width: 100%; grid-template-columns: minmax(0,1fr); gap: .9rem; padding: 1rem; }
+  .rpg-feature-step + .rpg-feature-step { margin-top: 0; }
+  .is-graphics-showcase :is(.rpg-focus-case,.rpg-feature-step,.modal-troubleshooting) { scroll-margin-top: 5rem; }
+}
 .lsp-troubleshooting-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
 .lsp-troubleshooting-summary > section { min-width: 0; padding: 1rem 1.1rem; border: 1px solid rgba(160,170,185,.3); border-radius: 4px; background: rgba(7,12,24,.35); }
 .lsp-troubleshooting-summary h5 { margin: 0 0 .55rem; color: var(--peach); font-size: .85rem; font-weight: 800; }
