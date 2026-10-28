@@ -3425,15 +3425,16 @@ everwindProject.otherFeatures.forEach((feature, index) => {
       };
 });
 
-// RPG layout draft: retain existing project text; all comparison media are placeholders.
+// RPG showcase: implementation list, focused difficulties and comparison media.
 const rpgFieldProject = projects["project-3"];
 rpgFieldProject.graphicsShowcase = {
-  features: rpgFieldProject.coreFeatures.map((feature, index) => ({
-    title: feature.title,
-    copy: ["오브젝트 배치 · 카메라 투영 · 화면 고정 UI", "필드의 명암과 표면 표현", "지형 표면과 주변 환경 표현", "캐릭터 애니메이션 · 레이 선택 반응", "위치 목록을 이용한 나무 반복 배치"][index],
-    before: ["변환 적용 전", "조명 적용 전", "단일 텍스처", "정적 메시", "단일 오브젝트"][index],
-    after: ["WVP 변환 적용", "Phong 조명 적용", "멀티 텍스처 적용", "애니메이션·인터랙션", "반복 오브젝트 배치"][index],
-  })),
+  features: [
+    { title: "Phong 조명", copy: "Ambient·Diffuse·Specular를 이용한 필드 명암 표현", before: "조명 적용 전", after: "Phong 조명 적용" },
+    { title: "멀티 텍스처링", copy: "여러 텍스처를 혼합한 지형 표면 표현", before: "단일 텍스처", after: "멀티 텍스처 적용" },
+    { title: "스카이맵", copy: "큐브맵을 이용한 스카이박스 환경 표현", before: "스카이맵 적용 전", after: "스카이맵 적용" },
+    { title: "스킨드 메시 애니메이션", copy: "Assimp로 읽은 본 계층·키프레임·가중치 기반 애니메이션", before: "정적 메시", after: "스킨드 메시 애니메이션" },
+    { title: "인터랙션", copy: "레이·AABB 판정과 선택에 따른 시각적 피드백", before: "입력·선택 반응 전", after: "인터랙션 적용" },
+  ],
   cases: [
     { source: 0, title: "월드 행렬 누적으로 공전 궤도가 틀어지는 문제", overviewSummary: "오브젝트별 World Matrix를 두고 매 프레임 행렬을 다시 구성했습니다.", explanationImage: "assets/rpg-field/explainers/world-matrix-before-after.png", before: "궤도·위치 이탈", after: "기준값에서 행렬 재구성", steps: ["변환 누적 확인", "고정 위치 좌표 분리", "매 프레임 행렬 재구성"] },
     { source: 2, title: "FBX 본 데이터로 캐릭터 메시가 뒤틀리는 문제", overviewSummary: "본 계층을 로그로 추적하고 불필요한 본 정보를 제외했습니다.", comparisonVideos: { before: "assets/rpg-field/videos/skinning-before.mp4", after: "assets/rpg-field/videos/skinning-after.mp4" }, before: "본 뒤틀림 발생", after: "본 계층 수정 후 정상 동작", steps: ["본 이름·계층 로그 비교", "불필요한 본 정보 식별", "유효 계층으로 본 행렬 계산"] },
