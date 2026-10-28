@@ -595,6 +595,9 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .rpg-explainer-figure img { display: block; width: 100%; height: auto; }
 .rpg-explainer-figure figcaption { border-top: 1px solid #d9dfd5; padding: .55rem .75rem; color: #59635e; font-size: .7rem; line-height: 1.6; }
 .rpg-video-screen { position: relative; background: #060a12; }
+.rpg-single-video { min-width: 0; }
+.rpg-image-screen { position: relative; background: #060a12; }
+.rpg-image-screen img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: contain; }
 .rpg-autoplay-video { display: block; width: 100%; aspect-ratio: 16/9; object-fit: contain; background: #060a12; }
 .rpg-resolution-block { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); overflow: hidden; border: 1px solid rgba(117,213,218,.4); border-radius: 4px; background: rgba(7,12,24,.4); }
 .rpg-resolution-block > section { min-width: 0; padding: 1rem 1.1rem; }
@@ -611,6 +614,7 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .rpg-feature-step h4 { margin: 0 0 .45rem; color: var(--yellow); font-size: 1rem; line-height: 1.5; word-break: keep-all; }
 .rpg-feature-step-copy p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.7; }
 .rpg-feature-step .rpg-comparison-pair { gap: .5rem; }
+.rpg-feature-step .rpg-single-video { width: calc(57.5% - .2875rem); justify-self: center; }
 .rpg-feature-step .rpg-comparison-frame figcaption { padding: .4rem .5rem; font-size: .65rem; }
 .rpg-feature-step .rpg-dummy-note { font-size: .55rem; }
 @media (max-width: 900px) {

@@ -438,74 +438,10 @@ const projects = {
       ["구현 범위", "렌더링·조명·텍스처·애니메이션·인터랙션·UI"],
     ],
     coreFeatures: [
-      {
-        title: "렌더링 파이프라인과 WVP 변환",
-        summary: "로컬 좌표를 월드·카메라·클립 공간으로 변환해 오브젝트를 화면에 배치합니다.",
-        keywords: ["WVP 변환", "World·View·Projection", "직교 투영", "상수 버퍼"],
-        emphasis: ["World·View·Projection", "World Matrix", "View Matrix", "Projection Matrix", "직교 투영"],
-        whyEmphasis: ["로컬 좌표", "오브젝트 이동", "카메라 회전", "화면 투영"],
-        why: "3D 오브젝트를 의도한 위치와 시점으로 화면에 표현하려면 로컬 좌표가 어떤 공간을 거쳐 변환되는지 이해해야 합니다. 변환 책임이 섞이면 오브젝트 이동, 카메라 회전과 화면 투영 중 어느 단계에서 문제가 생겼는지 추적하기 어렵습니다.",
-        how: "오브젝트별 World Matrix로 위치·회전·크기를 구성하고, 카메라의 View Matrix와 화면 비율을 반영한 Projection Matrix를 순서대로 셰이더에 전달했습니다. 정점 셰이더에서 World·View·Projection 변환을 적용했으며, 화면 고정 UI에는 별도의 직교 투영을 사용했습니다.",
-      },
-      {
-        title: "Phong 조명과 HLSL 데이터 바인딩",
-        summary: "C++의 조명·카메라 데이터를 셰이더에 전달해 표면의 입체감과 재질감을 계산합니다.",
-        keywords: ["Phong Lighting", "Ambient·Diffuse·Specular", "HLSL", "Normal Mapping"],
-        emphasis: ["Ambient·Diffuse·Specular", "상수 버퍼", "법선·빛·시선 방향", "텍스처 색상"],
-        whyEmphasis: ["표면 법선", "빛 방향", "시선 방향", "CPU 데이터", "셰이더 계산"],
-        why: "조명은 단순히 물체를 밝게 만드는 효과가 아니라 표면 법선, 빛 방향과 시선 방향의 관계를 계산해 형태와 재질을 드러내는 과정입니다. CPU 데이터와 셰이더 계산이 분리되어 있어 두 단계의 계약을 함께 이해해야 했습니다.",
-        how: "C++에서 행렬, 카메라 위치와 광원 정보를 상수 버퍼로 구성하고 HLSL에 바인딩했습니다. 픽셀 셰이더에서는 법선·빛·시선 방향을 사용해 Ambient·Diffuse·Specular 항을 계산하고 텍스처 색상과 합성했습니다. 노멀맵을 사용할 때는 접선 공간을 구성해 표면 법선을 보정했습니다.",
-        media: {
-          type: "image",
-          src: "assets/rpg-field/phong-lighting.png",
-          title: "Phong 조명 결과 사진",
-          alt: "여러 광원으로 나무와 건물, 가로등의 명암을 표현한 RPG Field Scene",
-        },
-      },
-      {
-        title: "멀티 텍스처링과 환경 표현",
-        summary: "Diffuse·Normal·Cube Map을 목적별로 샘플링해 표면과 주변 환경을 함께 표현합니다.",
-        keywords: ["Diffuse·Normal·Cube Map", "Texture Slot", "TextureCube", "Lerp"],
-        emphasis: ["Diffuse Map", "Normal Map", "Cube Map", "텍스처 슬롯", "TextureCube"],
-        whyEmphasis: ["표면의 색상", "미세 굴곡", "주변 환경", "텍스처"],
-        why: "하나의 텍스처만으로는 표면의 색상, 미세 굴곡과 주변 환경을 모두 표현하기 어렵습니다. 각 텍스처가 어떤 정보를 담고 셰이더의 어느 계산에 쓰이는지 구분할 필요가 있었습니다.",
-        how: "Diffuse Map은 기본 색상, Normal Map은 조명 계산용 표면 방향, Cube Map은 스카이박스의 환경 정보로 사용했습니다. 여러 텍스처를 정해진 텍스처 슬롯에 바인딩하고 같은 렌더 패스에서 샘플링했으며, 큐브맵은 방향 벡터를 사용하는 TextureCube 방식으로 처리했습니다.",
-        media: {
-          type: "image",
-          src: "assets/rpg-field/multi-texturing.png",
-          title: "멀티 텍스처링 결과 사진",
-          alt: "두 텍스처를 조합해 지형 표면을 표현한 멀티 텍스처링 결과",
-        },
-      },
-      {
-        title: "스킨드 메시 애니메이션과 인터랙션",
-        summary: "모델의 본 계층과 키프레임을 계산하고 레이 판정 결과를 장면 반응으로 연결합니다.",
-        keywords: ["Assimp", "Skinned Mesh", "Bone Matrix", "Ray·AABB"],
-        emphasis: ["Assimp", "본 계층·키프레임·가중치", "최종 본 행렬", "레이와 AABB", "시각적 피드백"],
-        whyEmphasis: ["정적 메시", "본 계층", "키프레임", "화면 좌표", "월드 오브젝트"],
-        why: "필드 캐릭터가 자연스럽게 움직이려면 정적 메시만 출력하는 것을 넘어 모델 파일의 본 계층과 시간별 키프레임을 해석해야 합니다. 사용자 입력 역시 화면 좌표에서 실제 월드 오브젝트까지 연결되어야 게임 장면의 상호작용으로 기능합니다.",
-        how: "Assimp로 메시·재질·본 계층·키프레임·가중치를 읽고 시간에 따라 최종 본 행렬을 계산해 셰이더에 전달했습니다. 화면 좌표에서는 월드 공간 레이를 만들고 오브젝트의 AABB와 교차 여부를 판정했으며, 선택 결과를 조명 색 변화 같은 시각적 피드백으로 연결했습니다.",
-        media: {
-          type: "video",
-          src: "assets/rpg-field/interaction-animation.mp4",
-          title: "스킨드 메시 애니메이션과 인터랙션 결과 영상",
-        },
-      },
-      {
-        title: "데이터 기반 반복 오브젝트 인스턴스 배치",
-        summary: "동일한 나무 모델을 위치 데이터로 반복 생성하고 인스턴스별 변환을 일괄 관리합니다.",
-        keywords: ["위치 데이터", "모델 리소스 공유", "월드 행렬", "반복 배치"],
-        emphasis: ["위치 목록", "동일한 모델 리소스", "개별 인스턴스", "월드 행렬", "공통 렌더 루프"],
-        whyEmphasis: ["반복되는 오브젝트", "생성", "렌더링 코드", "중복 코드", "배치 수"],
-        why: "필드에는 같은 종류의 나무처럼 반복되는 오브젝트가 많이 필요합니다. 오브젝트마다 생성과 렌더링 코드를 따로 작성하면 배치 수가 늘어날수록 중복 코드가 커지고, 위치를 수정하거나 개수를 확장하기도 어려워집니다.",
-        how: "나무가 배치될 좌표를 위치 목록으로 분리하고, 목록을 순회하며 동일한 모델 리소스를 사용하는 개별 인스턴스를 생성했습니다. 각 인스턴스에는 자신의 위치만 보관하고 하나의 컨테이너에서 관리합니다. 렌더링 단계에서는 공통 렌더 루프가 인스턴스별 위치로 월드 행렬을 구성해 같은 모델을 여러 장소에 배치하도록 만들었습니다.",
-        media: {
-          type: "image",
-          src: "assets/rpg-field/instancing.png",
-          title: "반복 오브젝트 배치 결과 사진",
-          alt: "동일한 나무 모델을 여러 위치에 반복 배치한 RPG Field Scene 결과",
-        },
-      },
+      { title: "Phong 조명", summary: "Ambient·Diffuse·Specular를 이용한 필드 명암 표현", before: "조명 적용 전", after: "Phong 조명 적용", comparisonImages: { before: "assets/rpg-field/comparisons/phong-before.png", after: "assets/rpg-field/comparisons/phong-after.png" } },
+      { title: "멀티 텍스처링·스카이맵", summary: "컬러 매핑·노멀 매핑으로 표면의 색상과 법선을 표현하고, 큐브 매핑으로 스카이맵 구성", before: "텍스처·스카이맵 적용 전", after: "컬러·노멀·큐브 매핑 적용" },
+      { title: "스킨드 메시 애니메이션", summary: "Assimp로 읽은 본 계층·키프레임·가중치 기반 애니메이션", before: "정적 메시", after: "스킨드 메시 애니메이션", comparisonVideos: { before: "assets/rpg-field/videos/animation-before.mp4", after: "assets/rpg-field/videos/animation-after.mp4" } },
+      { title: "인터랙션", summary: "레이·AABB로 모닥불을 선택하고, 클릭 유지 시 라이팅 업 인터랙션과 애니메이션 변화 적용", singleVideo: "assets/rpg-field/videos/campfire-interaction.mp4", mediaCaption: "모닥불 클릭 유지 · 라이팅 업·애니메이션 변화" },
     ],
     troubleshooting: [
       {
@@ -3428,13 +3364,7 @@ everwindProject.otherFeatures.forEach((feature, index) => {
 // RPG showcase: implementation list, focused difficulties and comparison media.
 const rpgFieldProject = projects["project-3"];
 rpgFieldProject.graphicsShowcase = {
-  features: [
-    { title: "Phong 조명", copy: "Ambient·Diffuse·Specular를 이용한 필드 명암 표현", before: "조명 적용 전", after: "Phong 조명 적용" },
-    { title: "멀티 텍스처링", copy: "여러 텍스처를 혼합한 지형 표면 표현", before: "단일 텍스처", after: "멀티 텍스처 적용" },
-    { title: "스카이맵", copy: "큐브맵을 이용한 스카이박스 환경 표현", before: "스카이맵 적용 전", after: "스카이맵 적용" },
-    { title: "스킨드 메시 애니메이션", copy: "Assimp로 읽은 본 계층·키프레임·가중치 기반 애니메이션", before: "정적 메시", after: "스킨드 메시 애니메이션" },
-    { title: "인터랙션", copy: "레이·AABB 판정과 선택에 따른 시각적 피드백", before: "입력·선택 반응 전", after: "인터랙션 적용" },
-  ],
+  features: rpgFieldProject.coreFeatures.map(({ summary, ...feature }) => ({ ...feature, copy: summary })),
   cases: [
     { source: 0, title: "월드 행렬 누적으로 공전 궤도가 틀어지는 문제", overviewSummary: "오브젝트별 World Matrix를 두고 매 프레임 행렬을 다시 구성했습니다.", explanationImage: "assets/rpg-field/explainers/world-matrix-before-after.png", before: "궤도·위치 이탈", after: "기준값에서 행렬 재구성", steps: ["변환 누적 확인", "고정 위치 좌표 분리", "매 프레임 행렬 재구성"] },
     { source: 2, title: "FBX 본 데이터로 캐릭터 메시가 뒤틀리는 문제", overviewSummary: "본 계층을 로그로 추적하고 불필요한 본 정보를 제외했습니다.", comparisonVideos: { before: "assets/rpg-field/videos/skinning-before.mp4", after: "assets/rpg-field/videos/skinning-after.mp4" }, before: "본 뒤틀림 발생", after: "본 계층 수정 후 정상 동작", steps: ["본 이름·계층 로그 비교", "불필요한 본 정보 식별", "유효 계층으로 본 행렬 계산"] },
@@ -4641,8 +4571,31 @@ const makeGraphicsPlaceholder = (label, copy, phase) => {
 };
 
 const makeGraphicsComparison = (item) => {
+  if (item.comparisonVideos || item.singleVideo) return makeGraphicsCaseMedia(item);
   const pair = document.createElement("div");
   pair.className = "rpg-comparison-pair";
+  if (item.comparisonImages) {
+    [["before", "BEFORE", item.before], ["after", "AFTER", item.after]].forEach(([phase, label, copy]) => {
+      const figure = document.createElement("figure");
+      const screen = document.createElement("div");
+      const badge = document.createElement("span");
+      const image = document.createElement("img");
+      const caption = document.createElement("figcaption");
+      figure.className = `rpg-comparison-frame is-${phase}`;
+      screen.className = "rpg-image-screen";
+      badge.className = "rpg-comparison-label";
+      badge.textContent = label;
+      image.src = item.comparisonImages[phase];
+      image.alt = `${item.title} · ${copy} 실제 실행 화면`;
+      image.loading = "lazy";
+      image.decoding = "async";
+      caption.textContent = copy;
+      screen.append(image, badge);
+      figure.append(screen, caption);
+      pair.append(figure);
+    });
+    return pair;
+  }
   pair.append(
     makeGraphicsPlaceholder("BEFORE", item.before, "before"),
     makeGraphicsPlaceholder(item.unresolved ? "ATTEMPT" : "AFTER", item.after, item.unresolved ? "attempt" : "after"),
@@ -4666,10 +4619,13 @@ const makeGraphicsCaseMedia = (item) => {
     figure.append(image, caption);
     return figure;
   }
-  if (item.comparisonVideos) {
+  if (item.comparisonVideos || item.singleVideo) {
     const pair = document.createElement("div");
-    pair.className = "rpg-comparison-pair";
-    [["before", "BEFORE", item.before], ["after", "AFTER", item.after]].forEach(([phase, label, copy]) => {
+    pair.className = item.singleVideo ? "rpg-single-video" : "rpg-comparison-pair";
+    const entries = item.singleVideo
+      ? [["result", "INTERACTION", item.mediaCaption || item.title]]
+      : [["before", "BEFORE", item.before], ["after", "AFTER", item.after]];
+    entries.forEach(([phase, label, copy]) => {
       const figure = document.createElement("figure");
       const screen = document.createElement("div");
       const badge = document.createElement("span");
@@ -4680,7 +4636,7 @@ const makeGraphicsCaseMedia = (item) => {
       badge.className = "rpg-comparison-label";
       badge.textContent = label;
       video.className = "rpg-autoplay-video";
-      video.src = item.comparisonVideos[phase];
+      video.src = item.singleVideo || item.comparisonVideos[phase];
       video.autoplay = true;
       video.loop = true;
       video.muted = true;
@@ -4727,7 +4683,7 @@ const buildGraphicsShowcase = (project) => {
   addOutline("04", "Implemented Functions", "modal-troubleshooting", showcase.features.map((item, index) => ({ title: item.title, summary: item.copy, target: `modal-render-feature-${index + 1}` })));
   const introduction = document.createElement("p");
   introduction.className = "rpg-showcase-note";
-  introduction.textContent = "1번은 설명용 개념도, 2번은 실제 비교 영상입니다. Implemented Functions의 비교 화면은 더미입니다.";
+  introduction.textContent = "Difficulties 1번은 설명용 개념도, 2번은 실제 비교 영상입니다. Implemented Functions에는 실제 비교 사진·영상과 더미 화면이 함께 배치되어 있습니다.";
   modalFields.features.append(introduction);
   showcase.cases.forEach((item, index) => {
     const article = document.createElement("article");
