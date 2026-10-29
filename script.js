@@ -439,7 +439,8 @@ const projects = {
     ],
     coreFeatures: [
       { title: "Phong 조명", summary: "Ambient·Diffuse·Specular를 이용한 필드 명암 표현", before: "조명 적용 전", after: "Phong 조명 적용", comparisonImages: { before: "assets/rpg-field/comparisons/phong-before.png", after: "assets/rpg-field/comparisons/phong-after.png" } },
-      { title: "멀티 텍스처링·스카이맵", summary: "컬러 매핑·노멀 매핑으로 표면의 색상과 법선을 표현하고, 큐브 매핑으로 스카이맵 구성", before: "텍스처·스카이맵 적용 전", after: "컬러·노멀·큐브 매핑 적용" },
+      { title: "컬러 매핑·노멀 매핑", summary: "컬러 매핑으로 눈 쌓인 지면을 표현하고, 노멀 매핑으로 표면 법선을 조정해 깊이감 표현", before: "눈·노멀 매핑 적용 전", after: "눈 쌓인 지면·표면 깊이감 표현", hoverImageZoom: true, comparisonImages: { before: "assets/rpg-field/comparisons/mapping-before.png", after: "assets/rpg-field/comparisons/mapping-after.png" } },
+      { title: "큐브 매핑", summary: "큐브 매핑으로 필드를 둘러싼 스카이맵 구성", singleVideo: "assets/rpg-field/videos/cube-mapping.mp4", mediaLabel: "CUBE MAPPING", mediaCaption: "큐브 매핑 · 스카이맵" },
       { title: "스킨드 메시 애니메이션", summary: "Assimp로 읽은 본 계층·키프레임·가중치 기반 애니메이션", before: "정적 메시", after: "스킨드 메시 애니메이션", comparisonVideos: { before: "assets/rpg-field/videos/animation-before.mp4", after: "assets/rpg-field/videos/animation-after.mp4" } },
       { title: "인터랙션", summary: "레이·AABB로 모닥불을 선택하고, 클릭 유지 시 라이팅 업 인터랙션과 애니메이션 변화 적용", singleVideo: "assets/rpg-field/videos/campfire-interaction.mp4", mediaCaption: "모닥불 클릭 유지 · 라이팅 업·애니메이션 변화" },
     ],
@@ -4592,6 +4593,28 @@ const makeGraphicsComparison = (item) => {
       caption.textContent = copy;
       screen.append(image, badge);
       figure.append(screen, caption);
+      if (item.hoverImageZoom) {
+        const zoomButton = document.createElement("button");
+        zoomButton.type = "button";
+        zoomButton.className = "rpg-image-enlarge";
+        zoomButton.textContent = "확대하기";
+        zoomButton.setAttribute("aria-label", `${item.title} ${label} 사진 확대하기`);
+        const preview = document.createElement("div");
+        preview.className = "rpg-image-hover-preview";
+        preview.setAttribute("popover", "manual");
+        preview.setAttribute("aria-hidden", "true");
+        const enlarged = document.createElement("img");
+        enlarged.src = image.src;
+        enlarged.alt = "";
+        preview.append(enlarged);
+        const showPreview = () => preview.showPopover();
+        const hidePreview = () => preview.hidePopover();
+        zoomButton.addEventListener("pointerenter", showPreview);
+        zoomButton.addEventListener("pointerleave", hidePreview);
+        zoomButton.addEventListener("focus", showPreview);
+        zoomButton.addEventListener("blur", hidePreview);
+        screen.append(zoomButton, preview);
+      }
       pair.append(figure);
     });
     return pair;
@@ -4623,7 +4646,7 @@ const makeGraphicsCaseMedia = (item) => {
     const pair = document.createElement("div");
     pair.className = item.singleVideo ? "rpg-single-video" : "rpg-comparison-pair";
     const entries = item.singleVideo
-      ? [["result", "INTERACTION", item.mediaCaption || item.title]]
+      ? [["result", item.mediaLabel || "INTERACTION", item.mediaCaption || item.title]]
       : [["before", "BEFORE", item.before], ["after", "AFTER", item.after]];
     entries.forEach(([phase, label, copy]) => {
       const figure = document.createElement("figure");
@@ -5479,6 +5502,7 @@ modal.addEventListener("click", (event) => {
   if (event.target === modal) modal.close();
 });
 modal.addEventListener("close", () => {
+  modal.querySelectorAll(".rpg-image-hover-preview:popover-open").forEach((preview) => preview.hidePopover());
   modal.querySelectorAll(".lsp-inline-result video, .rpg-autoplay-video").forEach((video) => video.pause());
   closeDesignDocument();
   closeFeatureImplementation();
