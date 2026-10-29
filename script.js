@@ -5093,6 +5093,11 @@ const openProject = (projectId) => {
 
   modal.classList.toggle("is-collection", isCollection);
   modal.classList.toggle("is-graphics-showcase", Boolean(project.graphicsShowcase));
+  const toolbar = modal.querySelector(".modal-toolbar");
+  const shell = modal.querySelector(".modal-shell");
+  if (project.graphicsShowcase) modal.prepend(toolbar);
+  else shell.prepend(toolbar);
+  shell.scrollTop = 0;
   modal.classList.toggle("has-inline-visuals", Boolean(project.inlineVisuals));
   modal.classList.toggle("has-design-document", hasDesignPage);
   designOpenButton.hidden = !hasDesignPage;

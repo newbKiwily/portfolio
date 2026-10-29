@@ -572,6 +572,9 @@ h3 { margin-bottom: .55rem; font-size: 1.16rem; line-height: 1.4; }
 .lsp-feature-brief { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.7; }
 .lsp-feature-brief strong { color: #f4f6fb; font-weight: 800; }
 .project-modal.is-graphics-showcase { width: min(calc(100% - 2rem),1240px); }
+.project-modal.is-graphics-showcase[open] { display: grid; grid-template-rows: auto minmax(0,1fr); height: calc(100dvh - 2rem); overflow: hidden; }
+.is-graphics-showcase > .modal-toolbar { position: relative; top: auto; z-index: 5; width: 100%; box-sizing: border-box; margin: 0; border-bottom: 1px solid var(--line); padding: .75rem clamp(1.25rem,4vw,3rem); background: var(--bg-soft); }
+.is-graphics-showcase > .modal-shell { min-height: 0; overflow-x: hidden; overflow-y: auto; scroll-padding-top: 1rem; }
 .is-graphics-showcase .feature-detail-list { gap: 1.8rem; }
 .rpg-showcase-note { margin: 0; border-left: 3px solid var(--cyan); padding: .65rem .9rem; background: rgba(117,213,218,.045); color: var(--muted); font-size: .78rem; line-height: 1.7; }
 .rpg-unresolved-badge { display: inline-block; margin-left: .65rem; border: 1px solid rgba(255,183,92,.6); border-radius: 3px; padding: .2rem .45rem; color: var(--peach); font-size: .68rem; line-height: 1.4; vertical-align: middle; white-space: nowrap; }
