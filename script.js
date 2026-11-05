@@ -46,7 +46,7 @@ if (certificatePreview) {
     const openPreview = () => {
       activeCertificate = trigger;
       image.src = trigger.dataset.certificatePreview;
-      image.alt = `${trigger.dataset.certificateTitle} 수료증`;
+      image.alt = trigger.dataset.certificateTitle;
       title.textContent = trigger.dataset.certificateTitle;
       period.textContent = trigger.dataset.certificatePeriod;
       certificatePreview.hidden = false;
